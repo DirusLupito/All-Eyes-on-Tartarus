@@ -1,0 +1,25 @@
+:: StoryTitle
+All Eyes on Tartarus
+
+
+:: StoryData
+{
+  "ifid": "603cb76a-579d-4d57-bff2-50fc09301310",
+  "format": "Harlowe",
+  "format-version": "3.3.9",
+  "start": "Intro 1",
+  "zoom": 1
+}
+
+
+:: Intro 1 {"position":"625,225","size":"100,100"}
+All Eyes on Tartarus
+
+
+:: StoryStylesheet [stylesheet]
+img {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width: 800px;
+}
