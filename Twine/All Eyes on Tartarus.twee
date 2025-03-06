@@ -30,8 +30,15 @@ All Eyes on Tartarus
 The Silent Service
 <!-- Take Her Down! (The Submarine Song) -->
 <script>
-  var audioSource = "../assets/take-her-down-submariners.mp3";
-  var audio = new Audio(audioSource);
+  // If audio is already defined, we should stop it before starting a new one
+  if (typeof audio !== 'undefined') {
+    audio.pause();
+    // And probably remove it from the memory
+    delete audio;
+  }
+  audioSource = "../assets/take-her-down-submariners.mp3";
+  audio = new Audio(audioSource);
+  audio.loop = true;
   // audio.muted = audioMuted;
   // If audioMuted is not defined, this will break the script
   // So we need to check and prevent this from happening
@@ -46,8 +53,14 @@ The Silent Service
 Construimus, Batuimus
 <!-- The Seabees Song -->
 <script>
-  var audioSource = "../assets/song-of-the-seabees.mp3";
-  var audio = new Audio(audioSource);
+  // Stops the previous audio
+  if (typeof audio !== 'undefined') {
+    audio.pause();
+    delete audio;
+  }
+  audioSource = "../assets/song-of-the-seabees.mp3";
+  audio = new Audio(audioSource);
+  audio.loop = true;
   if (typeof audioMuted !== 'undefined') {
     audio.muted = audioMuted;
   }
@@ -59,8 +72,14 @@ Construimus, Batuimus
 Anchors Aweigh
 <!-- Anchors Aweigh -->
 <script>
-  var audioSource = "../assets/anchors-aweigh.mp3";
-  var audio = new Audio(audioSource);
+  // Stops the previous audio
+  if (typeof audio !== 'undefined') {
+    audio.pause();
+    delete audio;
+  }
+  audioSource = "../assets/anchors-aweigh.mp3";
+  audio = new Audio(audioSource);
+  audio.loop = true;
   if (typeof audioMuted !== 'undefined') {
     audio.muted = audioMuted;
   }

@@ -27,8 +27,14 @@
 [[Continue-&gt;Intro 2]]</tw-passagedata><tw-passagedata pid="2" name="Intro 2" tags="" position="800,200" size="100,100">The Silent Service
 &lt;!-- Take Her Down! (The Submarine Song) --&gt;
 &lt;script&gt;
-  var audioSource = &quot;../assets/take-her-down-submariners.mp3&quot;;
-  var audio = new Audio(audioSource);
+  // If audio is already defined, we should stop it before starting a new one
+  if (typeof audio !== &#39;undefined&#39;) {
+    audio.pause();
+    // And probably remove it from the memory
+    delete audio;
+  }
+  audioSource = &quot;../assets/take-her-down-submariners.mp3&quot;;
+  audio = new Audio(audioSource);
   audio.loop = true;
   // audio.muted = audioMuted;
   // If audioMuted is not defined, this will break the script
@@ -41,8 +47,13 @@
 [[Continue-&gt;Intro 3]]</tw-passagedata><tw-passagedata pid="3" name="Intro 3" tags="" position="1000,200" size="100,100">Construimus, Batuimus
 &lt;!-- The Seabees Song --&gt;
 &lt;script&gt;
-  var audioSource = &quot;../assets/song-of-the-seabees.mp3&quot;;
-  var audio = new Audio(audioSource);
+  // Stops the previous audio
+  if (typeof audio !== &#39;undefined&#39;) {
+    audio.pause();
+    delete audio;
+  }
+  audioSource = &quot;../assets/song-of-the-seabees.mp3&quot;;
+  audio = new Audio(audioSource);
   audio.loop = true;
   if (typeof audioMuted !== &#39;undefined&#39;) {
     audio.muted = audioMuted;
@@ -52,8 +63,13 @@
 [[Continue-&gt;Intro 4]]</tw-passagedata><tw-passagedata pid="4" name="Intro 4" tags="" position="1200,200" size="100,100">Anchors Aweigh
 &lt;!-- Anchors Aweigh --&gt;
 &lt;script&gt;
-  var audioSource = &quot;../assets/anchors-aweigh.mp3&quot;;
-  var audio = new Audio(audioSource);
+  // Stops the previous audio
+  if (typeof audio !== &#39;undefined&#39;) {
+    audio.pause();
+    delete audio;
+  }
+  audioSource = &quot;../assets/anchors-aweigh.mp3&quot;;
+  audio = new Audio(audioSource);
   audio.loop = true;
   if (typeof audioMuted !== &#39;undefined&#39;) {
     audio.muted = audioMuted;
