@@ -12,8 +12,60 @@ All Eyes on Tartarus
 }
 
 
-:: Intro 1 {"position":"625,225","size":"100,100"}
+:: Intro 1 {"position":"600,200","size":"100,100"}
 All Eyes on Tartarus
+<!-- Allow audio button  (unmute all audio) -->
+<button id="playAudioButton">Allow Audio</button>
+<script>
+  // So far we only need to umute:
+  // id="submarine-song"
+  document.getElementById("playAudioButton").addEventListener("click", function() {
+    audioMuted = false;
+  }); 
+</script>
+[[Continue->Intro 2]]
+
+
+:: Intro 2 {"position":"800,200","size":"100,100"}
+The Silent Service
+<!-- Take Her Down! (The Submarine Song) -->
+<script>
+  var audioSource = "../assets/take-her-down-submariners.mp3";
+  var audio = new Audio(audioSource);
+  // audio.muted = audioMuted;
+  // If audioMuted is not defined, this will break the script
+  // So we need to check and prevent this from happening
+  if (typeof audioMuted !== 'undefined') {
+    audio.muted = audioMuted;
+  }
+  audio.play();
+</script>
+[[Continue->Intro 3]]
+
+:: Intro 3 {"position":"1000,200","size":"100,100"}
+Construimus, Batuimus
+<!-- The Seabees Song -->
+<script>
+  var audioSource = "../assets/song-of-the-seabees.mp3";
+  var audio = new Audio(audioSource);
+  if (typeof audioMuted !== 'undefined') {
+    audio.muted = audioMuted;
+  }
+  audio.play();
+</script>
+[[Continue->Intro 4]]
+
+:: Intro 4 {"position":"1200,200","size":"100,100"}
+Anchors Aweigh
+<!-- Anchors Aweigh -->
+<script>
+  var audioSource = "../assets/anchors-aweigh.mp3";
+  var audio = new Audio(audioSource);
+  if (typeof audioMuted !== 'undefined') {
+    audio.muted = audioMuted;
+  }
+  audio.play();
+</script>
 
 
 :: StoryStylesheet [stylesheet]
