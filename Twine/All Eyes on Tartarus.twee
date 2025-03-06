@@ -86,6 +86,80 @@ Anchors Aweigh
   audio.play();
 </script>
 
+<!-- The sensor game -->
+
+
+<!-- Not a game yet, just a circle with a line drawn from the center to the edge 
+which continuously rotates around the center, like a radar, and which leaves a fading ghost
+of the line behind it. -->
+<canvas id="radar" width="800" height="800"></canvas>
+<script>
+  (function() {
+    const canvas = document.getElementById("radar");
+    const ctx = canvas.getContext("2d");
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 - 10;
+    let angle = 0;
+  
+    // Fill the canvas with black initially to match Twine's background color
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, width, height);
+  
+    function drawRadar() {
+      // Draw a semi-transparent black overlay to fade previous drawings
+      ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+      ctx.fillRect(0, 0, width, height);
+  
+      // Draw the circle outline
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = "#00FF00";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+  
+      // Calculate the endpoint of the rotating line
+      const endX = centerX + radius * Math.cos(angle);
+      const endY = centerY + radius * Math.sin(angle);
+  
+      // Draw the rotating line
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = "#00FF00";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+  
+      // Drawing a bunch of semi-transparent black overlays won't quite make the line fade to black
+      // when the opacity is too small (about < 0.2), so we can also draw a second rotating line out
+      // of phase with the first to help darken the line
+      const endX2 = centerX + radius * Math.cos(angle - Math.PI / 10);
+      const endY2 = centerY + radius * Math.sin(angle - Math.PI / 10);
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(endX2, endY2);
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 8;
+      ctx.stroke();
+  
+      // Update the angle (rotate 0.5 degree per frame)
+      angle += Math.PI / 360;
+  
+      // Clamp the angle to avoid floating point precision issues
+      if (angle >= Math.PI * 2) {
+        angle = 0;
+      }
+  
+      setTimeout(drawRadar, 10);
+    }
+  
+    drawRadar();
+  })();
+  </script>
+
+
 
 :: StoryStylesheet [stylesheet]
 img {
