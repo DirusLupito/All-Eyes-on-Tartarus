@@ -14,6 +14,7 @@ All Eyes on Tartarus
 
 :: Intro 1 {"position":"600,200","size":"100,100"}
 All Eyes on Tartarus
+(set: $playerSeenRadar to false)
 <!-- Allow audio button  (unmute all audio) -->
 <button id="playAudioButton">Allow Audio</button>
 <script>
@@ -23,6 +24,7 @@ All Eyes on Tartarus
     audioMuted = false;
   }); 
 </script>
+
 [[Continue->Intro 2]]
 
 
@@ -48,7 +50,8 @@ The Silent Service
   audio.play();
 </script>
 [[Continue->Intro 3]]
-  
+
+
 :: Intro 3 {"position":"1000,200","size":"100,100"}
 Construimus, Batuimus
 <!-- The Seabees Song -->
@@ -66,6 +69,10 @@ Construimus, Batuimus
   }
   audio.play();
 </script>
+
+(if: $playerSeenRadar is false)[Player hasn't seen Radar]
+(if: $playerSeenRadar is true)[Player has seen Radar]
+
 [[Continue->Intro 4]]
 
 
@@ -85,6 +92,10 @@ Anchors Aweigh
     audio.muted = audioMuted;
   }
   audio.play();
+</script>
+
+<script>
+$playerSeenRadar = true;
 </script>
 
 <!-- The sensor game -->
@@ -241,6 +252,8 @@ of the line behind it. -->
     animate();
   })();
 </script>
+[[Back->Intro 3]]
+
 
 :: StoryStylesheet [stylesheet]
 img {
