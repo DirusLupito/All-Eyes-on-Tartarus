@@ -119,6 +119,7 @@ of the line behind it. -->
     // Customizable parameters
     const radarSpeed = 0.5; // degrees per frame
     const fadeRate = 0.1;   // fade opacity
+    const ELINTHalfAngle = Math.PI/36; // 5 degrees in radians
     
     // Radar line angle
     let angle = 0;
@@ -134,15 +135,15 @@ of the line behind it. -->
 
     // Contact class definition
     class Contact {
-      constructor(bearing, distance, size, realBearing, realDistance, movementSpeed, directionChangeFrequency, movementDirection, visible, opacity) {
+      constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, visible, opacity, emittingRadiation, emissionDetectionChance) {
         // Affects displayed position
         this.bearing = bearing;
         this.distance = distance;
         this.size = size;
         
         // Affects real position for sim (moves independently of the displayed blip)
-        this.realBearing = realBearing;
-        this.realDistance = realDistance;
+        this.realBearing = bearing;
+        this.realDistance = distance;
         
         // Movement parameters for sim
         this.movementSpeed = movementSpeed;
@@ -152,6 +153,12 @@ of the line behind it. -->
         // Visibility properties for contact blip
         this.visible = visible;
         this.opacity = opacity;
+
+        // ELINT detection properties
+        this.emittingRadiation = emittingRadiation;
+        this.emissionDetectionChance = emissionDetectionChance;
+        this.radiationDetected = false;
+        this.radiationDetectionDuration = 0;
       }
       
       updatePosition() {
@@ -185,6 +192,29 @@ of the line behind it. -->
           // If near center, move outward
           this.movementDirection = Math.atan2(contactY, contactX);
           this.realDistance = radius * 0.1;
+        }
+        
+        // Check for radiation detection
+        this.checkRadiationDetection();
+        
+        // Decrease radiation detection duration
+        if (this.radiationDetected) {
+          this.radiationDetectionDuration--;
+          if (this.radiationDetectionDuration <= 0) {
+            this.radiationDetected = false;
+          }
+        }
+      }
+      
+      checkRadiationDetection() {
+        if (this.emittingRadiation && Math.random() < this.emissionDetectionChance) {
+          // Play a beep
+          // ELINTBeep.mp3
+          const audio = new Audio("../assets/ELINTBeep.mp3");
+          audio.play();
+
+          this.radiationDetected = true;
+          this.radiationDetectionDuration = 15; // Show for about .25 second at 60fps
         }
       }
       
@@ -229,12 +259,43 @@ of the line behind it. -->
             this.visible = false;
           }
         }
+        
+        // Draw ELINT radiation cone if detected
+        if (this.radiationDetected) {
+          const startAngle = this.realBearing - ELINTHalfAngle;
+          const endAngle = this.realBearing + ELINTHalfAngle;
+          
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+          ctx.lineTo(centerX, centerY);
+          ctx.fillStyle = "rgba(255, 255, 0, 0.3)";
+          ctx.fill();
+          
+          // Draw the ELINT cone boundary lines
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + radius * Math.cos(startAngle), 
+            centerY + radius * Math.sin(startAngle)
+          );
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + radius * Math.cos(endAngle), 
+            centerY + radius * Math.sin(endAngle)
+          );
+          ctx.strokeStyle = "#FFFF00";
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
       }
     }
 
     // Create contacts array with one initial contact
+    // constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, visible, opacity, emittingRadiation, emissionDetectionChance)
     const contacts = [
-      new Contact(Math.PI/2, radius * 0.15, 5, Math.PI/2, radius * 0.15, 0.02, 0.005, Math.random() * Math.PI * 2, false, 0)
+      new Contact(Math.PI/2, radius * 0.15, 5, 0.002, 0.005, Math.random() * Math.PI * 2, false, 0, true, 0.005),
+      new Contact(3* Math.PI/2, radius * 0.15, 5, 0.02, 0.005, Math.random() * Math.PI * 2, false, 0, false, 0.005)
     ];
   
     // Fill the canvas with black initially
