@@ -124,7 +124,9 @@ of the line behind it. --&gt;
 
     // Contact class definition
     class Contact {
-      constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, visible, opacity, emittingRadiation, emissionDetectionChance) {
+      constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, 
+                  visible, opacity, emittingRadiation, emissionDetectionChance, 
+                  radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance) {
         // Affects displayed position
         this.bearing = bearing;
         this.distance = distance;
@@ -148,6 +150,16 @@ of the line behind it. --&gt;
         this.emissionDetectionChance = emissionDetectionChance;
         this.radiationDetected = false;
         this.radiationDetectionDuration = 0;
+        
+        // Radar detection properties
+        this.radarDetectable = radarDetectable;
+        this.radarDetectionChance = radarDetectionChance;
+
+        // Thermal detection properties
+        // NOTE! While the code supports objects hiding from thermal sensors,
+        // in practice this should NOT be done unless the object is a SENSOR GHOST (i.e. not a real object)
+        this.thermalDetectable = thermalDetectable;
+        this.thermalDetectionChance = thermalDetectionChance;
       }
       
       updatePosition() {
@@ -211,7 +223,7 @@ of the line behind it. --&gt;
         // Check if radar is sweeping over the contact
         const angleDiff = Math.abs(normalizeAngle(radarAngle - this.realBearing));
         
-        if (angleDiff &lt; 0.1) {
+        if (angleDiff &lt; 0.1 &amp;&amp; this.radarDetectable &amp;&amp; Math.random() &lt; this.radarDetectionChance) {
           this.visible = true;
           this.opacity = 1.0;
           // Update the displayed contact position to the real position
@@ -222,7 +234,8 @@ of the line behind it. --&gt;
         // Check if thermal scan is over the contact
         const thermalDiff = Math.abs(normalizeAngle(thermalScanAbsoluteAngle - this.realBearing));
         
-        if (thermalDiff &lt; 0.1 &amp;&amp; this.realDistance &lt; thermalScanRadius) {
+        if (thermalDiff &lt; 0.1 &amp;&amp; this.realDistance &lt; thermalScanRadius &amp;&amp; 
+            this.thermalDetectable &amp;&amp; Math.random() &lt; this.thermalDetectionChance) {
           this.visible = true;
           this.opacity = 1.0;
           // Update the displayed contact position to the real position
@@ -280,10 +293,17 @@ of the line behind it. --&gt;
       }
     }
 
-    // Create contacts array with one initial contact
+    // Create contacts array with initial contacts
+    // Parameters: bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, 
+    //             visible, opacity, emittingRadiation, emissionDetectionChance,
+    //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance
     const contacts = [
-      new Contact(Math.PI/2, radius * 0.15, 5, 0.002, 0.005, Math.random() * Math.PI * 2, false, 0, true, 0.005),
-      new Contact(3* Math.PI/2, radius * 0.15, 5, 0.02, 0.005, Math.random() * Math.PI * 2, false, 0, false, 0.005)
+      new Contact(Math.PI/2, radius * 0.15, 5, 0.002, 0.005, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.005,
+                  true, 0.01, true, 1),
+      new Contact(3 * Math.PI/2, radius * 0.15, 5, 0.02, 0.005, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 1, true, 1)
     ];
   
     // Fill the canvas with black initially
