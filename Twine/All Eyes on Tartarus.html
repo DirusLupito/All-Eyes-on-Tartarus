@@ -298,12 +298,48 @@ of the line behind it. --&gt;
     //             visible, opacity, emittingRadiation, emissionDetectionChance,
     //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance
     const contacts = [
+      // Real example contacts
       new Contact(Math.PI/2, radius * 0.15, 5, 0.002, 0.005, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.005,
                   true, 0.01, true, 1),
       new Contact(3 * Math.PI/2, radius * 0.15, 5, 0.02, 0.005, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 1, true, 1)
+                  true, 1, true, 1),
+      // ELINT Ghosts (No thermal, no radar detection)
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.001,
+                  false, 0, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.001,
+                  false, 0, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.001,
+                  false, 0, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.001,
+                  false, 0, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.001,
+                  false, 0, false, 0),
+      // Radar ghosts (No ELINT, No thermal detection)
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.001, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.001, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.001, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.001, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.001, false, 0),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5,  2, 0.5, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.001, false, 0),
     ];
   
     // Fill the canvas with black initially
