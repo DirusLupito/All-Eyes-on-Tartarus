@@ -66,36 +66,20 @@
 (if: $playerSeenRadar is false)[Player hasn&#39;t seen Radar]
 (if: $playerSeenRadar is true)[Player has seen Radar]
 
-[[Continue-&gt;Intro 4]]</tw-passagedata><tw-passagedata pid="4" name="Intro 4" tags="" position="1200,200" size="100,100">Anchors Aweigh
-&lt;!-- Anchors Aweigh --&gt;
+[[Continue-&gt;Intro 4]]</tw-passagedata><tw-passagedata pid="4" name="Intro 4" tags="" position="1200,200" size="100,100">Thermal Scan - Use A/D to rotate
+LS: Light Second = 299,792,458 Meters
 &lt;script&gt;
   // Stops the previous audio
   if (typeof audio !== &#39;undefined&#39;) {
     audio.pause();
     delete audio;
   }
-  audioSource = &quot;../assets/anchors-aweigh.mp3&quot;;
-  audio = new Audio(audioSource);
-  audio.loop = true;
-  if (typeof audioMuted !== &#39;undefined&#39;) {
-    audio.muted = audioMuted;
-  }
-  audio.play();
-&lt;/script&gt;
-
-&lt;script&gt;
-$playerSeenRadar = true;
 &lt;/script&gt;
 
 &lt;!-- The sensor game --&gt;
-Thermal Scan - Use A/D to rotate
-LS: Light Second = 299,792,458 Meters
-
-&lt;!-- Not a game yet, just a circle with a line drawn from the center to the edge 
-which continuously rotates around the center, like a radar, and which leaves a fading ghost
-of the line behind it. --&gt;
 &lt;canvas id=&quot;radar&quot; width=&quot;800&quot; height=&quot;800&quot;&gt;&lt;/canvas&gt;
 &lt;script&gt;
+$playerSeenRadar = true;
   (function() {
     const canvas = document.getElementById(&quot;radar&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
@@ -104,6 +88,9 @@ of the line behind it. --&gt;
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 10;
+    
+    // Track the start time
+    const startTime = Date.now();
     
     // Customizable parameters
     const radarSpeed = 0.5; // degrees per frame
@@ -121,6 +108,84 @@ of the line behind it. --&gt;
     const thermalScanSpeed = 0.5; // degrees per frame
     let thermalScanCenter = 0; // Center of thermal scan area
     let thermalScanReversed = false; // Direction of thermal scan rotation
+
+    // Contact report parameters
+    const contactReports = [];
+    const reportLifetime = 600; // number of frames before report disappears
+
+    // Contact Report class
+    class ContactReport {
+      constructor(x, y, timestamp, contactType, contact) {
+        this.x = x;
+        this.y = y;
+        this.timestamp = timestamp;
+        this.contactType = contactType;
+        this.contact = contact;
+        this.timeCreated = Date.now();
+        this.age = 0;
+        this.maxAge = reportLifetime;
+      }
+      
+      update() {
+        // Increment age, but only if the contact is no longer visible
+        if (!this.contact || !this.contact.visible) {
+          this.age++;
+        }
+        return this.age &lt; this.maxAge;
+      }
+      
+      draw() {
+        // Calculate opacity based on age
+        const opacity = 1 - (this.age / this.maxAge);
+        
+        // Determine position (ensure it&#39;s on screen)
+        const boxWidth = 180;
+        const boxHeight = 60;
+        let boxX = this.x + 15;
+        let boxY = this.y - boxHeight - 15;
+        
+        // Adjust if would go off screen
+        if (boxX + boxWidth &gt; width) boxX = this.x - boxWidth - 15;
+        if (boxY &lt; 0) boxY = this.y + 15;
+        
+        // Draw connection line
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(boxX + (boxX &gt; this.x ? 0 : boxWidth), boxY + boxHeight/2);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Draw box
+        ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.7})`;
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        ctx.strokeStyle = `rgba(0, 255, 255, ${opacity})`;
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Draw text
+        ctx.font = &quot;10px monospace&quot;;
+        ctx.fillStyle = `rgba(0, 255, 255, ${opacity})`;
+        ctx.textAlign = &quot;left&quot;;
+        ctx.fillText(`DETECTED: ${this.timestamp}`, boxX + 5, boxY + 15);
+        ctx.fillText(`POTENTIAL ${this.contactType} CONTACT`, boxX + 5, boxY + 30);
+        ctx.fillText(&quot;CLICK TO REPORT CONTACT&quot;, boxX + 5, boxY + 45);
+      }
+      
+      contains(mouseX, mouseY) {
+        // Determine box position
+        const boxWidth = 180;
+        const boxHeight = 60;
+        let boxX = this.x + 15;
+        let boxY = this.y - boxHeight - 15;
+        
+        // Adjust if would go off screen
+        if (boxX + boxWidth &gt; width) boxX = this.x - boxWidth - 15;
+        if (boxY &lt; 0) boxY = this.y + 15;
+        
+        return mouseX &gt;= boxX &amp;&amp; mouseX &lt;= boxX + boxWidth &amp;&amp; 
+               mouseY &gt;= boxY &amp;&amp; mouseY &lt;= boxY + boxHeight;
+      }
+    }
 
     // Contact class definition
     class Contact {
@@ -154,6 +219,7 @@ of the line behind it. --&gt;
         // Radar detection properties
         this.radarDetectable = radarDetectable;
         this.radarDetectionChance = radarDetectionChance;
+        this.lastDetectedTime = null;
 
         // Thermal detection properties
         // NOTE! While the code supports objects hiding from thermal sensors,
@@ -222,13 +288,41 @@ of the line behind it. --&gt;
       checkDetection(radarAngle, thermalScanAbsoluteAngle, thermalScanRadius) {
         // Check if radar is sweeping over the contact
         const angleDiff = Math.abs(normalizeAngle(radarAngle - this.realBearing));
+        let wasNewDetection = false;
         
         if (angleDiff &lt; 0.1 &amp;&amp; this.radarDetectable &amp;&amp; Math.random() &lt; this.radarDetectionChance) {
+          // Check if this is a new detection
+          if (!this.visible) {
+            wasNewDetection = true;
+          }
+
           this.visible = true;
           this.opacity = 1.0;
           // Update the displayed contact position to the real position
           this.bearing = this.realBearing;
           this.distance = this.realDistance;
+          
+          // Create a contact report for new detections
+          // May want to change this to make it harder since players might learn from this that a pair of contacts is actually
+          // just one contact moving around. But for now this stops a massive pile of reports from being generated while the radar
+          // is still sweeping over the contact.
+          if (wasNewDetection) {
+            // Play a ping
+            // RadarPing.mp3
+            const audio = new Audio(&quot;../assets/RadarPing.mp3&quot;);
+            audio.play();
+            const contactX = centerX + this.distance * Math.cos(this.bearing);
+            const contactY = centerY + this.distance * Math.sin(this.bearing);
+            
+            // Format timestamp as minutes:seconds since start
+            const elapsedMs = Date.now() - startTime;
+            const minutes = Math.floor(elapsedMs / 60000);
+            const seconds = Math.floor((elapsedMs % 60000) / 1000);
+            const timestamp = `${minutes.toString().padStart(2, &#39;0&#39;)}:${seconds.toString().padStart(2, &#39;0&#39;)}`;
+            
+            this.lastDetectedTime = timestamp;
+            contactReports.push(new ContactReport(contactX, contactY, timestamp, &quot;RADAR&quot;, this));
+          }
         }
         
         // Check if thermal scan is over the contact
@@ -236,11 +330,31 @@ of the line behind it. --&gt;
         
         if (thermalDiff &lt; 0.1 &amp;&amp; this.realDistance &lt; thermalScanRadius &amp;&amp; 
             this.thermalDetectable &amp;&amp; Math.random() &lt; this.thermalDetectionChance) {
+          // Check if this is a new detection
+          if (!this.visible) {
+            wasNewDetection = true;
+          }
+
           this.visible = true;
           this.opacity = 1.0;
           // Update the displayed contact position to the real position
           this.bearing = this.realBearing;
           this.distance = this.realDistance;
+          
+          // Create a contact report for new detections
+          if (wasNewDetection) {
+            const contactX = centerX + this.distance * Math.cos(this.bearing);
+            const contactY = centerY + this.distance * Math.sin(this.bearing);
+            
+            // Format timestamp as minutes:seconds since start
+            const elapsedMs = Date.now() - startTime;
+            const minutes = Math.floor(elapsedMs / 60000);
+            const seconds = Math.floor((elapsedMs % 60000) / 1000);
+            const timestamp = `${minutes.toString().padStart(2, &#39;0&#39;)}:${seconds.toString().padStart(2, &#39;0&#39;)}`;
+            
+            this.lastDetectedTime = timestamp;
+            contactReports.push(new ContactReport(contactX, contactY, timestamp, &quot;THERMAL&quot;, this));
+          }
         }
       }
       
@@ -345,6 +459,23 @@ of the line behind it. --&gt;
     // Fill the canvas with black initially
     ctx.fillStyle = &quot;black&quot;;
     ctx.fillRect(0, 0, width, height);
+    
+    // Add click event listener for contact reports
+    canvas.addEventListener(&#39;click&#39;, function(event) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+      
+      // Check if click is on a contact report
+      for (let i = 0; i &lt; contactReports.length; i++) {
+        if (contactReports[i].contains(mouseX, mouseY)) {
+          console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
+          // Remove the report after clicking
+          contactReports.splice(i, 1);
+          break;
+        }
+      }
+    });
     
     // Key event listeners for thermal scan control
     document.addEventListener(&#39;keydown&#39;, function(event) {
@@ -489,6 +620,15 @@ of the line behind it. --&gt;
       
       drawRadarLine();
       drawThermalScan();
+      
+      // Update and draw contact reports
+      for (let i = contactReports.length - 1; i &gt;= 0; i--) {
+        if (!contactReports[i].update()) {
+          contactReports.splice(i, 1);
+        } else {
+          contactReports[i].draw();
+        }
+      }
       
       // Update the angle (rotate by specified degrees per frame)
       angle += Math.PI * radarSpeed / 180;
