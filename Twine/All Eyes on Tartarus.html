@@ -444,7 +444,7 @@ of the line behind it. --&gt;
       ctx.moveTo(centerX, centerY);
       ctx.arc(centerX, centerY, thermalScanRadius, startAngle, endAngle);
       ctx.lineTo(centerX, centerY);
-      ctx.fillStyle = &quot;rgba(255, 0, 0, 0.2)&quot;;
+      ctx.fillStyle = &quot;rgba(0, 0, 255, 0.2)&quot;;
       ctx.fill();
       
       // Draw the thermal scan boundary lines
@@ -455,7 +455,7 @@ of the line behind it. --&gt;
       ctx.moveTo(centerX, centerY);
       ctx.lineTo(centerX + thermalScanRadius * Math.cos(endAngle), 
                  centerY + thermalScanRadius * Math.sin(endAngle));
-      ctx.strokeStyle = &quot;#FF0000&quot;;
+      ctx.strokeStyle = &quot;#0000FF&quot;;
       ctx.lineWidth = 2;
       ctx.stroke();
 
@@ -464,7 +464,7 @@ of the line behind it. --&gt;
       ctx.moveTo(centerX, centerY);
       ctx.lineTo(centerX + thermalScanRadius * Math.cos(thermalScanAngle + thermalScanCenter), 
                  centerY + thermalScanRadius * Math.sin(thermalScanAngle + thermalScanCenter));
-      ctx.strokeStyle = &quot;#FF0000&quot;;
+      ctx.strokeStyle = &quot;#0000FF&quot;;
       ctx.lineWidth = 2;
       ctx.stroke();
     }
