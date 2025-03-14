@@ -133,6 +133,9 @@ $playerSeenRadar = true;
     const contactReports = [];
     const reportLifetime = 10; // lifetime in seconds
 
+    // IFF Parameters
+    const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
+
     // Contact Report class
     class ContactReport {
       constructor(x, y, timestamp, contactType, contact) {
@@ -211,7 +214,8 @@ $playerSeenRadar = true;
     class Contact {
       constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, 
                   visible, opacity, emittingRadiation, emissionDetectionChance, 
-                  radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance) {
+                  radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
+                  iffBroadcasting, iffString, contactColor) {
         // Affects displayed position
         this.bearing = bearing;
         this.distance = distance;
@@ -246,6 +250,11 @@ $playerSeenRadar = true;
         // Thermal detection properties
         this.thermalDetectable = thermalDetectable;
         this.thermalDetectionChance = thermalDetectionChance;
+
+        // IFF (Identification Friend or Foe) properties
+        this.iffBroadcasting = iffBroadcasting;
+        this.iffString = iffString;
+        this.contactColor = contactColor;
       }
       
       updatePosition(deltaTime) {
@@ -385,6 +394,14 @@ $playerSeenRadar = true;
       }
       
       draw(deltaTime) {
+        // If IFF is broadcasting, the contact should always be visible and updating its contact position
+        if (this.iffBroadcasting) {
+          this.visible = true;
+          this.opacity = 1.0;
+          this.bearing = this.realBearing;
+          this.distance = this.realDistance;
+        }
+
         if (this.visible) {
           // Draw the contact at the last detected position
           const contactX = centerX + this.distance * Math.cos(this.bearing);
@@ -392,8 +409,63 @@ $playerSeenRadar = true;
           
           ctx.beginPath();
           ctx.arc(contactX, contactY, this.size, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255, 0, 0, ${this.opacity})`;
+          ctx.fillStyle = `rgba(${this.contactColor[0]}, ${this.contactColor[1]}, ${this.contactColor[2]}, ${this.opacity})`;
           ctx.fill();
+          
+          // Draw IFF bubble if broadcasting and mouse is nearby
+          if (this.iffBroadcasting && typeof mouseX !== 'undefined' && typeof mouseY !== 'undefined') {
+            // Calculate distance from mouse to contact
+            const dx = mouseX - contactX;
+            const dy = mouseY - contactY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate opacity based on distance (fully visible when close, fades out as distance increases)
+            const iffOpacity = Math.max(0, 1 - (distance / iffBoxDisplayDistance));
+            
+            // Only draw if opacity > 0
+            if (iffOpacity > 0) {
+              // Draw IFF bubble
+              const bubblePadding = 10;
+              const lines = this.iffString.split('\n');
+              const lineHeight = 16;
+              const bubbleWidth = lines.reduce((max, line) => Math.max(max, ctx.measureText(line).width), 0) + (bubblePadding * 2);
+              const bubbleHeight = (lines.length * lineHeight) + (bubblePadding * 2);
+              
+              // Calculate box position - default is to the right of the contact
+              let boxX = contactX + 15;
+              let boxY = contactY - 10;
+              
+              // Adjust if the box would go off the right edge of the canvas
+              if (boxX + bubbleWidth > width) {
+                boxX = contactX - bubbleWidth - 15; // Move to the left of the contact
+              }
+              
+              // Adjust if the box would go off the top or bottom of the canvas
+              if (boxY < 0) {
+                boxY = 0; // Align with top of canvas
+              } else if (boxY + bubbleHeight > height) {
+                boxY = height - bubbleHeight; // Align with bottom of canvas
+              }
+              
+              // Draw bubble background
+              ctx.fillStyle = `rgba(0, 0, 0, ${iffOpacity * 0.7})`;
+              ctx.fillRect(boxX, boxY, bubbleWidth, bubbleHeight);
+              ctx.strokeStyle = `rgba(0, 255, 255, ${iffOpacity})`;
+              ctx.strokeRect(boxX, boxY, bubbleWidth, bubbleHeight);
+              
+              // Draw IFF string
+              ctx.fillStyle = `rgba(0, 255, 255, ${iffOpacity})`;
+              ctx.font = "12px monospace";
+              ctx.textAlign = "left";
+              lines.forEach((line, i) => {
+                ctx.fillText(line, boxX + bubblePadding, boxY + 15 + (i * lineHeight));
+              });
+              
+              // Draw IFF status
+              ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
+              ctx.fillText("IFF: BROADCASTING", boxX + bubblePadding, boxY + 15 + (lines.length * lineHeight));
+            }
+          }
           
           // Fade out the contact - now based on time
           this.opacity -= this.fadeSpeed * deltaTime;
@@ -434,58 +506,100 @@ $playerSeenRadar = true;
     }
 
     // Create contacts array with initial contacts
-    // Parameters: bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, 
+    // Parameters: bearing, distance, size, 
+    //             movementSpeed, directionChangeFrequency, movementDirection, 
     //             visible, opacity, emittingRadiation, emissionDetectionChance,
-    //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance
+    //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
+    //             iffBroadcasting, iffString
     const contacts = [
       // Real example contacts - speeds now per second
-      new Contact(Math.PI/2, radius * 0.15, 5, 0.12, 0.3, Math.random() * Math.PI * 2, 
+      new Contact(Math.PI/2, radius * 0.15, 5, 
+                  0.12, 0.3, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.3,
-                  true, 0.6, true, 1),
-      new Contact(3 * Math.PI/2, radius * 0.15, 5, 1.2, 0.3, Math.random() * Math.PI * 2, 
+                  true, 0.6, true, 1,
+                  false, "", [255, 0, 0]),
+      new Contact(3 * Math.PI/2, radius * 0.15, 5, 
+                  1.2, 0.3, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 1, true, 1),
+                  true, 1, true, 1,
+                  false, "", [255, 0, 0]),
+      // Real example friendly contacts, broadcasting IFF
+      new Contact(0, radius * 0.75, 5, 
+                  1.2, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.3,
+                  true, 0.6, true, 1,
+                  true, "Friendly Battleship\nHMS Warspite\nQueen Elizabeth Class", [255, 0, 255]),
       // ELINT Ghosts (No thermal, no radar detection)
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
-                  false, 0, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
-                  false, 0, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
-                  false, 0, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
-                  false, 0, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
-                  false, 0, false, 0),
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0]),
       // Radar ghosts (No ELINT, No thermal detection)
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 0.12, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 0.12, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 0.12, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 0.12, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 0.12, false, 0),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 120, 30, Math.random() * Math.PI * 2, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0]),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
-                  true, 0.12, false, 0),
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0]),
     ];
-  
+
     // Fill the canvas with black initially
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, width, height);
-    
+
+    // Track mouse position
+    let mouseX, mouseY;
+    canvas.addEventListener('mousemove', function(event) {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = event.clientX - rect.left;
+      mouseY = event.clientY - rect.top;
+    });
+
     // Add click event listener for contact reports
     canvas.addEventListener('click', function(event) {
       const rect = canvas.getBoundingClientRect();
@@ -502,7 +616,7 @@ $playerSeenRadar = true;
         }
       }
     });
-    
+
     // Key event listeners for thermal scan control
     document.addEventListener('keydown', function(event) {
       if (event.key === 'a' || event.key === 'A') {
