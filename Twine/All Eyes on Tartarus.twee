@@ -138,9 +138,9 @@ $playerSeenRadar = true;
   
     // Function to create explosion effect
     function createExplosion(x, y) {
-      // Play explosion sound
-      const explosionSound = new Audio("../assets/RadarPing.mp3"); // Substitute with explosion sound
-      explosionSound.play();
+      // Play explosion sound (Unused for now)
+      // const explosionSound = new Audio("../assets/MissileHit.mp3");
+      // explosionSound.play();
 
       // Visual explosion effect (flash)
       ctx.beginPath();
@@ -517,14 +517,13 @@ $playerSeenRadar = true;
         }
       }
     }
-
     // Add missile functionality to the Contact class
     class MissileContact extends Contact {
-      constructor(bearing, targetContact) {
+      constructor(bearing, targetContact, fuelTime) {
         // Create missile as a friendly contact with higher speed
         super(
-          bearing, 10, 3, // bearing, starting distance, size
-          60, 0.1, bearing, // movementSpeed (faster), directionChangeFrequency (low), movementDirection 
+          bearing, radius * 0.01, 3, // bearing, starting distance, size
+          20, 0, bearing, // movementSpeed (faster than any enemy), directionChangeFrequency (none as it should go only in one direction until it finds a target), movementDirection 
           true, 1.0, false, 0, // visible, opacity, no radiation emission
           true, 1.0, true, 1.0, // fully radar and thermal detectable
           true, "HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFRIENDLY FIRE", [0, 255, 0] // IFF broadcasting
@@ -534,9 +533,30 @@ $playerSeenRadar = true;
         this.targetContact = targetContact;
         this.thermalScanRadius = radius * 0.15; // Smaller scan radius for missile
         this.hasTarget = false;
+        
+        // Add fuel time property (in seconds)
+        this.fuelTime = fuelTime; // Keeps track of original fuel time
+        this.fuelRemaining = fuelTime;
       }
       
       updatePosition(deltaTime) {
+        // Update fuel remaining
+        this.fuelRemaining -= deltaTime;
+        
+        // Self-destruct if out of fuel
+        if (this.fuelRemaining <= 0) {
+          // Create explosion effect
+          createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
+                         centerY + this.realDistance * Math.sin(this.realBearing));
+          
+          // Remove from contacts array
+          const index = contacts.indexOf(this);
+          if (index > -1) {
+            contacts.splice(index, 1);
+          }
+          return;
+        }
+        
         // Scan for thermal contacts
         if (!this.hasTarget) {
           // Look for contacts in thermal scan range
@@ -570,8 +590,10 @@ $playerSeenRadar = true;
         // Call parent updatePosition
         super.updatePosition(deltaTime);
         
-        // Check for collisions with contacts
-        this.checkCollisions();
+        // Check for collisions with contacts, but only if it has a target
+        if (this.hasTarget) {
+          this.checkCollisions();
+        }
       }
       
       checkCollisions() {
@@ -584,8 +606,8 @@ $playerSeenRadar = true;
           const dy = Math.sin(contact.realBearing) * contact.realDistance - Math.sin(this.realBearing) * this.realDistance;
           const distance = Math.sqrt(dx*dx + dy*dy);
           
-          // If collision detected
-          if (distance < (this.size + contact.size)) {
+          // If collision detected with a non-ghost (thermal detectable) contact, destroy both
+          if (distance < (this.size + contact.size) && contact.thermalDetectable) {
             // Mark both as destroyed
             this.destroyed = true;
             contact.destroyed = true;
@@ -599,6 +621,43 @@ $playerSeenRadar = true;
             contacts.splice(contacts.indexOf(contact), 1);
             return;
           }
+        }
+      }
+      
+      draw(deltaTime) {
+        // Call parent draw method
+        super.draw(deltaTime);
+        
+        // Draw fuel indicator if visible
+        if (this.visible) {
+          const contactX = centerX + this.distance * Math.cos(this.bearing);
+          const contactY = centerY + this.distance * Math.sin(this.bearing);
+          
+          // Draw fuel bar
+          const barWidth = 20;
+          const barHeight = 4;
+          const fuelPercentage = this.fuelRemaining / this.fuelTime;
+          
+          // Draw fuel background
+          ctx.fillStyle = "rgba(100, 100, 100, 0.7)";
+          ctx.fillRect(contactX - barWidth/2, contactY + 8, barWidth, barHeight);
+          
+          // Draw remaining fuel - color changes as fuel depletes
+          let fuelColor;
+          if (fuelPercentage > 0.6) {
+            fuelColor = "rgba(0, 255, 0, 0.7)"; // Green
+          } else if (fuelPercentage > 0.3) {
+            fuelColor = "rgba(255, 255, 0, 0.7)"; // Yellow
+          } else {
+            fuelColor = "rgba(255, 0, 0, 0.7)"; // Red
+          }
+          
+          ctx.fillStyle = fuelColor;
+          ctx.fillRect(contactX - barWidth/2, contactY + 8, barWidth * fuelPercentage, barHeight);
+          
+          // Update IFF string with fuel information
+          const fuelSeconds = Math.round(this.fuelRemaining);
+          this.iffString = `HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFUEL: ${fuelSeconds}s REMAINING`;
         }
       }
     }
@@ -616,7 +675,7 @@ $playerSeenRadar = true;
                   false, 0, true, 0.3,
                   true, 0.6, true, 1,
                   false, "", [255, 0, 0]),
-      new Contact(3 * Math.PI/2, radius * 0.15, 5, 
+      new Contact(3 * Math.PI/2, radius * 0.75, 5, 
                   1.2, 0.3, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 1, true, 1,
@@ -715,7 +774,8 @@ $playerSeenRadar = true;
           const bearing = Math.atan2(dy, dx);
 
           // Create and launch missile
-          const missile = new MissileContact(bearing, contactReports[i].contact);
+          // MissileContact(bearing, targetContact, fuelTime)
+          const missile = new MissileContact(bearing, contactReports[i].contact, 15);
           contacts.push(missile);
 
           // Remove the report after clicking
