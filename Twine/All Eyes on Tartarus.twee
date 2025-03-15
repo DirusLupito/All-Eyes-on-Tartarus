@@ -135,6 +135,19 @@ $playerSeenRadar = true;
 
     // IFF Parameters
     const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
+  
+    // Function to create explosion effect
+    function createExplosion(x, y) {
+      // Play explosion sound
+      const explosionSound = new Audio("../assets/RadarPing.mp3"); // Substitute with explosion sound
+      explosionSound.play();
+
+      // Visual explosion effect (flash)
+      ctx.beginPath();
+      ctx.arc(x, y, 30, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(255, 200, 50, 0.8)";
+      ctx.fill();
+    }
 
     // Contact Report class
     class ContactReport {
@@ -505,6 +518,91 @@ $playerSeenRadar = true;
       }
     }
 
+    // Add missile functionality to the Contact class
+    class MissileContact extends Contact {
+      constructor(bearing, targetContact) {
+        // Create missile as a friendly contact with higher speed
+        super(
+          bearing, 10, 3, // bearing, starting distance, size
+          60, 0.1, bearing, // movementSpeed (faster), directionChangeFrequency (low), movementDirection 
+          true, 1.0, false, 0, // visible, opacity, no radiation emission
+          true, 1.0, true, 1.0, // fully radar and thermal detectable
+          true, "HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFRIENDLY FIRE", [0, 255, 0] // IFF broadcasting
+        );
+        
+        this.isMissile = true;
+        this.targetContact = targetContact;
+        this.thermalScanRadius = radius * 0.15; // Smaller scan radius for missile
+        this.hasTarget = false;
+      }
+      
+      updatePosition(deltaTime) {
+        // Scan for thermal contacts
+        if (!this.hasTarget) {
+          // Look for contacts in thermal scan range
+          for (let contact of contacts) {
+            if (contact === this || contact.isMissile) continue; // Skip self and other missiles
+            
+            const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
+            const dy = Math.sin(contact.realBearing) * contact.realDistance - Math.sin(this.realBearing) * this.realDistance;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+            
+            if (distance < this.thermalScanRadius && contact.thermalDetectable) {
+              this.targetContact = contact;
+              this.hasTarget = true;
+              break;
+            }
+          }
+        }
+        
+        // Update missile direction if it has a target
+        if (this.hasTarget && this.targetContact && !this.targetContact.destroyed) {
+          // Calculate direction to target
+          const targetX = Math.cos(this.targetContact.realBearing) * this.targetContact.realDistance;
+          const targetY = Math.sin(this.targetContact.realBearing) * this.targetContact.realDistance;
+          const missileX = Math.cos(this.realBearing) * this.realDistance;
+          const missileY = Math.sin(this.realBearing) * this.realDistance;
+          
+          // Set movement direction toward target
+          this.movementDirection = Math.atan2(targetY - missileY, targetX - missileX);
+        }
+        
+        // Call parent updatePosition
+        super.updatePosition(deltaTime);
+        
+        // Check for collisions with contacts
+        this.checkCollisions();
+      }
+      
+      checkCollisions() {
+        for (let i = 0; i < contacts.length; i++) {
+          const contact = contacts[i];
+          if (contact === this || contact.isMissile) continue; // Skip self and other missiles
+          
+          // Calculate distance between missile and contact
+          const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
+          const dy = Math.sin(contact.realBearing) * contact.realDistance - Math.sin(this.realBearing) * this.realDistance;
+          const distance = Math.sqrt(dx*dx + dy*dy);
+          
+          // If collision detected
+          if (distance < (this.size + contact.size)) {
+            // Mark both as destroyed
+            this.destroyed = true;
+            contact.destroyed = true;
+            
+            // Create explosion effect
+            createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
+                           centerY + this.realDistance * Math.sin(this.realBearing));
+            
+            // Remove both from contacts array
+            contacts.splice(contacts.indexOf(this), 1);
+            contacts.splice(contacts.indexOf(contact), 1);
+            return;
+          }
+        }
+      }
+    }
+
     // Create contacts array with initial contacts
     // Parameters: bearing, distance, size, 
     //             movementSpeed, directionChangeFrequency, movementDirection, 
@@ -605,11 +703,21 @@ $playerSeenRadar = true;
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
-      
+    
       // Check if click is on a contact report
       for (let i = 0; i < contactReports.length; i++) {
         if (contactReports[i].contains(mouseX, mouseY)) {
           console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
+
+          // Calculate bearing to the contact report
+          const dx = contactReports[i].x - centerX;
+          const dy = contactReports[i].y - centerY;
+          const bearing = Math.atan2(dy, dx);
+
+          // Create and launch missile
+          const missile = new MissileContact(bearing, contactReports[i].contact);
+          contacts.push(missile);
+
           // Remove the report after clicking
           contactReports.splice(i, 1);
           break;
