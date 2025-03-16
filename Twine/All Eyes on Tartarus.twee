@@ -112,6 +112,11 @@ $playerSeenRadar = true;
     // Intended to address the fact that PC performance can affect detection chances
     const detectionTimeMultiplier = 1;
 
+    // Game state variables
+    let gameOver = false;
+    let gameOverMessage = "";
+    let gameOverColor = "";
+
     // Customizable parameters - now in units per second instead of per frame
     const radarSpeed = 30; // degrees per second
     const fadeRate = 6;   // fade opacity per second
@@ -140,7 +145,12 @@ $playerSeenRadar = true;
 
     // IFF Parameters
     const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
-    const acceptedTypes = ["FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST"]; // Accepted contact types
+    const acceptedTypes = ["FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST", "PLAYER"]; // Accepted contact types
+
+    // Random missile launch parameters
+    const baseMissileLaunchChance = 0.0001;
+    missileLaunchChance = baseMissileLaunchChance;
+    missileLaunchIncrease = 0.000001;
   
     // Function to create explosion effect
     function createExplosion(x, y) {
@@ -153,6 +163,11 @@ $playerSeenRadar = true;
       ctx.arc(x, y, 30, 0, Math.PI * 2);
       ctx.fillStyle = "rgba(255, 200, 50, 0.8)";
       ctx.fill();
+    }
+
+    // Function to check if all contacts of a specific type are gone
+    function areAllContactsGone(type) {
+      return !contacts.some(contact => contact.contactType === type && !contact.destroyed);
     }
 
     // Contact Report class
@@ -169,8 +184,8 @@ $playerSeenRadar = true;
       }
       
       update(deltaTime) {
-        // Increment age, but only if the contact is no longer visible
-        if (!this.contact || !this.contact.visible) {
+        // Increment age, but only if the contact is no longer visible or no longer exists
+        if (!this.contact || !this.contact.visible || this.contact.destroyed || typeof this.contact === 'undefined') {
           this.age += deltaTime;
         }
         return this.age < this.maxAge;
@@ -275,7 +290,7 @@ $playerSeenRadar = true;
         this.iffString = iffString;
         this.contactColor = contactColor;
 
-        // Currently, there are four types of contacts: "FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST"
+        // Currently, there are five types of contacts: "FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST", and "PLAYER"
         // Anything else is treated as "GHOST"
         if (acceptedTypes.includes(contactType)) {
           this.contactType = contactType;
@@ -314,7 +329,19 @@ $playerSeenRadar = true;
         
         // Keep contact within radar bounds
         if (this.realDistance > radius * 0.95) {
-          // If near edge, bounce back
+          // If near edge, bounce back, unless a missile, in which case it should self-destruct
+          if (this.isMissile) {
+            // Create explosion effect
+            createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
+                           centerY + this.realDistance * Math.sin(this.realBearing));
+            
+            // Remove from contacts array
+            const index = contacts.indexOf(this);
+            if (index > -1) {
+              contacts.splice(index, 1);
+            }
+            return;
+          }
           this.movementDirection = Math.atan2(-contactY, -contactX);
           this.realDistance = radius * 0.95;
         } else if (this.realDistance < 0) {
@@ -495,7 +522,7 @@ $playerSeenRadar = true;
               // ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
               // Frienly contacts have a green IFF broadcast, hostile contacts have a red IFF broadcast
               // Neutral contacts have a yellow IFF broadcast. Ghosts should not have an IFF broadcast but if they do, it should be white
-              if (this.contactType === "FRIENDLY") {
+              if (this.contactType === "FRIENDLY" || this.contactType === "PLAYER") {
                 ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
               } else if (this.contactType === "HOSTILE") {
                 ctx.fillStyle = `rgba(255, 0, 0, ${iffOpacity})`;
@@ -547,17 +574,30 @@ $playerSeenRadar = true;
     }
     // Extend Contacts to add heat seeking missiles
     class MissileContact extends Contact {
-      constructor(bearing, distance, targetContact, fuelTime, contactType) {
+      constructor(bearing, distance, targetContact, fuelTime, contactType, armingTime) {
         // If the contact type is not one of the accepted types, default to "HOSTILE"
         if (!acceptedTypes.includes(contactType)) {
           contactType = "HOSTILE";
         }
+        // Figure out the movement direction based on the target contact and the current bearing and distance
+        // We are at (bearing, distance) and the target is at (targetContact.bearing, targetContact.distance), in polar coordinates
+        // We want to move towards the target, so we need to calculate the angle between the two points
+        // This is done by calculating the angle between the two points in cartesian coordinates and then converting it to polar coordinates
+        // Figure out our position in cartesian coordinates
+        const missileX = Math.cos(bearing) * distance;
+        const missileY = Math.sin(bearing) * distance;
+        // Figure out the target position in cartesian coordinates
+        const targetX = Math.cos(targetContact.bearing) * targetContact.distance;
+        const targetY = Math.sin(targetContact.bearing) * targetContact.distance;
+        // Calculate the angle to the target
+        const targetAngle = Math.atan2(targetY - missileY, targetX - missileX);
+
         // If the contact is friendly, create it like so
         if (contactType === "FRIENDLY") {
           // Create a friendly missile
           super(
             bearing, distance, 3, // bearing, starting distance, size
-            20, 0, targetContact.bearing, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection (direction of the target)
+            10, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection (direction of the target)
             true, 1.0, true, 1, // visible, opacity, immense radiation emission "due to really powerful engine" or something like that
             true, 1.0, true, 1.0, // fully radar and thermal detectable
             true, "HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFRIENDLY FIRE", [255, 0, 255], // IFF broadcasting
@@ -567,8 +607,8 @@ $playerSeenRadar = true;
           // Create a hostile missile
           super(
             bearing, distance, 3, // bearing, starting distance, size
-            20, 0, targetContact.bearing, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection 
-            true, 1.0, true, 1, // visible, opacity, immense radiation emission "due to really powerful engine" or something like that
+            20, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection 
+            false, 0, true, 1, // visible, opacity, immense radiation emission "due to really powerful engine" or something like that
             true, 1.0, true, 1.0, // fully radar and thermal detectable
             false, "", [255, 0, 0], // IFF broadcasting
             contactType // Contact type
@@ -589,9 +629,17 @@ $playerSeenRadar = true;
         this.scanAngle = 0; // Current scan offset angle
         this.scanReversed = false; // Direction of scan
         this.scanCenter = 0; // Scan is centered forward of the missile
+
+        // Arming time - Missile will not trigger collision check/explosion until armed
+        this.armingTime = armingTime;
       }
       
       updatePosition(deltaTime) {
+        // If not armed, count down arming time
+        if (this.armingTime > 0) {
+          this.armingTime -= deltaTime;
+        }
+
         // Update fuel remaining
         this.fuelRemaining -= deltaTime;
         
@@ -626,26 +674,31 @@ $playerSeenRadar = true;
         
         // Scan for thermal contacts if no target yet
         if (!this.hasTarget) {
-          // Calculate absolute scan angle relative to world
-          const absoluteScanAngle = this.realBearing + this.scanAngle;
+          // Use the missile's movement direction as its orientation.
+          const missileOrientation = this.movementDirection;
+          const absoluteScanAngle = missileOrientation + this.scanAngle;
           
           // Look for contacts in thermal scan range
           for (let contact of contacts) {
             if (contact === this) continue; // Skip self
             
-            // Calculate position difference
-            const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
-            const dy = Math.sin(contact.realBearing) * contact.realDistance - Math.sin(this.realBearing) * this.realDistance;
-            const distance = Math.sqrt(dx*dx + dy*dy);
+            // Determine missile and contact positions in cartesian coordinates
+            const missileX = centerX + this.realDistance * Math.cos(this.realBearing);
+            const missileY = centerY + this.realDistance * Math.sin(this.realBearing);
+            const contactX = centerX + contact.realDistance * Math.cos(contact.realBearing);
+            const contactY = centerY + contact.realDistance * Math.sin(contact.realBearing);
             
-            // Calculate angle to contact relative to missile bearing
+            // Calculate position difference and distance
+            const dx = contactX - missileX;
+            const dy = contactY - missileY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate angle to contact relative to the missile's orientation
             const angleToContact = Math.atan2(dy, dx);
-            
-            // Normalize the angle difference to be between -PI and PI
-            const angleDiff = normalizeAngle(angleToContact - this.realBearing);
+            const angleDiff = normalizeAngle(angleToContact - missileOrientation);
             
             // Check if contact is within scan arc and radius
-            if (distance < this.thermalScanRadius && 
+            if (distance < this.thermalScanRadius &&
                 Math.abs(angleDiff - this.scanAngle) < 0.1 &&
                 contact.thermalDetectable) {
               this.targetContact = contact;
@@ -677,16 +730,19 @@ $playerSeenRadar = true;
       }
       
       checkCollisions() {
+        // Only check for collisions if armed
+        if (this.armingTime > 0) return;
+
         for (let i = 0; i < contacts.length; i++) {
           const contact = contacts[i];
-          if (contact === this || contact.isMissile) continue; // Skip self and other missiles
+          if (contact === this) continue; // Skip self and other missiles
           
           // Calculate distance between missile and contact
           const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
           const dy = Math.sin(contact.realBearing) * contact.realDistance - Math.sin(this.realBearing) * this.realDistance;
           const distance = Math.sqrt(dx*dx + dy*dy);
           
-          // If collision detected with a non-ghost (thermal detectable) contact, destroy both
+          // If collision detected with a thermal detectable contact, destroy both
           if (distance < (this.size + contact.size) && contact.thermalDetectable) {
             // Mark both as destroyed
             this.destroyed = true;
@@ -808,10 +864,10 @@ $playerSeenRadar = true;
       // The player's ship. Always visible and at the center of the radar
       new Contact(0, 0, 5, 
                   0, 0, 0, 
-                  true, 1, false, 0, 
-                  false, 0, false, 0,
+                  true, 1, true, 0, 
+                  true, 0, true, 0,
                   true, "PLAYER SHIP, Heavy Cruiser\nTNFS Torch\nLantern Class", [255, 255, 255],
-                  "FRIENDLY"),
+                  "PLAYER"),
       // Real example contacts - speeds now per second
       new Contact(Math.PI/2, radius * 0.15, 5, 
                   0.12, 0.3, Math.random() * Math.PI * 2, 
@@ -931,8 +987,8 @@ $playerSeenRadar = true;
           const bearing = Math.atan2(dy, dx);
 
           // Create and launch missile
-          // MissileContact(bearing, targetContact, fuelTime)
-          const missile = new MissileContact(bearing, 0, contactReports[i].contact, 15, "FRIENDLY");
+          // MissileContact(bearing, distance, targetContact, fuelTime, contactType, armingTime)
+          const missile = new MissileContact(bearing, 0, contactReports[i].contact, 30, "FRIENDLY", 1.0);
           contacts.push(missile);
 
           // Remove the report after clicking
@@ -954,7 +1010,7 @@ $playerSeenRadar = true;
         if (thermalScanCenter >= Math.PI * 2) thermalScanCenter -= Math.PI * 2;
       }
     });
-    
+
     function drawBackground(deltaTime) {
       // Draw fading overlay - fade rate now per second
       ctx.fillStyle = `rgba(0, 0, 0, ${fadeRate * deltaTime})`;
@@ -1071,6 +1127,44 @@ $playerSeenRadar = true;
     }
     
     function animate(currentTime) {
+    
+      // Game over check
+      if (gameOver) {
+        // Draw game over message
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.font = "bold 48px Arial";
+        ctx.fillStyle = gameOverColor;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(gameOverMessage, centerX, centerY);
+
+        // Don't animate anymore
+        return;
+      }
+
+      // Check if game should end now
+      // Check if all player ships are gone
+      if (areAllContactsGone("PLAYER")) {
+        gameOver = true;
+        gameOverMessage = "DEFEAT!";
+        gameOverColor = "red";
+        // Play defeat sound
+        const audio = new Audio("../assets/defeat.mp3");
+        audio.play();
+      }
+
+      // Check if all hostile contacts are gone
+      if (areAllContactsGone("HOSTILE")) {
+        gameOver = true;
+        gameOverMessage = "VICTORY!";
+        gameOverColor = "green";
+        // Play victory sound
+        const audio = new Audio("../assets/victory.mp3");
+        audio.play();
+      }
+      
       // Calculate time since last frame
       const deltaTime = ((currentTime - lastFrameTime) / 1000) * deltaTimeMultiplier; // Convert to seconds, then scale by deltaTimeMultiplier
       lastFrameTime = currentTime;
@@ -1082,6 +1176,107 @@ $playerSeenRadar = true;
       
       // Calculate thermal scan absolute angle
       const thermalScanAbsoluteAngle = thermalScanAngle + thermalScanCenter;
+
+      // Sort contacts into friendly and hostile arrays
+      // Do not include missiles in these arrays
+      const friendlyContacts = contacts.filter(contact => contact.contactType === "FRIENDLY" || contact.contactType === "PLAYER");
+      const hostileContacts = contacts.filter(contact => contact.contactType === "HOSTILE" && !contact.isMissile);
+
+      // Keep track of launch chance for both sides
+      const hostileLaunchChance = missileLaunchChance;
+      const friendlyLaunchChance = missileLaunchChance;
+
+      missileLaunched = false;
+
+      // Randomly make hostile contacts fire missiles at player or friendly contacts
+      for (let contact of hostileContacts) {
+        // Skip missiles
+        if (contact.isMissile) continue;
+
+        if (Math.random() < missileLaunchChance && typeof friendlyContacts !== 'undefined' && friendlyContacts.length > 0) {
+          // Randomly select a target from friendly contacts
+          const target = friendlyContacts[Math.floor(Math.random() * friendlyContacts.length)];
+          if (typeof target !== 'undefined') {
+        
+            // Calculate position offset
+            // Figure out the direction from contact to target
+            const contactX = Math.cos(contact.realBearing) * contact.realDistance;
+            const contactY = Math.sin(contact.realBearing) * contact.realDistance;
+            const targetX = Math.cos(target.realBearing) * target.realDistance;
+            const targetY = Math.sin(target.realBearing) * target.realDistance;
+
+            // Direction to target
+            const directionAngle = Math.atan2(targetY - contactY, targetX - contactX);
+
+            // Offset distance based on contact size plus a little extra
+            const offsetDistance = contact.size * 2;
+
+            // Calculate new starting position with offset
+            const offsetX = contactX + Math.cos(directionAngle) * offsetDistance;
+            const offsetY = contactY + Math.sin(directionAngle) * offsetDistance;
+
+            // Convert back to polar coordinates
+            const missileDistance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+            const missileBearing = Math.atan2(offsetY, offsetX);
+
+            // Create the missile at the offset position
+            const missile = new MissileContact(missileBearing, missileDistance, target, 30, "HOSTILE", 0.2);
+            contacts.push(missile);
+            missileLaunched = true;
+          }
+        }
+      }
+      
+      // Randomly make friendly contacts fire missiles at hostile contacts
+      for (let contact of friendlyContacts) {
+        // Skip the player contact
+        if (contact.contactType === "PLAYER") continue;
+        // Skip missiles
+        if (contact.isMissile) continue;
+        
+        if (Math.random() < missileLaunchChance && typeof hostileContacts !== 'undefined' && hostileContacts.length > 0) {
+          // Randomly select a target from hostile contacts
+          const target = hostileContacts[Math.floor(Math.random() * hostileContacts.length)];
+          if (typeof target !== 'undefined') {
+        
+            // Calculate position offset
+            // Figure out the direction from contact to target
+            const contactX = Math.cos(contact.realBearing) * contact.realDistance;
+            const contactY = Math.sin(contact.realBearing) * contact.realDistance;
+            const targetX = Math.cos(target.realBearing) * target.realDistance;
+            const targetY = Math.sin(target.realBearing) * target.realDistance;
+            
+            // Direction to target
+            const directionAngle = Math.atan2(targetY - contactY, targetX - contactX);
+            
+            // Offset distance based on contact size plus a little extra
+            const offsetDistance = contact.size * 2;
+            
+            // Calculate new starting position with offset
+            const offsetX = contactX + Math.cos(directionAngle) * offsetDistance;
+            const offsetY = contactY + Math.sin(directionAngle) * offsetDistance;
+            
+            // Convert back to polar coordinates
+            const missileDistance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+            const missileBearing = Math.atan2(offsetY, offsetX);
+            
+            // Create the missile at the offset position - marked as FRIENDLY type
+            const missile = new MissileContact(missileBearing, missileDistance, target, 30, "FRIENDLY", 0.2);
+            contacts.push(missile);
+            missileLaunched = true;
+          }
+        }
+      }
+
+      // If a missile was launched, reset the missileLaunchChance to base value
+      if (missileLaunched) {
+        missileLaunchChance = baseMissileLaunchChance;
+      } else {
+        // Otherwise increase the missile launch chance
+        missileLaunchChance += missileLaunchIncrease;
+        if (missileLaunchChance > 1.0) missileLaunchChance = 1.0;
+      }
+          
       
       // Update and draw contacts
       for (let contact of contacts) {
