@@ -140,6 +140,7 @@ $playerSeenRadar = true;
 
     // IFF Parameters
     const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
+    const acceptedTypes = ["FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST"]; // Accepted contact types
   
     // Function to create explosion effect
     function createExplosion(x, y) {
@@ -233,7 +234,7 @@ $playerSeenRadar = true;
       constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, 
                   visible, opacity, emittingRadiation, emissionDetectionChance, 
                   radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
-                  iffBroadcasting, iffString, contactColor) {
+                  iffBroadcasting, iffString, contactColor, contactType) {
         // Affects displayed position
         this.bearing = bearing;
         this.distance = distance;
@@ -273,6 +274,18 @@ $playerSeenRadar = true;
         this.iffBroadcasting = iffBroadcasting;
         this.iffString = iffString;
         this.contactColor = contactColor;
+
+        // Currently, there are four types of contacts: "FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST"
+        // Anything else is treated as "GHOST"
+        if (acceptedTypes.includes(contactType)) {
+          this.contactType = contactType;
+        } else {
+          this.contactType = "GHOST";
+        }
+        // Ghosts must not be thermally detectable
+        if (this.contactType === "GHOST") {
+          this.thermalDetectable = false;
+        }
       }
       
       updatePosition(deltaTime) {
@@ -304,10 +317,9 @@ $playerSeenRadar = true;
           // If near edge, bounce back
           this.movementDirection = Math.atan2(-contactY, -contactX);
           this.realDistance = radius * 0.95;
-        } else if (this.realDistance < radius * 0.1) {
-          // If near center, move outward
-          this.movementDirection = Math.atan2(contactY, contactX);
-          this.realDistance = radius * 0.1;
+        } else if (this.realDistance < 0) {
+          // If somehow at a negative distance, reset to 0
+          this.realDistance = 0;
         }
         
         // Check for radiation detection
@@ -480,7 +492,18 @@ $playerSeenRadar = true;
               });
               
               // Draw IFF status
-              ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
+              // ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
+              // Frienly contacts have a green IFF broadcast, hostile contacts have a red IFF broadcast
+              // Neutral contacts have a yellow IFF broadcast. Ghosts should not have an IFF broadcast but if they do, it should be white
+              if (this.contactType === "FRIENDLY") {
+                ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
+              } else if (this.contactType === "HOSTILE") {
+                ctx.fillStyle = `rgba(255, 0, 0, ${iffOpacity})`;
+              } else if (this.contactType === "NEUTRAL") {
+                ctx.fillStyle = `rgba(255, 255, 0, ${iffOpacity})`;
+              } else {
+                ctx.fillStyle = `rgba(255, 255, 255, ${iffOpacity})`;
+              }
               ctx.fillText("IFF: BROADCASTING", boxX + bubblePadding, boxY + 15 + (lines.length * lineHeight));
             }
           }
@@ -524,15 +547,33 @@ $playerSeenRadar = true;
     }
     // Extend Contacts to add heat seeking missiles
     class MissileContact extends Contact {
-      constructor(bearing, targetContact, fuelTime) {
-        // Create missile as a friendly contact with higher speed
-        super(
-          bearing, radius * 0.01, 3, // bearing, starting distance, size
-          20, 0, bearing, // movementSpeed (faster than any enemy), directionChangeFrequency (none as it should go only in one direction until it finds a target), movementDirection 
-          true, 1.0, false, 0, // visible, opacity, no radiation emission
-          true, 1.0, true, 1.0, // fully radar and thermal detectable
-          true, "HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFRIENDLY FIRE", [0, 255, 0] // IFF broadcasting
-        );
+      constructor(bearing, distance, targetContact, fuelTime, contactType) {
+        // If the contact type is not one of the accepted types, default to "HOSTILE"
+        if (!acceptedTypes.includes(contactType)) {
+          contactType = "HOSTILE";
+        }
+        // If the contact is friendly, create it like so
+        if (contactType === "FRIENDLY") {
+          // Create a friendly missile
+          super(
+            bearing, distance, 3, // bearing, starting distance, size
+            20, 0, targetContact.bearing, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection (direction of the target)
+            true, 1.0, true, 1, // visible, opacity, immense radiation emission "due to really powerful engine" or something like that
+            true, 1.0, true, 1.0, // fully radar and thermal detectable
+            true, "HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFRIENDLY FIRE", [255, 0, 255], // IFF broadcasting
+            contactType // Contact type
+          );
+        } else {
+          // Create a hostile missile
+          super(
+            bearing, distance, 3, // bearing, starting distance, size
+            20, 0, targetContact.bearing, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection 
+            true, 1.0, true, 1, // visible, opacity, immense radiation emission "due to really powerful engine" or something like that
+            true, 1.0, true, 1.0, // fully radar and thermal detectable
+            false, "", [255, 0, 0], // IFF broadcasting
+            contactType // Contact type
+          );
+        }
         
         this.isMissile = true;
         this.targetContact = targetContact;
@@ -590,7 +631,7 @@ $playerSeenRadar = true;
           
           // Look for contacts in thermal scan range
           for (let contact of contacts) {
-            if (contact === this || contact.isMissile) continue; // Skip self and other missiles
+            if (contact === this) continue; // Skip self
             
             // Calculate position difference
             const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
@@ -664,14 +705,18 @@ $playerSeenRadar = true;
       }
       
       draw(deltaTime) {
-        // Draw the thermal scan cone
-        this.drawScanCone();
+        // Draw the thermal scan cone if visible and friendly
+        // Friendly contacts are "sending missile telemetry" to the player
+        // Doesn't make sense for hostile or neutral contacts to do this
+        if (this.visible && this.contactType === "FRIENDLY") {
+          this.drawScanCone();
+        }
         
         // Call parent draw method
         super.draw(deltaTime);
         
-        // Draw fuel indicator if visible
-        if (this.visible) {
+        // Draw fuel indicator if visible and friendly (see earlier comment about telemetry)
+        if (this.visible && this.contactType === "FRIENDLY") {
           const contactX = centerX + this.distance * Math.cos(this.bearing);
           const contactY = centerY + this.distance * Math.sin(this.bearing);
           
@@ -708,10 +753,13 @@ $playerSeenRadar = true;
         const missileX = centerX + this.realDistance * Math.cos(this.realBearing);
         const missileY = centerY + this.realDistance * Math.sin(this.realBearing);
         
+        // Calculate orientation of missile (direction of movement)
+        const missileOrientation = this.movementDirection;
+        
         // Calculate start and end angles for the scan cone
-        const absoluteScanAngle = this.realBearing + this.scanAngle;
-        const startAngle = this.realBearing + this.scanCenter - this.scanWidth/2;
-        const endAngle = this.realBearing + this.scanCenter + this.scanWidth/2;
+        const absoluteScanAngle = missileOrientation + this.scanAngle;
+        const startAngle = missileOrientation + this.scanCenter - this.scanWidth/2;
+        const endAngle = missileOrientation + this.scanCenter + this.scanWidth/2;
         
         // Draw the thermal scan area
         ctx.beginPath();
@@ -755,82 +803,103 @@ $playerSeenRadar = true;
     //             movementSpeed, directionChangeFrequency, movementDirection, 
     //             visible, opacity, emittingRadiation, emissionDetectionChance,
     //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
-    //             iffBroadcasting, iffString
+    //             iffBroadcasting, iffString, contactColor, contactType
     const contacts = [
+      // The player's ship. Always visible and at the center of the radar
+      new Contact(0, 0, 5, 
+                  0, 0, 0, 
+                  true, 1, false, 0, 
+                  false, 0, false, 0,
+                  true, "PLAYER SHIP, Heavy Cruiser\nTNFS Torch\nLantern Class", [255, 255, 255],
+                  "FRIENDLY"),
       // Real example contacts - speeds now per second
       new Contact(Math.PI/2, radius * 0.15, 5, 
                   0.12, 0.3, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.3,
                   true, 0.6, true, 1,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
       new Contact(3 * Math.PI/2, radius * 0.75, 5, 
                   1.2, 0.3, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 1, true, 1,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
       // Real example friendly contacts, broadcasting IFF
       new Contact(0, radius * 0.75, 5, 
                   1.2, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.3,
+                  false, 0, true, 0.1,
                   true, 0.6, true, 1,
-                  true, "Friendly Battleship\nHMS Warspite\nQueen Elizabeth Class", [255, 0, 255]),
+                  true, "Battleship\nHMS Warspite\nQueen Elizabeth Class", [255, 0, 255],
+                  "FRIENDLY"),
       // ELINT Ghosts (No thermal, no radar detection)
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
                   false, 0, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
                   false, 0, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
                   false, 0, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
                   false, 0, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, true, 0.03,
                   false, 0, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       // Radar ghosts (No ELINT, No thermal detection)
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 0.12, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 0.12, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 0.12, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 0.12, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 0.12, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 0.12, false, 0,
-                  false, "", [255, 0, 0]),
+                  false, "", [255, 0, 0],
+                  "GHOST"),
     ];
 
     // Fill the canvas with black initially
@@ -863,7 +932,7 @@ $playerSeenRadar = true;
 
           // Create and launch missile
           // MissileContact(bearing, targetContact, fuelTime)
-          const missile = new MissileContact(bearing, contactReports[i].contact, 15);
+          const missile = new MissileContact(bearing, 0, contactReports[i].contact, 15, "FRIENDLY");
           contacts.push(missile);
 
           // Remove the report after clicking
