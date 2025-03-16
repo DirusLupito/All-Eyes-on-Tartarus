@@ -118,6 +118,11 @@ $playerSeenRadar = true;
     let thermalScanCenter = 0; // Center of thermal scan area
     let thermalScanReversed = false; // Direction of thermal scan rotation
 
+    // Missile thermal scan parameters
+    const missileScanWidth = Math.PI/6; // 30 degrees in radians
+    const missileScanRadius = radius * 0.05; // 0.05ls circle
+    const missileScanSpeed = 60; // degrees per second
+
     // Contact report parameters
     const contactReports = [];
     const reportLifetime = 10; // lifetime in seconds
@@ -506,7 +511,7 @@ $playerSeenRadar = true;
         }
       }
     }
-    // Add missile functionality to the Contact class
+    // Extend Contacts to add heat seeking missiles
     class MissileContact extends Contact {
       constructor(bearing, targetContact, fuelTime) {
         // Create missile as a friendly contact with higher speed
@@ -520,12 +525,18 @@ $playerSeenRadar = true;
         
         this.isMissile = true;
         this.targetContact = targetContact;
-        this.thermalScanRadius = radius * 0.15; // Smaller scan radius for missile
+        this.thermalScanRadius = missileScanRadius;
         this.hasTarget = false;
         
         // Add fuel time property (in seconds)
         this.fuelTime = fuelTime; // Keeps track of original fuel time
         this.fuelRemaining = fuelTime;
+        
+        // Missile scan properties
+        this.scanWidth = missileScanWidth; // Use the same width as the main scanner
+        this.scanAngle = 0; // Current scan offset angle
+        this.scanReversed = false; // Direction of scan
+        this.scanCenter = 0; // Scan is centered forward of the missile
       }
       
       updatePosition(deltaTime) {
@@ -546,17 +557,45 @@ $playerSeenRadar = true;
           return;
         }
         
-        // Scan for thermal contacts
+        // Update scan angle
+        if (this.scanReversed) {
+          this.scanAngle -= (Math.PI * missileScanSpeed / 180) * deltaTime;
+          if (this.scanAngle &lt;= -this.scanWidth/2) {
+            this.scanAngle = -this.scanWidth/2;
+            this.scanReversed = false;
+          }
+        } else {
+          this.scanAngle += (Math.PI * missileScanSpeed / 180) * deltaTime;
+          if (this.scanAngle &gt;= this.scanWidth/2) {
+            this.scanAngle = this.scanWidth/2;
+            this.scanReversed = true;
+          }
+        }
+        
+        // Scan for thermal contacts if no target yet
         if (!this.hasTarget) {
+          // Calculate absolute scan angle relative to world
+          const absoluteScanAngle = this.realBearing + this.scanAngle;
+          
           // Look for contacts in thermal scan range
           for (let contact of contacts) {
             if (contact === this || contact.isMissile) continue; // Skip self and other missiles
             
+            // Calculate position difference
             const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
             const dy = Math.sin(contact.realBearing) * contact.realDistance - Math.sin(this.realBearing) * this.realDistance;
             const distance = Math.sqrt(dx*dx + dy*dy);
             
-            if (distance &lt; this.thermalScanRadius &amp;&amp; contact.thermalDetectable) {
+            // Calculate angle to contact relative to missile bearing
+            const angleToContact = Math.atan2(dy, dx);
+            
+            // Normalize the angle difference to be between -PI and PI
+            const angleDiff = normalizeAngle(angleToContact - this.realBearing);
+            
+            // Check if contact is within scan arc and radius
+            if (distance &lt; this.thermalScanRadius &amp;&amp; 
+                Math.abs(angleDiff - this.scanAngle) &lt; 0.1 &amp;&amp;
+                contact.thermalDetectable) {
               this.targetContact = contact;
               this.hasTarget = true;
               break;
@@ -614,6 +653,9 @@ $playerSeenRadar = true;
       }
       
       draw(deltaTime) {
+        // Draw the thermal scan cone
+        this.drawScanCone();
+        
         // Call parent draw method
         super.draw(deltaTime);
         
@@ -648,6 +690,52 @@ $playerSeenRadar = true;
           const fuelSeconds = Math.round(this.fuelRemaining);
           this.iffString = `HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFUEL: ${fuelSeconds}s REMAINING`;
         }
+      }
+      
+      drawScanCone() {
+        // Calculate position on screen
+        const missileX = centerX + this.realDistance * Math.cos(this.realBearing);
+        const missileY = centerY + this.realDistance * Math.sin(this.realBearing);
+        
+        // Calculate start and end angles for the scan cone
+        const absoluteScanAngle = this.realBearing + this.scanAngle;
+        const startAngle = this.realBearing + this.scanCenter - this.scanWidth/2;
+        const endAngle = this.realBearing + this.scanCenter + this.scanWidth/2;
+        
+        // Draw the thermal scan area
+        ctx.beginPath();
+        ctx.moveTo(missileX, missileY);
+        ctx.arc(missileX, missileY, this.thermalScanRadius, startAngle, endAngle);
+        ctx.lineTo(missileX, missileY);
+        ctx.fillStyle = &quot;rgba(0, 0, 255, 0.2)&quot;; // Thermal blue for missile scan
+        ctx.fill();
+        
+        // Draw the thermal scan boundary lines
+        ctx.beginPath();
+        ctx.moveTo(missileX, missileY);
+        ctx.lineTo(
+          missileX + this.thermalScanRadius * Math.cos(startAngle), 
+          missileY + this.thermalScanRadius * Math.sin(startAngle)
+        );
+        ctx.moveTo(missileX, missileY);
+        ctx.lineTo(
+          missileX + this.thermalScanRadius * Math.cos(endAngle), 
+          missileY + this.thermalScanRadius * Math.sin(endAngle)
+        );
+        ctx.strokeStyle = &quot;#0000FF&quot;; // Blue outline
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Draw the active scan line
+        ctx.beginPath();
+        ctx.moveTo(missileX, missileY);
+        ctx.lineTo(
+          missileX + this.thermalScanRadius * Math.cos(absoluteScanAngle), 
+          missileY + this.thermalScanRadius * Math.sin(absoluteScanAngle)
+        );
+        ctx.strokeStyle = &quot;#0000FF&quot;; // Blue
+        ctx.lineWidth = 2;
+        ctx.stroke();
       }
     }
 
