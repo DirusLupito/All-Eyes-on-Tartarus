@@ -14,6 +14,44 @@
   margin-left: auto;
   margin-right: auto;
   width: 800px;
+}
+
+.dialogue-container {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.dialogue {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0px;
+  position: relative;
+}
+
+.portrait {
+  width: 80px;
+  height: 100px;
+  border-radius: 0; /* Changed from 50% to 0 to make rectangular */
+  object-fit: cover;
+  margin: 0 20px;
+}
+
+.dialogue-text {
+  flex: 1;
+  text-align: center;
+  padding: 10px 20px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 15px;
+}
+
+/* Left dialogue has portrait on the left side */
+.left-dialogue {
+  flex-direction: row;
+}
+
+/* Right dialogue has portrait on the right side */
+.right-dialogue {
+  flex-direction: row-reverse;
 }</style><script role="script" id="twine-user-script" type="text/twine-javascript"></script><tw-passagedata pid="1" name="Intro 1" tags="" position="600,200" size="100,100">All Eyes on Tartarus
 (set: $playerSeenRadar to false)
 &lt;!-- Allow audio button  (unmute all audio) --&gt;
@@ -88,46 +126,6 @@
     &lt;p class=&quot;dialogue-text&quot;&gt;At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.&lt;/p&gt;
   &lt;/div&gt;
 &lt;/div&gt;
-
-&lt;style&gt;
-.dialogue-container {
-  width: 80%;
-  margin: 0 auto;
-}
-
-.dialogue {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0px;
-  position: relative;
-}
-
-.portrait {
-  width: 80px;
-  height: 100px;
-  border-radius: 0; /* Changed from 50% to 0 to make rectangular */
-  object-fit: cover;
-  margin: 0 20px;
-}
-
-.dialogue-text {
-  flex: 1;
-  text-align: center;
-  padding: 10px 20px;
-  background: rgba(0,0,0,0.1);
-  border-radius: 15px;
-}
-
-/* Left dialogue has portrait on the left side */
-.left-dialogue {
-  flex-direction: row;
-}
-
-/* Right dialogue has portrait on the right side */
-.right-dialogue {
-  flex-direction: row-reverse;
-}
-&lt;/style&gt;
 
 (if: $playerSeenRadar is false)[Player hasn&#39;t seen Radar]
 (if: $playerSeenRadar is true)[Player has seen Radar]

@@ -96,46 +96,6 @@ Construimus, Batuimus
   </div>
 </div>
 
-<style>
-.dialogue-container {
-  width: 80%;
-  margin: 0 auto;
-}
-
-.dialogue {
-  display: flex;
-  align-items: center;
-  margin-bottom: 0px;
-  position: relative;
-}
-
-.portrait {
-  width: 80px;
-  height: 100px;
-  border-radius: 0; /* Changed from 50% to 0 to make rectangular */
-  object-fit: cover;
-  margin: 0 20px;
-}
-
-.dialogue-text {
-  flex: 1;
-  text-align: center;
-  padding: 10px 20px;
-  background: rgba(0,0,0,0.1);
-  border-radius: 15px;
-}
-
-/* Left dialogue has portrait on the left side */
-.left-dialogue {
-  flex-direction: row;
-}
-
-/* Right dialogue has portrait on the right side */
-.right-dialogue {
-  flex-direction: row-reverse;
-}
-</style>
-
 (if: $playerSeenRadar is false)[Player hasn't seen Radar]
 (if: $playerSeenRadar is true)[Player has seen Radar]
 
@@ -1399,4 +1359,42 @@ img {
   margin-left: auto;
   margin-right: auto;
   width: 800px;
+}
+
+.dialogue-container {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.dialogue {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0px;
+  position: relative;
+}
+
+.portrait {
+  width: 80px;
+  height: 100px;
+  border-radius: 0; /* Changed from 50% to 0 to make rectangular */
+  object-fit: cover;
+  margin: 0 20px;
+}
+
+.dialogue-text {
+  flex: 1;
+  text-align: center;
+  padding: 10px 20px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 15px;
+}
+
+/* Left dialogue has portrait on the left side */
+.left-dialogue {
+  flex-direction: row;
+}
+
+/* Right dialogue has portrait on the right side */
+.right-dialogue {
+  flex-direction: row-reverse;
 }
