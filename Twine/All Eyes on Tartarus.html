@@ -62,6 +62,76 @@
   }
   audio.play();
 &lt;/script&gt;
+&lt;!-- Dialogue with alternating character portraits --&gt;
+&lt;div class=&quot;dialogue-container&quot;&gt;
+  &lt;!-- Character 1 speaks --&gt;
+  &lt;div class=&quot;dialogue left-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/Admiral.png&quot; class=&quot;portrait left-portrait&quot; alt=&quot;Character 1&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod velit nec libero rutrum, non venenatis dolor fringilla. Phasellus id metus at lectus cursus tincidunt.&lt;/p&gt;
+  &lt;/div&gt;
+  
+  &lt;!-- Character 2 speaks --&gt;
+  &lt;div class=&quot;dialogue right-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/captain.png&quot; class=&quot;portrait right-portrait&quot; alt=&quot;Character 2&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.&lt;/p&gt;
+  &lt;/div&gt;
+  
+  &lt;!-- Character 1 speaks again --&gt;
+  &lt;div class=&quot;dialogue left-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/Admiral.png&quot; class=&quot;portrait left-portrait&quot; alt=&quot;Character 1&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.&lt;/p&gt;
+  &lt;/div&gt;
+  
+  &lt;!-- Character 2 speaks again --&gt;
+  &lt;div class=&quot;dialogue right-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/captain.png&quot; class=&quot;portrait right-portrait&quot; alt=&quot;Character 2&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+
+&lt;style&gt;
+.dialogue-container {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.dialogue {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.portrait {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.left-portrait {
+  margin-right: 20px;
+  order: 1;
+}
+
+.right-portrait {
+  margin-left: 20px;
+  order: 3;
+}
+
+.dialogue-text {
+  flex: 1;
+  text-align: center;
+  padding: 10px 20px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 15px;
+  order: 2;
+}
+
+.right-dialogue {
+  flex-direction: row-reverse;
+}
+&lt;/style&gt;
 
 (if: $playerSeenRadar is false)[Player hasn&#39;t seen Radar]
 (if: $playerSeenRadar is true)[Player has seen Radar]

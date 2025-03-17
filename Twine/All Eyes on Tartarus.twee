@@ -69,6 +69,76 @@ Construimus, Batuimus
   }
   audio.play();
 </script>
+<!-- Dialogue with alternating character portraits -->
+<div class="dialogue-container">
+  <!-- Character 1 speaks -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait left-portrait" alt="Character 1">
+    <p class="dialogue-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod velit nec libero rutrum, non venenatis dolor fringilla. Phasellus id metus at lectus cursus tincidunt.</p>
+  </div>
+  
+  <!-- Character 2 speaks -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/captain.png" class="portrait right-portrait" alt="Character 2">
+    <p class="dialogue-text">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.</p>
+  </div>
+  
+  <!-- Character 1 speaks again -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait left-portrait" alt="Character 1">
+    <p class="dialogue-text">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
+  </div>
+  
+  <!-- Character 2 speaks again -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/captain.png" class="portrait right-portrait" alt="Character 2">
+    <p class="dialogue-text">At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.</p>
+  </div>
+</div>
+
+<style>
+.dialogue-container {
+  width: 80%;
+  margin: 0 auto;
+}
+
+.dialogue {
+  display: flex;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.portrait {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.left-portrait {
+  margin-right: 20px;
+  order: 1;
+}
+
+.right-portrait {
+  margin-left: 20px;
+  order: 3;
+}
+
+.dialogue-text {
+  flex: 1;
+  text-align: center;
+  padding: 10px 20px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 15px;
+  order: 2;
+}
+
+.right-dialogue {
+  flex-direction: row-reverse;
+}
+</style>
 
 (if: $playerSeenRadar is false)[Player hasn't seen Radar]
 (if: $playerSeenRadar is true)[Player has seen Radar]
