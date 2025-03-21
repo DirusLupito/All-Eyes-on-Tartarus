@@ -105,6 +105,10 @@ Construimus, Batuimus
 
 :: Intro 4 {"position":"1200,200","size":"100,100"}
 Debug mission. On a routine patrol the Torch and Warspite encounter two hostiles.
+Whether they survive depends on the player.
+
+TRIVIA:
+LS: Light Second = 299,792,458 Meters
 
 TIPS:
 Left clicking on a contact report will fire a missile at it. 
@@ -132,10 +136,16 @@ Missiles do not care if you're friendly or hostile or neutral. If they see somet
 
 That means your own missiles, if somehow redirected towards yourself or a friendly ship, will blow you up.
 
+Conserve your missiles. Once you're out, you have no way of defending yourself from incoming fire.
+
+Fire missiles in a spread of all possible positions you think they enemy could be in so they can't get away in time regardless of how they dodge.
+
+When firing a spread, make sure to also spread the missiles out in time so they don't get launched so quickly that they lock onto each other and either blow themselves up or alter course and mess up the spread.
+
 Controls:
 Thermal Scan - Use A/D to rotate
-Contact Report - Left click to fire at, X to dismiss
-LS: Light Second = 299,792,458 Meters
+Contact Report - Left click to fire at, X to Dismiss
+Pause - P to toggle pause
 <script>
   // Stops the previous audio
   if (typeof audio !== 'undefined') {
@@ -171,8 +181,14 @@ $playerWon = false;
 
     // Game state variables
     let gameOver = false;
+    let gamePaused = true;
     let gameOverMessage = "";
     let gameOverColor = "";
+
+    // If the game is paused, go ahead and draw the pause screen
+    if (gamePaused) {
+      requestAnimationFrame(drawPauseMenu);
+    }
 
     // Customizable parameters - now in units per second instead of per frame
     const radarSpeed = 30; // degrees per second
@@ -547,7 +563,7 @@ $playerWon = false;
               const lines = this.iffString.split('\n');
               const lineHeight = 16;
               const bubbleWidth = lines.reduce((max, line) => Math.max(max, ctx.measureText(line).width), 0) + (bubblePadding * 2);
-              var bubbleHeight = (lines.length * lineHeight) + (bubblePadding * 2);
+              var bubbleHeight = ((lines.length + 1) * lineHeight) + (bubblePadding * 2); // Add 1 for the missile count line
               
               // Add extra height for missile count if it exists
               const hasMissiles = this.numMissiles !== undefined && this.numMissiles !== null;
@@ -940,7 +956,8 @@ $playerWon = false;
     //             movementSpeed, directionChangeFrequency, movementDirection, 
     //             visible, opacity, emittingRadiation, emissionDetectionChance,
     //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
-    //             iffBroadcasting, iffString, contactColor, contactType
+    //             iffBroadcasting, iffString, contactColor, contactType,
+    //             numMissilesLoaded
     const contacts = [
       // The player's ship. Always visible and at the center of the radar
       // Has 100 missiles loaded
@@ -1054,6 +1071,9 @@ $playerWon = false;
 
     // Add click event listener for contact reports
     canvas.addEventListener('click', function(event) {
+      // If paused, do nothing
+      if (gamePaused) return;
+
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
@@ -1108,23 +1128,44 @@ $playerWon = false;
     document.addEventListener('keydown', function(event) {
       if (event.key === 'a' || event.key === 'A') {
         // Rotate thermal scan left
-        thermalScanCenter -= 0.1;
-        if (thermalScanCenter < 0) thermalScanCenter += Math.PI * 2;
+        // If paused, do nothing
+        if (!gamePaused) {
+          thermalScanCenter -= 0.1;
+          if (thermalScanCenter < 0) thermalScanCenter += Math.PI * 2;
+        }
       } else if (event.key === 'd' || event.key === 'D') {
         // Rotate thermal scan right
-        thermalScanCenter += 0.1;
-        if (thermalScanCenter >= Math.PI * 2) thermalScanCenter -= Math.PI * 2;
+        // If paused, do nothing
+        if (!gamePaused) {
+          thermalScanCenter += 0.1;
+          if (thermalScanCenter >= Math.PI * 2) thermalScanCenter -= Math.PI * 2;
+        }
       } else if (event.key === 'x' || event.key === 'X') {
         // Check if the mouse is over a contact report
-        for (let i = 0; i < contactReports.length; i++) {
-          if (contactReports[i].contains(mouseX, mouseY)) {
-            // Dismiss the contact report
-            console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
-            contactReports.splice(i, 1);
-            break;
+        // If paused, do nothing
+        if (!gamePaused) {
+          for (let i = 0; i < contactReports.length; i++) {
+            if (contactReports[i].contains(mouseX, mouseY)) {
+              // Dismiss the contact report
+              console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
+              contactReports.splice(i, 1);
+              break;
+            }
           }
         }
-      }
+      } else if (event.key === 'p' || event.key === 'P') {
+        // Toggle pause state if not in game over state
+        if (!gameOver) {
+          gamePaused = !gamePaused;
+          if (gamePaused) {
+            console.log("Game paused");
+            // Draw it here to ensure it's only drawn once when paused
+            drawPauseMenu();
+          } else {
+            console.log("Game unpaused");
+          }
+        }
+      } 
     });
 
     function drawBackground(deltaTime) {
@@ -1236,6 +1277,51 @@ $playerWon = false;
       ctx.lineWidth = 2;
       ctx.stroke();
     }
+
+    // For drawing how many missiles are left in stock on the player ship
+    // Draws in the top left corner of the screen
+    function drawCurrentMissiles() {
+      const playerContact = contacts[0]; // Assuming the player ship is the first contact
+
+      if (playerContact && playerContact.visible) {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(10, 10, 150, 50);
+        
+        ctx.fillStyle = "#00FF00";
+        ctx.font = "20px monospace";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(`MISSILES: ${playerContact.numMissiles}`, 20, 20);
+      }
+
+    }
+
+    // Draws the game over message in the center of the screen
+    function drawGameOver() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.font = "bold 48px Arial";
+      ctx.fillStyle = gameOverColor;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(gameOverMessage, centerX, centerY);
+    }
+
+    // Draws the pause menu in the center of the screen
+    // Says "PAUSED" in big centered letters, then below it "Press P to unpause"
+    function drawPauseMenu() {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.font = "bold 48px Arial";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("PAUSED", centerX, centerY - 20);
+      ctx.font = "24px Arial";
+      ctx.fillText("Press P to unpause", centerX, centerY + 20);
+    }
     
     function normalizeAngle(a) {
       // Normalize angle to be between -pi and pi
@@ -1247,14 +1333,7 @@ $playerWon = false;
       // Game over check
       if (gameOver) {
         // Draw game over message
-        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.font = "bold 48px Arial";
-        ctx.fillStyle = gameOverColor;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(gameOverMessage, centerX, centerY);
+        drawGameOver();
 
         // Don't animate anymore
         return;
@@ -1285,6 +1364,18 @@ $playerWon = false;
       // Calculate time since last frame
       const deltaTime = ((currentTime - lastFrameTime) / 1000) * deltaTimeMultiplier; // Convert to seconds, then scale by deltaTimeMultiplier
       lastFrameTime = currentTime;
+
+      // Pause check is placed here to ensure deltaTime will not jump when unpausing
+      if (gamePaused) {
+        // Pause menu is drawn in the event listener, not here since otherwise
+        // the code causing the dimming effect would run over and over blacking out the screen
+        // instead of just dimming it once
+        // drawPauseMenu();
+        
+        // Keep animating, but only up to here
+        requestAnimationFrame(animate)
+        return;
+      }
       
       // Cap deltaTime to prevent huge jumps if tab was inactive
       const cappedDeltaTime = Math.min(deltaTime, 0.5);
@@ -1402,8 +1493,11 @@ $playerWon = false;
         contact.draw(cappedDeltaTime);
       }
       
+      // Draw the radar line and thermal scan
       drawRadarLine();
       drawThermalScan();
+      // Draw the text telling the player in the top left how many missiles are left
+      drawCurrentMissiles();
       
       // Update and draw contact reports
       for (let i = contactReports.length - 1; i >= 0; i--) {
