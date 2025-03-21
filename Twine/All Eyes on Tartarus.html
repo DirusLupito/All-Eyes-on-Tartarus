@@ -172,6 +172,7 @@ When firing a spread, make sure to also spread the missiles out in time so they 
 Controls:
 Thermal Scan - Use A/D to rotate
 Contact Report - Left click to fire at, X to Dismiss
+Pause - P to toggle pause
 &lt;script&gt;
   // Stops the previous audio
   if (typeof audio !== &#39;undefined&#39;) {
@@ -207,9 +208,14 @@ $playerWon = false;
 
     // Game state variables
     let gameOver = false;
-    let gamePaused = false;
+    let gamePaused = true;
     let gameOverMessage = &quot;&quot;;
     let gameOverColor = &quot;&quot;;
+
+    // If the game is paused, go ahead and draw the pause screen
+    if (gamePaused) {
+      requestAnimationFrame(drawPauseMenu);
+    }
 
     // Customizable parameters - now in units per second instead of per frame
     const radarSpeed = 30; // degrees per second
@@ -584,7 +590,7 @@ $playerWon = false;
               const lines = this.iffString.split(&#39;\n&#39;);
               const lineHeight = 16;
               const bubbleWidth = lines.reduce((max, line) =&gt; Math.max(max, ctx.measureText(line).width), 0) + (bubblePadding * 2);
-              var bubbleHeight = (lines.length * lineHeight) + (bubblePadding * 2);
+              var bubbleHeight = ((lines.length + 1) * lineHeight) + (bubblePadding * 2); // Add 1 for the missile count line
               
               // Add extra height for missile count if it exists
               const hasMissiles = this.numMissiles !== undefined &amp;&amp; this.numMissiles !== null;
@@ -977,7 +983,8 @@ $playerWon = false;
     //             movementSpeed, directionChangeFrequency, movementDirection, 
     //             visible, opacity, emittingRadiation, emissionDetectionChance,
     //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
-    //             iffBroadcasting, iffString, contactColor, contactType
+    //             iffBroadcasting, iffString, contactColor, contactType,
+    //             numMissilesLoaded
     const contacts = [
       // The player&#39;s ship. Always visible and at the center of the radar
       // Has 100 missiles loaded
