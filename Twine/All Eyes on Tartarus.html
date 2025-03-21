@@ -574,7 +574,13 @@ $playerWon = false;
               const lines = this.iffString.split(&#39;\n&#39;);
               const lineHeight = 16;
               const bubbleWidth = lines.reduce((max, line) =&gt; Math.max(max, ctx.measureText(line).width), 0) + (bubblePadding * 2);
-              const bubbleHeight = (lines.length * lineHeight) + (bubblePadding * 2);
+              var bubbleHeight = (lines.length * lineHeight) + (bubblePadding * 2);
+              
+              // Add extra height for missile count if it exists
+              const hasMissiles = this.numMissiles !== undefined &amp;&amp; this.numMissiles !== null;
+              if (hasMissiles) {
+                bubbleHeight += lineHeight;
+              }
               
               // Calculate box position - default is to the right of the contact
               let boxX = contactX + 15;
@@ -620,6 +626,11 @@ $playerWon = false;
                 ctx.fillStyle = `rgba(255, 255, 255, ${iffOpacity})`;
               }
               ctx.fillText(&quot;IFF: BROADCASTING&quot;, boxX + bubblePadding, boxY + 15 + (lines.length * lineHeight));
+              
+              // Show missile count if available
+              if (hasMissiles) {
+                ctx.fillText(`MISSILES: ${this.numMissiles}`, boxX + bubblePadding, boxY + 15 + ((lines.length + 1) * lineHeight));
+              }
             }
           }
           
@@ -959,12 +970,13 @@ $playerWon = false;
     //             iffBroadcasting, iffString, contactColor, contactType
     const contacts = [
       // The player&#39;s ship. Always visible and at the center of the radar
+      // Has 100 missiles loaded
       new Contact(0, 0, 5, 
                   0, 0, 0, 
                   true, 1, true, 0, 
                   true, 0, true, 0,
                   true, &quot;PLAYER SHIP, Heavy Cruiser\nTNFS Torch\nLantern Class&quot;, [255, 255, 255],
-                  &quot;PLAYER&quot;),
+                  &quot;PLAYER&quot;, 100),
       // Real example contacts - speeds now per second
       new Contact(Math.PI/2, radius * 0.15, 5, 
                   0.12, 0.3, Math.random() * Math.PI * 2, 
@@ -1076,7 +1088,9 @@ $playerWon = false;
       // Check if click is on a contact report
       let wasOnContactReport = false;
       for (let i = 0; i &lt; contactReports.length; i++) {
-        if (contactReports[i].contains(mouseX, mouseY)) {
+        // Launch a missile if the click is on a contact report and the player ship still has missiles
+        // PLayer ship should be the first contact in the contacts array
+        if (contactReports[i].contains(mouseX, mouseY) &amp;&amp; contacts[0].numMissiles &gt; 0) {
           console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
           wasOnContactReport = true;
 
@@ -1089,6 +1103,7 @@ $playerWon = false;
           // MissileContact(bearing, distance, targetContact, fuelTime, contactType, armingTime)
           const missile = new MissileContact(bearing, 0, contactReports[i].contact, 30, &quot;FRIENDLY&quot;, 1.0);
           contacts.push(missile);
+          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
 
           // Remove the report after clicking
           contactReports.splice(i, 1);
@@ -1102,12 +1117,16 @@ $playerWon = false;
         const dy = mouseY - centerY;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        if (distance &lt; radius) {
+        // Check if the click is within the radar radius and the player ship has missiles
+        if (distance &lt; radius &amp;&amp; contacts[0].numMissiles &gt; 0) {
           // Calculate bearing to the clicked point
           const bearing = Math.atan2(dy, dx);
           // Fire a missile at the clicked point
+          // Add a distance of 1 because otherwise something breaks with a bearing of 0 causing the player ship to
+          // blow itself up
           const missile = new MissileContact(bearing, 1, null, 30, &quot;FRIENDLY&quot;, 1.0);
           contacts.push(missile);
+          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
         }
       }
     });
