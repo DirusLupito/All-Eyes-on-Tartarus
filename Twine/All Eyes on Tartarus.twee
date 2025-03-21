@@ -14,7 +14,8 @@ All Eyes on Tartarus
 
 :: Intro 1 {"position":"600,200","size":"100,100"}
 All Eyes on Tartarus
-(set: $playerSeenRadar to false)
+To mute audio, right click the tab in the browser and select "Mute Tab".
+(set: $playerWon to false)
 <!-- Allow audio button  (unmute all audio) -->
 <button id="playAudioButton">Allow Audio</button>
 <script>
@@ -96,14 +97,44 @@ Construimus, Batuimus
   </div>
 </div>
 
-(if: $playerSeenRadar is false)[Player hasn't seen Radar]
-(if: $playerSeenRadar is true)[Player has seen Radar]
+(if: $playerWon is false)[Player didn't win the last engagement]
+(if: $playerWon is true)[Player won the last engagement]
 
 [[Continue->Intro 4]]
 
 
 :: Intro 4 {"position":"1200,200","size":"100,100"}
+Debug mission. On a routine patrol the Torch and Warspite encounter two hostiles.
+
+TIPS:
+Left clicking on a contact report will fire a missile at it. 
+
+Left clicking elsewhere on the screen will fire a missile at the clicked location.
+
+Mousing over a contact report and pressing "X" will dismiss it. 
+
+Mousing over a friendly contact will display miscellaneous information about it, such as the name of a friendly ship, or the remaining fuel time of a friendly missile.
+
+Radar and radiation detectors can be faulty, displaying false detections occasionally and randomly. Real contacts will be far more consisently located in one place.
+
+Missiles, both friendly and hostile, give off an immense amount of electromagnetic radiation, making them show up near continuously on the radiation detectors.
+
+Radar can be fooled by stealthy contacts, but thermal sensors never lie. 
+
+In combat, missiles can be flying at your ship so fast that you might not detect them on the radar until they are right on top of you. 
+Orient the thermal scanner to the direction of the enemy ship to get the most live data on any incoming missiles.
+
+Incoming missiles can be shot down by other missiles.
+
+Missiles are equipped with very short range thermal scanners that let them see what's in front of them. 
+
+Missiles do not care if you're friendly or hostile or neutral. If they see something, they will home in on it until they run out of fuel or until they strike true.
+
+That means your own missiles, if somehow redirected towards yourself or a friendly ship, will blow you up.
+
+Controls:
 Thermal Scan - Use A/D to rotate
+Contact Report - Left click to fire at, X to dismiss
 LS: Light Second = 299,792,458 Meters
 <script>
   // Stops the previous audio
@@ -116,7 +147,7 @@ LS: Light Second = 299,792,458 Meters
 <!-- The sensor game -->
 <canvas id="radar" width="800" height="800"></canvas>
 <script>
-$playerSeenRadar = true;
+$playerWon = false;
   (function() {
     const canvas = document.getElementById("radar");
     const ctx = canvas.getContext("2d");
@@ -165,6 +196,11 @@ $playerSeenRadar = true;
     const missileScanRadius = radius * 0.05; // 0.05ls circle
     const missileScanSpeed = 60; // degrees per second
 
+    // Random missile launch parameters
+    const baseMissileLaunchChance = 0.0001;
+    missileLaunchChance = baseMissileLaunchChance;
+    missileLaunchIncrease = 0.000001;
+
     // Contact report parameters
     const contactReports = [];
     const reportLifetime = 10; // lifetime in seconds
@@ -172,11 +208,6 @@ $playerSeenRadar = true;
     // IFF Parameters
     const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
     const acceptedTypes = ["FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST", "PLAYER"]; // Accepted contact types
-
-    // Random missile launch parameters
-    const baseMissileLaunchChance = 0.0001;
-    missileLaunchChance = baseMissileLaunchChance;
-    missileLaunchIncrease = 0.000001;
   
     // Function to create explosion effect
     function createExplosion(x, y) {
@@ -223,7 +254,7 @@ $playerSeenRadar = true;
         
         // Determine position (ensure it's on screen)
         const boxWidth = 180;
-        const boxHeight = 60;
+        const boxHeight = 75; // Increased height to fit new line
         let boxX = this.x + 15;
         let boxY = this.y - boxHeight - 15;
         
@@ -252,6 +283,7 @@ $playerSeenRadar = true;
         ctx.fillText(`DETECTED: ${this.timestamp}`, boxX + 5, boxY + 15);
         ctx.fillText(`POTENTIAL ${this.contactType} CONTACT`, boxX + 5, boxY + 30);
         ctx.fillText("CLICK TO REPORT CONTACT", boxX + 5, boxY + 45);
+        ctx.fillText("X TO DISMISS", boxX + 5, boxY + 60);
       }
       
       contains(mouseX, mouseY) {
@@ -275,7 +307,7 @@ $playerSeenRadar = true;
       constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, 
                   visible, opacity, emittingRadiation, emissionDetectionChance, 
                   radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
-                  iffBroadcasting, iffString, contactColor, contactType) {
+                  iffBroadcasting, iffString, contactColor, contactType, numMissilesLoaded) {
         // Affects displayed position
         this.bearing = bearing;
         this.distance = distance;
@@ -315,6 +347,9 @@ $playerSeenRadar = true;
         this.iffBroadcasting = iffBroadcasting;
         this.iffString = iffString;
         this.contactColor = contactColor;
+
+        // How many missiles are aboard the ship
+        this.numMissiles = numMissilesLoaded;
 
         // Currently, there are five types of contacts: "FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST", and "PLAYER"
         // Anything else is treated as "GHOST"
@@ -613,8 +648,17 @@ $playerSeenRadar = true;
         const missileX = Math.cos(bearing) * distance;
         const missileY = Math.sin(bearing) * distance;
         // Figure out the target position in cartesian coordinates
-        const targetX = Math.cos(targetContact.bearing) * targetContact.distance;
-        const targetY = Math.sin(targetContact.bearing) * targetContact.distance;
+        // so long as the target contact is not null or undefined or something like that
+        if (targetContact) {
+          var targetXv = Math.cos(targetContact.bearing) * targetContact.distance;
+          var targetYv = Math.sin(targetContact.bearing) * targetContact.distance;
+        } else {
+          // If the target contact is null or undefined, default to the point at the radius and bearing
+          var targetXv = Math.cos(bearing) * radius;
+          var targetYv = Math.sin(bearing) * radius;
+        }
+        const targetX = targetXv;
+        const targetY = targetYv;
         // Calculate the angle to the target
         const targetAngle = Math.atan2(targetY - missileY, targetX - missileX);
 
@@ -1003,9 +1047,11 @@ $playerSeenRadar = true;
       const mouseY = event.clientY - rect.top;
     
       // Check if click is on a contact report
+      let wasOnContactReport = false;
       for (let i = 0; i < contactReports.length; i++) {
         if (contactReports[i].contains(mouseX, mouseY)) {
           console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
+          wasOnContactReport = true;
 
           // Calculate bearing to the contact report
           const dx = contactReports[i].x - centerX;
@@ -1022,6 +1068,21 @@ $playerSeenRadar = true;
           break;
         }
       }
+      // If not on a contact report, check if click is on the radar screen
+      if (!wasOnContactReport) {
+        // Check if click is on the radar screen
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < radius) {
+          // Calculate bearing to the clicked point
+          const bearing = Math.atan2(dy, dx);
+          // Fire a missile at the clicked point
+          const missile = new MissileContact(bearing, 1, null, 30, "FRIENDLY", 1.0);
+          contacts.push(missile);
+        }
+      }
     });
 
     // Key event listeners for thermal scan control
@@ -1034,6 +1095,16 @@ $playerSeenRadar = true;
         // Rotate thermal scan right
         thermalScanCenter += 0.1;
         if (thermalScanCenter >= Math.PI * 2) thermalScanCenter -= Math.PI * 2;
+      } else if (event.key === 'x' || event.key === 'X') {
+        // Check if the mouse is over a contact report
+        for (let i = 0; i < contactReports.length; i++) {
+          if (contactReports[i].contains(mouseX, mouseY)) {
+            // Dismiss the contact report
+            console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
+            contactReports.splice(i, 1);
+            break;
+          }
+        }
       }
     });
 
@@ -1184,6 +1255,7 @@ $playerSeenRadar = true;
       // Check if all hostile contacts are gone
       if (areAllContactsGone("HOSTILE")) {
         gameOver = true;
+        $playerWon = true;
         gameOverMessage = "VICTORY!";
         gameOverColor = "green";
         // Play victory sound
