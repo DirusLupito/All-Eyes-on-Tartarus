@@ -332,7 +332,7 @@ $playerWon = false;
       contains(mouseX, mouseY) {
         // Determine box position
         const boxWidth = 180;
-        const boxHeight = 60;
+        const boxHeight = 75; // TODO: Make boxWidth and boxHeight not exist both here and in draw() separately in order to make it easier to change
         let boxX = this.x + 15;
         let boxY = this.y - boxHeight - 15;
         
