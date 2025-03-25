@@ -526,6 +526,14 @@ $playerWon = false;
           }
         }
       }
+
+      // Launch a missile at the given position
+      launchMissile(targetX, targetY) {
+        // Check if there are missiles available
+        if (this.numMissiles > 0) {
+          // Create a new missile contact
+        }
+      }
       
       draw(deltaTime) {
         // If IFF is broadcasting, the contact should always be visible and updating its contact position
@@ -660,6 +668,7 @@ $playerWon = false;
         }
       }
     }
+
     // Extend Contacts to add heat seeking missiles
     class MissileContact extends Contact {
       constructor(bearing, distance, targetContact, fuelTime, contactType, armingTime) {
@@ -950,223 +959,6 @@ $playerWon = false;
         ctx.stroke();
       }
     }
-
-    // Create contacts array with initial contacts
-    // Parameters: bearing, distance, size, 
-    //             movementSpeed, directionChangeFrequency, movementDirection, 
-    //             visible, opacity, emittingRadiation, emissionDetectionChance,
-    //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
-    //             iffBroadcasting, iffString, contactColor, contactType,
-    //             numMissilesLoaded
-    const contacts = [
-      // The player's ship. Always visible and at the center of the radar
-      // Has 100 missiles loaded
-      new Contact(0, 0, 5, 
-                  0, 0, 0, 
-                  true, 1, true, 0, 
-                  true, 0, true, 0,
-                  true, "PLAYER SHIP, Heavy Cruiser\nTNFS Torch\nLantern Class", [255, 255, 255],
-                  "PLAYER", 100),
-      // Real example contacts - speeds now per second
-      new Contact(Math.PI/2, radius * 0.15, 5, 
-                  0.12, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.3,
-                  true, 0.6, true, 1,
-                  false, "", [255, 0, 0],
-                  "HOSTILE"),
-      new Contact(3 * Math.PI/2, radius * 0.75, 5, 
-                  1.2, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 1, true, 1,
-                  false, "", [255, 0, 0],
-                  "HOSTILE"),
-      // Real example friendly contacts, broadcasting IFF
-      new Contact(0, radius * 0.75, 5, 
-                  1.2, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.1,
-                  true, 0.6, true, 1,
-                  true, "Battleship\nHMS Warspite\nQueen Elizabeth Class", [255, 0, 255],
-                  "FRIENDLY"),
-      // ELINT Ghosts (No thermal, no radar detection)
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      // Radar ghosts (No ELINT, No thermal detection)
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-    ];
-
-    // Fill the canvas with black initially
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, width, height);
-
-    // Track mouse position
-    let mouseX, mouseY;
-    canvas.addEventListener('mousemove', function(event) {
-      const rect = canvas.getBoundingClientRect();
-      mouseX = event.clientX - rect.left;
-      mouseY = event.clientY - rect.top;
-    });
-
-    // Add click event listener for contact reports
-    canvas.addEventListener('click', function(event) {
-      // If paused, do nothing
-      if (gamePaused) return;
-
-      const rect = canvas.getBoundingClientRect();
-      const mouseX = event.clientX - rect.left;
-      const mouseY = event.clientY - rect.top;
-    
-      // Check if click is on a contact report
-      let wasOnContactReport = false;
-      for (let i = 0; i < contactReports.length; i++) {
-        // Launch a missile if the click is on a contact report and the player ship still has missiles
-        // PLayer ship should be the first contact in the contacts array
-        if (contactReports[i].contains(mouseX, mouseY) && contacts[0].numMissiles > 0) {
-          console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
-          wasOnContactReport = true;
-
-          // Calculate bearing to the contact report
-          const dx = contactReports[i].x - centerX;
-          const dy = contactReports[i].y - centerY;
-          const bearing = Math.atan2(dy, dx);
-
-          // Create and launch missile
-          // MissileContact(bearing, distance, targetContact, fuelTime, contactType, armingTime)
-          const missile = new MissileContact(bearing, 0, contactReports[i].contact, 30, "FRIENDLY", 1.0);
-          contacts.push(missile);
-          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
-
-          // Remove the report after clicking
-          contactReports.splice(i, 1);
-          break;
-        }
-      }
-      // If not on a contact report, check if click is on the radar screen
-      if (!wasOnContactReport) {
-        // Check if click is on the radar screen
-        const dx = mouseX - centerX;
-        const dy = mouseY - centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Check if the click is within the radar radius and the player ship has missiles
-        if (distance < radius && contacts[0].numMissiles > 0) {
-          // Calculate bearing to the clicked point
-          const bearing = Math.atan2(dy, dx);
-          // Fire a missile at the clicked point
-          // Add a distance of 1 because otherwise something breaks with a bearing of 0 causing the player ship to
-          // blow itself up
-          const missile = new MissileContact(bearing, 1, null, 30, "FRIENDLY", 1.0);
-          contacts.push(missile);
-          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
-        }
-      }
-    });
-
-    // Key event listeners for thermal scan control
-    document.addEventListener('keydown', function(event) {
-      if (event.key === 'a' || event.key === 'A') {
-        // Rotate thermal scan left
-        // If paused, do nothing
-        if (!gamePaused) {
-          thermalScanCenter -= 0.1;
-          if (thermalScanCenter < 0) thermalScanCenter += Math.PI * 2;
-        }
-      } else if (event.key === 'd' || event.key === 'D') {
-        // Rotate thermal scan right
-        // If paused, do nothing
-        if (!gamePaused) {
-          thermalScanCenter += 0.1;
-          if (thermalScanCenter >= Math.PI * 2) thermalScanCenter -= Math.PI * 2;
-        }
-      } else if (event.key === 'x' || event.key === 'X') {
-        // Check if the mouse is over a contact report
-        // If paused, do nothing
-        if (!gamePaused) {
-          for (let i = 0; i < contactReports.length; i++) {
-            if (contactReports[i].contains(mouseX, mouseY)) {
-              // Dismiss the contact report
-              console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
-              contactReports.splice(i, 1);
-              break;
-            }
-          }
-        }
-      } else if (event.key === 'p' || event.key === 'P') {
-        // Toggle pause state if not in game over state
-        if (!gameOver) {
-          gamePaused = !gamePaused;
-          if (gamePaused) {
-            console.log("Game paused");
-            // Draw it here to ensure it's only drawn once when paused
-            drawPauseMenu();
-          } else {
-            console.log("Game unpaused");
-          }
-        }
-      } 
-    });
 
     function drawBackground(deltaTime) {
       // Draw fading overlay - fade rate now per second
@@ -1481,7 +1273,7 @@ $playerWon = false;
         missileLaunchChance = baseMissileLaunchChance;
       } else {
         // Otherwise increase the missile launch chance
-        missileLaunchChance += missileLaunchIncrease;
+        missileLaunchChance += missileLaunchIncrease * cappedDeltaTime;
         if (missileLaunchChance > 1.0) missileLaunchChance = 1.0;
       }
           
@@ -1529,6 +1321,223 @@ $playerWon = false;
       
       requestAnimationFrame(animate);
     }
+
+    // Track mouse position
+    let mouseX, mouseY;
+    canvas.addEventListener('mousemove', function(event) {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = event.clientX - rect.left;
+      mouseY = event.clientY - rect.top;
+    });
+
+    // Add click event listener for contact reports
+    canvas.addEventListener('click', function(event) {
+      // If paused, do nothing
+      if (gamePaused) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+    
+      // Check if click is on a contact report
+      let wasOnContactReport = false;
+      for (let i = 0; i < contactReports.length; i++) {
+        // Launch a missile if the click is on a contact report and the player ship still has missiles
+        // PLayer ship should be the first contact in the contacts array
+        if (contactReports[i].contains(mouseX, mouseY) && contacts[0].numMissiles > 0) {
+          console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
+          wasOnContactReport = true;
+
+          // Calculate bearing to the contact report
+          const dx = contactReports[i].x - centerX;
+          const dy = contactReports[i].y - centerY;
+          const bearing = Math.atan2(dy, dx);
+
+          // Create and launch missile
+          // MissileContact(bearing, distance, targetContact, fuelTime, contactType, armingTime)
+          const missile = new MissileContact(bearing, 0, contactReports[i].contact, 30, "FRIENDLY", 1.0);
+          contacts.push(missile);
+          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
+
+          // Remove the report after clicking
+          contactReports.splice(i, 1);
+          break;
+        }
+      }
+      // If not on a contact report, check if click is on the radar screen
+      if (!wasOnContactReport) {
+        // Check if click is on the radar screen
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Check if the click is within the radar radius and the player ship has missiles
+        if (distance < radius && contacts[0].numMissiles > 0) {
+          // Calculate bearing to the clicked point
+          const bearing = Math.atan2(dy, dx);
+          // Fire a missile at the clicked point
+          // Add a distance of 1 because otherwise something breaks with a bearing of 0 causing the player ship to
+          // blow itself up
+          const missile = new MissileContact(bearing, 1, null, 30, "FRIENDLY", 1.0);
+          contacts.push(missile);
+          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
+        }
+      }
+    });
+
+    // Key event listeners for thermal scan control
+    document.addEventListener('keydown', function(event) {
+      if (event.key === 'a' || event.key === 'A') {
+        // Rotate thermal scan left
+        // If paused, do nothing
+        if (!gamePaused) {
+          thermalScanCenter -= 0.1;
+          if (thermalScanCenter < 0) thermalScanCenter += Math.PI * 2;
+        }
+      } else if (event.key === 'd' || event.key === 'D') {
+        // Rotate thermal scan right
+        // If paused, do nothing
+        if (!gamePaused) {
+          thermalScanCenter += 0.1;
+          if (thermalScanCenter >= Math.PI * 2) thermalScanCenter -= Math.PI * 2;
+        }
+      } else if (event.key === 'x' || event.key === 'X') {
+        // Check if the mouse is over a contact report
+        // If paused, do nothing
+        if (!gamePaused) {
+          for (let i = 0; i < contactReports.length; i++) {
+            if (contactReports[i].contains(mouseX, mouseY)) {
+              // Dismiss the contact report
+              console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
+              contactReports.splice(i, 1);
+              break;
+            }
+          }
+        }
+      } else if (event.key === 'p' || event.key === 'P') {
+        // Toggle pause state if not in game over state
+        if (!gameOver) {
+          gamePaused = !gamePaused;
+          if (gamePaused) {
+            console.log("Game paused");
+            // Draw it here to ensure it's only drawn once when paused
+            drawPauseMenu();
+          } else {
+            console.log("Game unpaused");
+          }
+        }
+      } 
+    });
+
+    // Create contacts array with initial contacts
+    // Parameters: bearing, distance, size, 
+    //             movementSpeed, directionChangeFrequency, movementDirection, 
+    //             visible, opacity, emittingRadiation, emissionDetectionChance,
+    //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
+    //             iffBroadcasting, iffString, contactColor, contactType,
+    //             numMissilesLoaded
+    const contacts = [
+      // The player's ship. Always visible and at the center of the radar
+      // Has 100 missiles loaded
+      new Contact(0, 0, 5, 
+                  0, 0, 0, 
+                  true, 1, true, 0, 
+                  true, 0, true, 0,
+                  true, "PLAYER SHIP, Heavy Cruiser\nTNFS Torch\nLantern Class", [255, 255, 255],
+                  "PLAYER", 100),
+      // Real example contacts - speeds now per second
+      new Contact(Math.PI/2, radius * 0.15, 5, 
+                  0.12, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.3,
+                  true, 0.6, true, 1,
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
+      new Contact(3 * Math.PI/2, radius * 0.75, 5, 
+                  1.2, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 1, true, 1,
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
+      // Real example friendly contacts, broadcasting IFF
+      new Contact(0, radius * 0.75, 5, 
+                  1.2, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.1,
+                  true, 0.6, true, 1,
+                  true, "Battleship\nHMS Warspite\nQueen Elizabeth Class", [255, 0, 255],
+                  "FRIENDLY"),
+      // ELINT Ghosts (No thermal, no radar detection)
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      // Radar ghosts (No ELINT, No thermal detection)
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+    ];
+
+    // Fill the canvas with black initially
+    ctx.fillStyle = "black";
+    ctx.fillRect(0, 0, width, height);
     
     // Start the animation with the timestamp
     lastFrameTime = performance.now();
