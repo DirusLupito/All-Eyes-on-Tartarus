@@ -166,6 +166,12 @@ $playerWon = false;
     const centerX = width / 2;
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 10;
+
+    // Array of elint beep audios. Rather than create and play a new beep each time there is a detection,
+    // we will instead reuse numBeeps number of beeps. This is to prevent the audio from overlapping and
+    // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
+    const numBeeps = 20;
+    const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
     
     // Track the start time
     const startTime = Date.now();
@@ -215,7 +221,7 @@ $playerWon = false;
     // Random missile launch parameters
     const baseMissileLaunchChance = 0.0001;
     missileLaunchChance = baseMissileLaunchChance;
-    missileLaunchIncrease = 0.000001;
+    missileLaunchIncrease = 0.00001;
 
     // Contact report parameters
     const contactReports = [];
@@ -444,8 +450,13 @@ $playerWon = false;
         
         if (this.emittingRadiation && Math.random() < timeAdjustedChance) {
           // Play a beep
-          const audio = new Audio("../assets/ELINTBeep.mp3");
-          audio.play();
+          // Iterate through beeps to find one that is not currently playing
+          for (let i = 0; i < numBeeps; i++) {
+            if (elintBeeps[i].paused) {
+              elintBeeps[i].play();
+              break;
+            }
+          }
 
           this.radiationDetected = true;
           this.radiationDetectionDuration = 0.25; // Show for 0.25 second
@@ -527,11 +538,218 @@ $playerWon = false;
         }
       }
 
-      // Launch a missile at the given position
-      launchMissile(targetX, targetY) {
-        // Check if there are missiles available
-        if (this.numMissiles > 0) {
-          // Create a new missile contact
+      // Launch a missile along a given bearing
+      launchMissileAlongAngle(targetBearing, missileFuelTime, missileArmingTime, missileMovementSpeed) {
+        // Check if there are missiles available (undefined or null indicates infinite missiles)
+        if (this.numMissiles > 0 || this.numMissiles === undefined || this.numMissiles === null) {
+          // General idea: Create a unit circle around this contact, then create a contact at the 
+          // corresponding point on the circle with the matching bearing.
+
+          // Figure out the polar coordinates of a point on the unit circle with angle targetBearing
+          const targetX = Math.cos(targetBearing);
+          const targetY = Math.sin(targetBearing);
+
+          // Center the unit circle around the launcher's position
+          const missileX = Math.cos(this.realBearing) * this.realDistance;
+          const missileY = Math.sin(this.realBearing) * this.realDistance;
+
+          // Figure out the actual position in the game world that the missile is being launched towards
+          const trueTargetX = missileX + targetX;
+          const trueTargetY = missileY + targetY;
+
+          // Convert back to polar coordinates
+          const targetContactBearing = Math.atan2(trueTargetY, trueTargetX);
+          const targetContactDistance = Math.sqrt(trueTargetX * trueTargetX + trueTargetY * trueTargetY);
+
+          // Create a new contact that just gives a bearing and unit distance
+          // to tell the missile what direction to aim in
+          // If this is not done, then missiles launched will not know
+          // which direction to go in. They will only know where to spawn.
+          let targetContact = new Contact(targetContactBearing, targetContactDistance);
+
+          // Set the missile's contact type to match whoever launched it, unless the contact is a player
+          // Set it to friendly in that latter case
+          let contactType = this.contactType;
+          if (this.contactType === "PLAYER") {
+            contactType = "FRIENDLY";
+          }
+          const missile = new MissileContact(this.realBearing, this.realDistance, targetContact, missileFuelTime, contactType, missileArmingTime, missileMovementSpeed);
+          contacts.push(missile);
+
+          // Reduce the number of missiles available if applicable
+          if (this.numMissiles !== undefined && this.numMissiles !== null) {
+            this.numMissiles--;
+          }
+        } 
+      }
+
+      // Launch a missile at the given position (Requires target contact just to tell the missile who it's initially targeting)
+      launchMissileAtPoint(targetX, targetY, missileFuelTime, missileArmingTime, missileMovementSpeed) {
+        // Check if there are missiles available (undefined or null indicates infinite missiles)
+        if (this.numMissiles > 0 || this.numMissiles === undefined || this.numMissiles === null) {
+          
+          // Figure out the angle of the line which points from this contact to the target
+          // Convert contact position from polar to Cartesian
+          const contactX = Math.cos(this.realBearing) * this.realDistance;
+          const contactY = Math.sin(this.realBearing) * this.realDistance;
+
+          // Calculate angle from contact to target
+          const targetAngle = Math.atan2(targetY - contactY, targetX - contactX);
+
+          // Delegate to launchMissileAlongAngle with the target angle
+          this.launchMissileAlongAngle(targetAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+        }
+      }
+
+      // Launch a missile at the given contact
+      launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed) {
+        // Check if there are missiles available (undefined or null indicates infinite missiles)
+        if (this.numMissiles > 0 || this.numMissiles === undefined || this.numMissiles === null) {
+          // Basic idea: We have four parametric equations, two for the target's position as a function
+          // of time, and two for the missile's position as a function of time. 
+          // The missile position in x is given by
+          //
+          // missileX(t) = t * missileVelocityX + missileX(0)    <-- missileX(0) is the initial x position of the missile, so in this case, the launcher's x position
+          //
+          // The missile position in y is given by
+          //
+          // missileY(t) = t * missileVelocityY + missileY(0)  <-- missileY(0) is the initial y position of the missile, so in this case, the launcher's y position
+          //
+          // The target position in x is given by
+          //
+          // targetX(t) = t * targetVelocityX + targetX(0)  <-- targetX(0) is the initial x position of the target contact, so in this case, its current x position
+          //
+          // The target position in y is given by
+          //
+          // targetY(t) = t * targetVelocityY + targetY(0)  <-- targetY(0) is the initial y position of the target contact, so in this case, its current y position
+          //
+          // We want all four quantities to equal, so we arrive at a system of two equations:
+          //
+          // missileX(t) = targetX(t) && missileY(t) = targetY(t)
+          //
+          // We actually have two unknowns. Time is of course one of them, but the other is the angle at which we must launch the missile to collide with the target.
+          // It is this quantity we are interested in. We know that launch angle is actually a part of the missile's velocity vector, so we can write
+          //
+          // missileVelocityX = missileSpeed * cos(missileLaunchAngle) && missileVelocityY = missileSpeed * sin(missileLaunchAngle)
+          //
+          // We then substitute these into the system of equations, and solve for time and missileLaunchAngle. 
+          // It is somewhat challenging to solve this, but by using a symbolic algebra system like the one used by Wolfram Mathematica, we get that there
+          // are actually two solutions for both time and angle. We will look at both solutions and chooose which, if any, is the correct one to use.
+          // For instance, if angle or time are undefined or infinite, we know that something is wrong with that solution, likely because none is possible.
+          // This could happen in a case where we're shooting at something going away faster than we can catch up to it, for instance.
+          // Moreover, if time is negative, then our window of opportunity has already passed, and we should not launch the missile using the given solution.
+          // Those interested in the derivation of this equation for themselves should be familiar with solutions of equations of the form 
+          //
+          // sin(x) + b cos(x) = c for real valued constants b and c
+
+          // Time, angle equations 1.
+          // These symbols correspond to these quantities:
+          // evx - Enemy velocity x
+          // evy - Enemy velocity y
+          // mxi - Missile initial x position
+          // myi - Missile initial y position
+          // exi - Enemy initial x position
+          // eyi - Enemy initial y position
+          // mspeed - Missile speed
+          // t - Time
+          // a - Angle
+
+          // In Mathematica code, solution pair 1 is given by
+          // t=1/(evx^2+evy^2-mspeed^2) (-evx  exi-evy  eyi+evx  mxi+evy  myi-1/2  \[Sqrt](4  (evx (exi-mxi)+evy (eyi-myi))^2-4  (evx^2+evy^2-mspeed^2)  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))
+          // a=ArcTan[(-evy  (exi-mxi)  (eyi-myi)+evx  (eyi-myi)^2+(exi-mxi)  \[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)),(evy  (exi-mxi+(eyi-myi)  (-evx  exi+evx  mxi+\[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))]
+          
+          // In Mathematica code, solution pair 2 is given by
+          // t=1/(evx^2+evy^2-mspeed^2) (-evx  exi-evy  eyi+evx  mxi+evy  myi+1/2  \[Sqrt](4  (evx (exi-mxi)+evy (eyi-myi))^2-4  (evx^2+evy^2-mspeed^2)  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))
+          // a=ArcTan[(-evy  (exi-mxi)  (eyi-myi)+evx  (eyi-myi)^2+(-exi+mxi)  \[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)),(evy  (exi-mxi)^2-(eyi-myi)  (evx  exi-evx  mxi+\[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))]
+
+          // We first check to see if we're firing at a ghost
+          if (targetContact.contactType === "GHOST") {
+            // If we're firing at a ghost, launch directly at ghost's last sighted position
+            // Looks odd otherwise (Why is my missile going to this random position this game is buggy!!!)
+            this.launchMissileAtPoint(targetContact.distance * Math.cos(targetContact.bearing), targetContact.distance * Math.sin(targetContact.bearing), missileFuelTime, missileArmingTime, missileMovementSpeed);
+            return;
+          }
+
+          // Convert both contacts' polar coordinates to Cartesian
+          // For the missile launcher (this contact)
+          const mxi = Math.cos(this.realBearing) * this.realDistance; // Missile initial x
+          const myi = Math.sin(this.realBearing) * this.realDistance; // Missile initial y
+          
+          // For the target
+          const exi = Math.cos(targetContact.realBearing) * targetContact.realDistance; // Enemy initial x
+          const eyi = Math.sin(targetContact.realBearing) * targetContact.realDistance; // Enemy initial y
+          
+          // Calculate enemy velocity components
+          const evx = Math.cos(targetContact.movementDirection) * targetContact.movementSpeed; // Enemy velocity x
+          const evy = Math.sin(targetContact.movementDirection) * targetContact.movementSpeed; // Enemy velocity y
+          
+          // Missile speed
+          const mspeed = missileMovementSpeed;
+          
+          // Calculate values needed for the formulas
+          const dx = exi - mxi;
+          const dy = eyi - myi;
+          const distSquared = dx*dx + dy*dy;
+          
+          // Calculate the determinant inside the square root
+          const determinant = 4 * Math.pow(evx*dx + evy*dy, 2) - 
+                              4 * (evx*evx + evy*evy - mspeed*mspeed) * distSquared;
+          
+          // Only proceed if the determinant is positive (solutions exist)
+          if (determinant >= 0) {
+            // Calculate solutions for time
+            const t1 = 1/(evx*evx + evy*evy - mspeed*mspeed) * 
+                     (-evx*exi - evy*eyi + evx*mxi + evy*myi - 0.5 * Math.sqrt(determinant));
+            
+            const t2 = 1/(evx*evx + evy*evy - mspeed*mspeed) * 
+                     (-evx*exi - evy*eyi + evx*mxi + evy*myi + 0.5 * Math.sqrt(determinant));
+            
+            // Calculate the square root term for angle calculations
+            const sqrtTerm = Math.sqrt(-evy*evy*dx*dx + 
+                                       2*evx*evy*dx*dy - 
+                                       evx*evx*dy*dy + 
+                                       mspeed*mspeed*distSquared);
+            
+            // Calculate angles for both solutions
+            const a1x = (-evy*dx*dy + evx*dy*dy + dx*sqrtTerm) / (mspeed*distSquared);
+            const a1y = (evy*dx*dx + dy*(-evx*exi + evx*mxi + sqrtTerm)) / (mspeed*distSquared);
+            const a1 = Math.atan2(a1y, a1x);
+            
+            const a2x = (-evy*dx*dy + evx*dy*dy - dx*sqrtTerm) / (mspeed*distSquared);
+            const a2y = (evy*dx*dx - dy*(evx*exi - evx*mxi + sqrtTerm)) / (mspeed*distSquared);
+            const a2 = Math.atan2(a2y, a2x);
+            
+            // Choose the best solution (positive time, earliest intercept)
+            let selectedTime = null;
+            let selectedAngle = null;
+            
+            if (t1 > 0 && (selectedTime === null || t1 < selectedTime)) {
+              selectedTime = t1;
+              selectedAngle = a1;
+            }
+            
+            if (t2 > 0 && (selectedTime === null || t2 < selectedTime)) {
+              selectedTime = t2;
+              selectedAngle = a2;
+            }
+
+            // If selected time is greater than missile fuel time, reset selected time to null
+            if (selectedTime > missileFuelTime) {
+              selectedTime = null;
+            } 
+            
+            // If we found a valid solution, launch the missile
+            if (selectedTime !== null) {
+              this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+            } else {
+              // No valid solution found, launch directly at current position as fallback
+              this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+            }
+          } else {
+            // No intercept solution exists, launch directly at current position
+            this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+          }
+
         }
       }
       
@@ -671,7 +889,7 @@ $playerWon = false;
 
     // Extend Contacts to add heat seeking missiles
     class MissileContact extends Contact {
-      constructor(bearing, distance, targetContact, fuelTime, contactType, armingTime) {
+      constructor(bearing, distance, targetContact, fuelTime, contactType, armingTime, movementSpeed = 10) {
         // If the contact type is not one of the accepted types, default to "HOSTILE"
         if (!acceptedTypes.includes(contactType)) {
           contactType = "HOSTILE";
@@ -703,7 +921,7 @@ $playerWon = false;
           // Create a friendly missile
           super(
             bearing, distance, 3, // bearing, starting distance, size
-            10, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection (direction of the target)
+            movementSpeed, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection (direction of the target)
             true, 1.0, true, 1, // visible, opacity, immense radiation emission "due to really powerful engine" or something like that
             true, 1.0, true, 1.0, // fully radar and thermal detectable
             true, "HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFRIENDLY FIRE", [255, 0, 255], // IFF broadcasting
@@ -713,7 +931,7 @@ $playerWon = false;
           // Create a hostile missile
           super(
             bearing, distance, 3, // bearing, starting distance, size
-            20, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection 
+            movementSpeed, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection 
             false, 0, true, 1, // visible, opacity, immense radiation emission "due to really powerful engine" or something like that
             true, 1.0, true, 1.0, // fully radar and thermal detectable
             false, "", [255, 0, 0], // IFF broadcasting
@@ -738,9 +956,19 @@ $playerWon = false;
 
         // Arming time - Missile will not trigger collision check/explosion until armed
         this.armingTime = armingTime;
+
+        // // debug
+        // this.positionHistoryString = "Time = 0: " + centerX + ", " + centerY + "\n";
+        // this.positionHistory = [{x: centerX, y: centerY, time: 0}];
       }
       
       updatePosition(deltaTime) {
+        // debug
+        // // get previous time
+        // const prevTime = this.positionHistory[this.positionHistory.length - 1].time;
+        // this.positionHistoryString += "Time = " + deltaTime + prevTime + ": " + this.realDistance * Math.cos(this.realBearing) + centerX + ", " + this.realDistance * Math.sin(this.realBearing) + centerY + "\n";
+        // this.positionHistory.push({x: this.realDistance * Math.cos(this.realBearing) + centerX, y: this.realDistance * Math.sin(this.realBearing) + centerY, time: deltaTime + prevTime});
+
         // If not armed, count down arming time
         if (this.armingTime > 0) {
           this.armingTime -= deltaTime;
@@ -778,8 +1006,8 @@ $playerWon = false;
           }
         }
         
-        // Scan for thermal contacts if no target yet
-        if (!this.hasTarget) {
+        // Scan for thermal contacts if no target yet and armed 
+        if (!this.hasTarget && this.armingTime <= 0) {
           // Use the missile's movement direction as its orientation.
           const missileOrientation = this.movementDirection;
           const absoluteScanAngle = missileOrientation + this.scanAngle;
@@ -859,6 +1087,8 @@ $playerWon = false;
                            centerY + this.realDistance * Math.sin(this.realBearing));
             
             // Remove both from contacts array
+            console.log("Missile collided with contact:", contact);
+            console.log("Missile destroyed:", this);
             contacts.splice(contacts.indexOf(this), 1);
             contacts.splice(contacts.indexOf(contact), 1);
             return;
@@ -1075,7 +1305,7 @@ $playerWon = false;
     function drawCurrentMissiles() {
       const playerContact = contacts[0]; // Assuming the player ship is the first contact
 
-      if (playerContact && playerContact.visible) {
+      if (playerContact && playerContact.visible && playerContact.numMissiles !== undefined) {
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
         ctx.fillRect(10, 10, 150, 50);
         
@@ -1197,32 +1427,8 @@ $playerWon = false;
           // Randomly select a target from friendly contacts
           const target = friendlyContacts[Math.floor(Math.random() * friendlyContacts.length)];
           if (typeof target !== 'undefined') {
-        
-            // Calculate position offset
-            // Figure out the direction from contact to target
-            const contactX = Math.cos(contact.realBearing) * contact.realDistance;
-            const contactY = Math.sin(contact.realBearing) * contact.realDistance;
-            const targetX = Math.cos(target.realBearing) * target.realDistance;
-            const targetY = Math.sin(target.realBearing) * target.realDistance;
-
-            // Direction to target
-            const directionAngle = Math.atan2(targetY - contactY, targetX - contactX);
-
-            // Offset distance based on contact size plus a little extra
-            const offsetDistance = contact.size * 2;
-
-            // Calculate new starting position with offset
-            const offsetX = contactX + Math.cos(directionAngle) * offsetDistance;
-            const offsetY = contactY + Math.sin(directionAngle) * offsetDistance;
-
-            // Convert back to polar coordinates
-            const missileDistance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-            const missileBearing = Math.atan2(offsetY, offsetX);
-
-            // Create the missile at the offset position
-            const missile = new MissileContact(missileBearing, missileDistance, target, 30, "HOSTILE", 0.2);
-            contacts.push(missile);
-            missileLaunched = true;
+            // Actually fire the missile
+            contact.launchMissileAtContact(target, 30, 0.9, 10);
           }
         }
       }
@@ -1238,32 +1444,8 @@ $playerWon = false;
           // Randomly select a target from hostile contacts
           const target = hostileContacts[Math.floor(Math.random() * hostileContacts.length)];
           if (typeof target !== 'undefined') {
-        
-            // Calculate position offset
-            // Figure out the direction from contact to target
-            const contactX = Math.cos(contact.realBearing) * contact.realDistance;
-            const contactY = Math.sin(contact.realBearing) * contact.realDistance;
-            const targetX = Math.cos(target.realBearing) * target.realDistance;
-            const targetY = Math.sin(target.realBearing) * target.realDistance;
-            
-            // Direction to target
-            const directionAngle = Math.atan2(targetY - contactY, targetX - contactX);
-            
-            // Offset distance based on contact size plus a little extra
-            const offsetDistance = contact.size * 2;
-            
-            // Calculate new starting position with offset
-            const offsetX = contactX + Math.cos(directionAngle) * offsetDistance;
-            const offsetY = contactY + Math.sin(directionAngle) * offsetDistance;
-            
-            // Convert back to polar coordinates
-            const missileDistance = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-            const missileBearing = Math.atan2(offsetY, offsetX);
-            
-            // Create the missile at the offset position - marked as FRIENDLY type
-            const missile = new MissileContact(missileBearing, missileDistance, target, 30, "FRIENDLY", 0.2);
-            contacts.push(missile);
-            missileLaunched = true;
+            // Actually fire the missile
+            contact.launchMissileAtContact(target, 30, 0.9, 10);
           }
         }
       }
@@ -1300,7 +1482,7 @@ $playerWon = false;
         }
       }
       
-      // Update the angle (rotate by specified degrees per second)
+      // Update the radar scan angle (rotate by specified degrees per second)
       angle += (Math.PI * radarSpeed / 180) * cappedDeltaTime;
       if (angle >= Math.PI * 2) angle = 0;
 
@@ -1348,17 +1530,11 @@ $playerWon = false;
           console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
           wasOnContactReport = true;
 
-          // Calculate bearing to the contact report
-          const dx = contactReports[i].x - centerX;
-          const dy = contactReports[i].y - centerY;
-          const bearing = Math.atan2(dy, dx);
-
-          // Create and launch missile
-          // MissileContact(bearing, distance, targetContact, fuelTime, contactType, armingTime)
-          const missile = new MissileContact(bearing, 0, contactReports[i].contact, 30, "FRIENDLY", 1.0);
-          contacts.push(missile);
-          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
-
+          // Fire at the contact report's associated contact
+          // contacts[0] is the player ship, so we will use it to launch the missile
+          // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
+          contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10);
+          
           // Remove the report after clicking
           contactReports.splice(i, 1);
           break;
@@ -1366,22 +1542,14 @@ $playerWon = false;
       }
       // If not on a contact report, check if click is on the radar screen
       if (!wasOnContactReport) {
-        // Check if click is on the radar screen
+        // Figure out the fire coordinates based on the mouse position
         const dx = mouseX - centerX;
         const dy = mouseY - centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        // Check if the click is within the radar radius and the player ship has missiles
-        if (distance < radius && contacts[0].numMissiles > 0) {
-          // Calculate bearing to the clicked point
-          const bearing = Math.atan2(dy, dx);
-          // Fire a missile at the clicked point
-          // Add a distance of 1 because otherwise something breaks with a bearing of 0 causing the player ship to
-          // blow itself up
-          const missile = new MissileContact(bearing, 1, null, 30, "FRIENDLY", 1.0);
-          contacts.push(missile);
-          contacts[0].numMissiles -= 1; // Decrease the missile count of the player ship
-        }
+
+        // Try to fire at the given coordinates
+        // contacts[0] is the player ship, so we will use it to launch the missile
+        // launchMissileAtPoint(targetX, targetY, missileFuelTime, missileArmingTime, missileMovementSpeed)
+        contacts[0].launchMissileAtPoint(dx, dy, 30, 0.9, 10);
       }
     });
 
@@ -1454,6 +1622,12 @@ $playerWon = false;
                   "HOSTILE"),
       new Contact(3 * Math.PI/2, radius * 0.75, 5, 
                   1.2, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 1, true, 1,
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
+      new Contact(-1 * Math.PI/2, radius * 0.55, 5, 
+                  4.5, 0.3, Math.random() * Math.PI * 2, 
                   false, 0, false, 0, 
                   true, 1, true, 1,
                   false, "", [255, 0, 0],
