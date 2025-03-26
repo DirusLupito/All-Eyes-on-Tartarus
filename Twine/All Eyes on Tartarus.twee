@@ -220,8 +220,10 @@ $playerWon = false;
 
     // Random missile launch parameters
     const baseMissileLaunchChance = 0.0001;
-    missileLaunchChance = baseMissileLaunchChance;
-    missileLaunchIncrease = 0.00001;
+    let missileLaunchChance = baseMissileLaunchChance;
+    let missileLaunchIncrease = 0.00001;
+    // Missile attack type parameters
+    const chanceOfSpreadAttack = 0.5;
 
     // Contact report parameters
     const contactReports = [];
@@ -230,6 +232,22 @@ $playerWon = false;
     // IFF Parameters
     const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
     const acceptedTypes = ["FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST", "PLAYER"]; // Accepted contact types
+
+    // Dialogue message parameters
+    const dialogueMessages = []; // Array to store dialogue messages with text, color, and time they should disappear
+    const defaultDialogueTime = 5; // Default time for dialogue messages to disappear
+    // Dialogue flags
+    let isFirstContact = true;
+    let isFirstMissile = true;
+    let madeFirstKill = false;
+    let madeSecondKill = false;
+    let friendlyTookAShot = false;
+    let madeFirstClick = false;
+    let firedFirstSpread = false;
+    // Dialogue message colors for certain characters
+    const engineerColor = "#00FF00";
+    const captainColor = "#34eb7a";
+    const friendlyColor = "#FF00FF"
   
     // Function to create explosion effect
     function createExplosion(x, y) {
@@ -740,7 +758,43 @@ $playerWon = false;
             
             // If we found a valid solution, launch the missile
             if (selectedTime !== null) {
-              this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              // this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              // With chanceOfSpreadAttack chance, instead fire a spread of missiles at the target and its immediate surroundings
+              // Only do this if firing at a non-missile contact and at a contact that is at least 0.25 radius away
+              if (Math.random() < chanceOfSpreadAttack && !targetContact.isMissile && Math.sqrt(distSquared) > 0.25 * radius) {
+                // Check if the player ship is the launcher
+                // and if firedFirstSpread is false
+                // If so, write dialogue 
+                if(this.contactType === "PLAYER" && !firedFirstSpread) {
+                  addDialogue("Captain: Let's bring the pain. Gunnery control, fire a spread of missiles at that contact!", captainColor);
+                  firedFirstSpread = true;
+                }
+
+                // Calculate distance in radius units
+                const distance = Math.sqrt(distSquared) / radius;
+                
+                // Calculate number of missiles based on distance
+                // Add 1 missile for every 0.05 * radius
+                let numMissiles = Math.floor(distance / (0.05 * radius)) + 1;
+                
+                // Set minimum and maximum number of missiles
+                numMissiles = Math.max(2, Math.min(numMissiles, 10));
+                
+                // Calculate increased arming time (0.5 seconds per missile)
+                const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                
+                // Launch a spread of missiles
+                const spreadAngle = Math.PI / 6; // 30 degrees
+                for (let i = 0; i < numMissiles; i++) {
+                  const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                  this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                }
+                
+                // Launch one more missile directly at the target
+                this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              } else {
+                this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              }
             } else {
               // No valid solution found, launch directly at current position as fallback
               this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
@@ -1089,6 +1143,19 @@ $playerWon = false;
             // Remove both from contacts array
             console.log("Missile collided with contact:", contact);
             console.log("Missile destroyed:", this);
+
+            // Check if it was a friendly missile that collided with a hostile contact
+            if (this.contactType === "FRIENDLY" && contact.contactType === "HOSTILE") {
+              // If the player hasn't made their first kill
+              if (!madeFirstKill) {
+                addDialogue("Engineer: Telemetry indicates one less hostile!", engineerColor);
+                madeFirstKill = true;
+              } else if (!madeSecondKill) {
+                addDialogue("Captain: Good hit. Let's finish the last of these scum!", captainColor);
+                madeSecondKill = true;
+              }
+            }
+
             contacts.splice(contacts.indexOf(this), 1);
             contacts.splice(contacts.indexOf(contact), 1);
             return;
@@ -1318,6 +1385,210 @@ $playerWon = false;
 
     }
 
+    // Function to add a new dialogue message
+    function addDialogue(text, color, duration = defaultDialogueTime) {
+      // Add the message to the array with current time + duration as expiry time
+      dialogueMessages.push({
+      text: text,
+      color: color,
+      expiryTime: Date.now() + (duration * 1000) // Multiply by 1000 to convert to milliseconds
+      });
+    }
+
+    // Function to draw dialogue messages in the top right corner
+    function drawDialogue() {
+      // Check if the last message, the most recent one, has expired
+      // If so, don't draw anything
+      const currentTime = Date.now();
+      if (dialogueMessages[dialogueMessages.length - 1].expiryTime < currentTime) {
+      return;
+      }
+      
+      // Get the latest message
+      const message = dialogueMessages[dialogueMessages.length - 1];
+      
+      // Calculate text dimensions and position
+      const maxWidth = 300;
+      const padding = 15;
+      
+      // Split text into lines for wrapping
+      const words = message.text.split(' ');
+      let lines = [];
+      let currentLine = words.length > 0 ? words[0] : '';
+      
+      ctx.font = "16px Arial";
+      
+      // Create wrapped lines
+      for (let i = 1; i < words.length; i++) {
+      const testLine = currentLine + ' ' + words[i];
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth) {
+        lines.push(currentLine);
+        currentLine = words[i];
+      } else {
+        currentLine = testLine;
+      }
+      }
+      lines.push(currentLine);
+      
+      // Calculate box height based on number of lines
+      const lineHeight = 20;
+      const boxHeight = (lines.length * lineHeight) + (padding * 2);
+      
+      // Draw the background box
+      const boxWidth = maxWidth + (padding * 2);
+      const boxX = width - boxWidth - 10;
+      const boxY = 10;
+      
+      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+      ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+      ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+      
+      // Draw the text - changed to right align
+      ctx.fillStyle = message.color;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "top";
+      
+      lines.forEach((line, index) => {
+      ctx.fillText(line, boxX + boxWidth - padding, boxY + padding + (index * lineHeight));
+      });
+    }
+
+    // Variables for message history
+    let isViewingMessageHistory = false;
+    let messageHistoryScrollPosition = 0;
+    
+    // Function to draw message history window
+    function drawMessageHistory() {
+      // Clear the screen with a dark background
+      ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
+      ctx.fillRect(0, 0, width, height);
+      
+      // Calculate window dimensions
+      const margin = 50;
+      const windowWidth = width - (margin * 2);
+      const windowHeight = height - (margin * 2);
+      
+      // Draw window background
+      ctx.fillStyle = "rgba(20, 20, 30, 0.8)";
+      ctx.fillRect(margin, margin, windowWidth, windowHeight);
+      ctx.strokeStyle = "rgba(0, 255, 255, 0.7)";
+      ctx.lineWidth = 2;
+      ctx.strokeRect(margin, margin, windowWidth, windowHeight);
+      
+      // Draw title
+      ctx.font = "bold 24px Arial";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("MESSAGE HISTORY", centerX, margin + 20);
+      
+      // Draw navigation instructions
+      ctx.font = "16px Arial";
+      ctx.fillStyle = "#AAAAAA";
+      ctx.fillText("Use UP/DOWN arrows to scroll, press H to return", centerX, margin + 50);
+      
+      // Draw divider line
+      ctx.beginPath();
+      ctx.moveTo(margin + 20, margin + 80);
+      ctx.lineTo(margin + windowWidth - 20, margin + 80);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Set up scrollable area
+      const contentAreaTop = margin + 100;
+      const contentAreaHeight = windowHeight - 120;
+      const contentAreaBottom = contentAreaTop + contentAreaHeight;
+      
+      // Clip to content area
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(margin + 20, contentAreaTop, windowWidth - 40, contentAreaHeight);
+      ctx.clip();
+      
+      // Display messages
+      const lineHeight = 24;
+      const visibleMessages = [...dialogueMessages].reverse(); // Show newest messages first
+      let y = contentAreaTop - messageHistoryScrollPosition;
+      
+      ctx.textAlign = "left";
+      ctx.font = "16px Arial";
+      
+      visibleMessages.forEach(message => {
+      // Format timestamp
+      const timestamp = new Date(message.expiryTime - (defaultDialogueTime * 1000));
+      const timeString = timestamp.toTimeString().split(' ')[0];
+      
+      // Draw timestamp
+      ctx.fillStyle = "#888888";
+      ctx.fillText(timeString, margin + 40, y);
+      
+      // Calculate text dimensions and position
+      const textMaxWidth = windowWidth - 250;
+      
+      // Split text into lines for wrapping
+      const words = message.text.split(' ');
+      let lines = [];
+      let currentLine = words.length > 0 ? words[0] : '';
+      
+      // Create wrapped lines
+      for (let i = 1; i < words.length; i++) {
+        const testLine = currentLine + ' ' + words[i];
+        const metrics = ctx.measureText(testLine);
+        if (metrics.width > textMaxWidth) {
+        lines.push(currentLine);
+        currentLine = words[i];
+        } else {
+        currentLine = testLine;
+        }
+      }
+      lines.push(currentLine);
+      
+      // Draw message text
+      ctx.fillStyle = message.color;
+      lines.forEach((line, index) => {
+        ctx.fillText(line, margin + 150, y + (index * lineHeight));
+      });
+      
+      // Move Y position for next message
+      y += (lines.length * lineHeight) + 15;
+      });
+      
+      // Restore clipping
+      ctx.restore();
+      
+      // Draw scroll indicators if needed
+      if (messageHistoryScrollPosition > 0) {
+      // Draw up arrow
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.moveTo(width - margin - 30, contentAreaTop + 20);
+      ctx.lineTo(width - margin - 15, contentAreaTop + 5);
+      ctx.lineTo(width - margin - 45, contentAreaTop + 5);
+      ctx.closePath();
+      ctx.fill();
+      }
+      
+      // Check if we need to show down arrow (if more content exists below)
+      const totalContentHeight = visibleMessages.reduce((total, msg) => {
+      const lines = Math.ceil(ctx.measureText(msg.text).width / (windowWidth - 150));
+      return total + (lines * lineHeight) + 15;
+      }, 0);
+      
+      if (messageHistoryScrollPosition < totalContentHeight - contentAreaHeight && totalContentHeight > contentAreaHeight) {
+      // Draw down arrow
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.moveTo(width - margin - 30, contentAreaBottom - 20);
+      ctx.lineTo(width - margin - 15, contentAreaBottom - 5);
+      ctx.lineTo(width - margin - 45, contentAreaBottom - 5);
+      ctx.closePath();
+      ctx.fill();
+      }
+    }
+
     // Draws the game over message in the center of the screen
     function drawGameOver() {
       ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -1343,6 +1614,7 @@ $playerWon = false;
       ctx.fillText("PAUSED", centerX, centerY - 20);
       ctx.font = "24px Arial";
       ctx.fillText("Press P to unpause", centerX, centerY + 20);
+      ctx.fillText("Press H for message history", centerX, centerY + 60);
     }
     
     function normalizeAngle(a) {
@@ -1389,11 +1661,13 @@ $playerWon = false;
 
       // Pause check is placed here to ensure deltaTime will not jump when unpausing
       if (gamePaused) {
-        // Pause menu is drawn in the event listener, not here since otherwise
-        // the code causing the dimming effect would run over and over blacking out the screen
-        // instead of just dimming it once
-        // drawPauseMenu();
-        
+        // If viewing message history, draw that instead of pause menu
+        if (isViewingMessageHistory) {
+          drawMessageHistory();
+        } else {
+          // Pause menu is drawn in the event listener
+        }
+
         // Keep animating, but only up to here
         requestAnimationFrame(animate)
         return;
@@ -1445,6 +1719,12 @@ $playerWon = false;
           const target = hostileContacts[Math.floor(Math.random() * hostileContacts.length)];
           if (typeof target !== 'undefined') {
             // Actually fire the missile
+
+            // Add dialogue if this is the first missile launch
+            if (!friendlyTookAShot) {
+              addDialogue("Warspite: Unidentified contacts presumed hostile! Fire at will!", friendlyColor);
+              friendlyTookAShot = true;
+            }
             contact.launchMissileAtContact(target, 30, 0.9, 10);
           }
         }
@@ -1458,7 +1738,6 @@ $playerWon = false;
         missileLaunchChance += missileLaunchIncrease * cappedDeltaTime;
         if (missileLaunchChance > 1.0) missileLaunchChance = 1.0;
       }
-          
       
       // Update and draw contacts
       for (let contact of contacts) {
@@ -1472,6 +1751,8 @@ $playerWon = false;
       drawThermalScan();
       // Draw the text telling the player in the top left how many missiles are left
       drawCurrentMissiles();
+      // Draw the dialogue messages in the top right corner
+      drawDialogue();
       
       // Update and draw contact reports
       for (let i = contactReports.length - 1; i >= 0; i--) {
@@ -1528,13 +1809,30 @@ $playerWon = false;
         // PLayer ship should be the first contact in the contacts array
         if (contactReports[i].contains(mouseX, mouseY) && contacts[0].numMissiles > 0) {
           console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
+
+          // If this is the first contact report clicked, add a dialogue message
+          if (isFirstContact) {
+            addDialogue(`Engineer: I've got something on scope!`, engineerColor);
+            isFirstContact = false;
+          }
+
+          // If this isn't the first contact report clicked and the associated contact is a missile, add a dialogue message for that
+          if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
+            addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor);
+            // Wait for 5 seconds, then have the captain respond
+            setTimeout(() => {
+              addDialogue(`Captain: Gunnery control, fire countermissile!`, captainColor);
+            }, 5000);
+            isFirstMissile = false;
+          }
+
           wasOnContactReport = true;
 
           // Fire at the contact report's associated contact
           // contacts[0] is the player ship, so we will use it to launch the missile
           // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
           contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10);
-          
+
           // Remove the report after clicking
           contactReports.splice(i, 1);
           break;
@@ -1545,6 +1843,16 @@ $playerWon = false;
         // Figure out the fire coordinates based on the mouse position
         const dx = mouseX - centerX;
         const dy = mouseY - centerY;
+
+        // Add dialogue if this is the first time the player has fired from a click
+        if (!madeFirstClick) {
+          addDialogue("Engineer: Captain, I think we need to fire at this position!", engineerColor);
+          madeFirstClick = true;
+          setTimeout(() => {
+            addDialogue("Captain: Affirmative. I'm networking your console into the fire control system.", captainColor);
+          }, 3000);
+          return; // Do nothing until the captain responds
+        }
 
         // Try to fire at the given coordinates
         // contacts[0] is the player ship, so we will use it to launch the missile
@@ -1585,16 +1893,51 @@ $playerWon = false;
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
-          gamePaused = !gamePaused;
-          if (gamePaused) {
-            console.log("Game paused");
-            // Draw it here to ensure it's only drawn once when paused
+          // If viewing message history, just exit that view but remain paused
+          if (isViewingMessageHistory) {
+            isViewingMessageHistory = false;
             drawPauseMenu();
           } else {
-            console.log("Game unpaused");
+            gamePaused = !gamePaused;
+            if (gamePaused) {
+              console.log("Game paused");
+              // Draw it here to ensure it's only drawn once when paused
+              drawPauseMenu();
+            } else {
+              console.log("Game unpaused");
+            }
           }
         }
-      } 
+      } else if (event.key === 'h' || event.key === 'H') {
+        // Toggle message history view
+        if (!gameOver) {
+          if (isViewingMessageHistory) {
+            // Exit message history view but stay paused
+            isViewingMessageHistory = false;
+            drawPauseMenu();
+          } else {
+            // If game is not already paused, pause it
+            if (!gamePaused) {
+              gamePaused = true;
+            }
+            // Switch to message history view
+            isViewingMessageHistory = true;
+            // Reset scroll position when first opening
+            messageHistoryScrollPosition = 0;
+          }
+        }
+      } else if (event.key === 'ArrowUp') {
+        // Scroll message history up
+        if (isViewingMessageHistory) {
+          messageHistoryScrollPosition = Math.max(0, messageHistoryScrollPosition - 40);
+        }
+      } else if (event.key === 'ArrowDown') {
+        // Scroll message history down
+        if (isViewingMessageHistory) {
+          messageHistoryScrollPosition += 40;
+          // Upper limit will be checked in draw function
+        }
+      }
     });
 
     // Create contacts array with initial contacts
@@ -1715,6 +2058,10 @@ $playerWon = false;
     
     // Start the animation with the timestamp
     lastFrameTime = performance.now();
+
+    // Add the initial dialogue message
+    addDialogue("Captain: Sensors! What's going on?!",  captainColor);
+
     requestAnimationFrame(animate);
   })();
 </script>
