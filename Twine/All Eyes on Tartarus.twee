@@ -136,6 +136,8 @@ Message history - H to pause and view message history
     // Track the start time
     const startTime = Date.now();
     let lastFrameTime = performance.now();
+    // Track the unpaused elapsed time
+    let unpausedElapsedTimeMillis = 0;
     // Time multiplier
     // 1 = normal speed
     // 2 = double speed
@@ -475,9 +477,8 @@ Message history - H to pause and view message history
             const contactY = centerY + this.distance * Math.sin(this.bearing);
             
             // Format timestamp as minutes:seconds since start
-            const elapsedMs = Date.now() - startTime;
-            const minutes = Math.floor(elapsedMs / 60000);
-            const seconds = Math.floor((elapsedMs % 60000) / 1000);
+            const minutes = Math.floor(unpausedElapsedTimeMillis / 60000);
+            const seconds = Math.floor((unpausedElapsedTimeMillis % 60000) / 1000);
             const timestamp = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             this.lastDetectedTime = timestamp;
@@ -507,9 +508,8 @@ Message history - H to pause and view message history
             const contactY = centerY + this.distance * Math.sin(this.bearing);
             
             // Format timestamp as minutes:seconds since start
-            const elapsedMs = Date.now() - startTime;
-            const minutes = Math.floor(elapsedMs / 60000);
-            const seconds = Math.floor((elapsedMs % 60000) / 1000);
+            const minutes = Math.floor(unpausedElapsedTimeMillis / 60000);
+            const seconds = Math.floor((unpausedElapsedTimeMillis % 60000) / 1000);
             const timestamp = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             this.lastDetectedTime = timestamp;
@@ -1340,62 +1340,77 @@ Message history - H to pause and view message history
 
     // Function to draw dialogue messages in the top right corner
     function drawDialogue() {
-      // Check if the last message, the most recent one, has expired
-      // If so, don't draw anything
       const currentTime = Date.now();
-      if (dialogueMessages[dialogueMessages.length - 1].expiryTime < currentTime) {
-      return;
+      
+      // If no messages or all messages expired, don't draw anything
+      if (dialogueMessages.length === 0 || dialogueMessages[dialogueMessages.length - 1].expiryTime < currentTime) {
+        return;
       }
       
-      // Get the latest message
-      const message = dialogueMessages[dialogueMessages.length - 1];
-      
-      // Calculate text dimensions and position
       const maxWidth = 300;
       const padding = 15;
-      
-      // Split text into lines for wrapping
-      const words = message.text.split(' ');
-      let lines = [];
-      let currentLine = words.length > 0 ? words[0] : '';
-      
-      ctx.font = "16px Arial";
-      
-      // Create wrapped lines
-      for (let i = 1; i < words.length; i++) {
-      const testLine = currentLine + ' ' + words[i];
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth) {
-        lines.push(currentLine);
-        currentLine = words[i];
-      } else {
-        currentLine = testLine;
-      }
-      }
-      lines.push(currentLine);
-      
-      // Calculate box height based on number of lines
       const lineHeight = 20;
-      const boxHeight = (lines.length * lineHeight) + (padding * 2);
+      let currentY = 10; // Start at the top
       
-      // Draw the background box
-      const boxWidth = maxWidth + (padding * 2);
-      const boxX = width - boxWidth - 10;
-      const boxY = 10;
-      
-      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-      ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-      ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-      
-      // Draw the text - changed to right align
-      ctx.fillStyle = message.color;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "top";
-      
-      lines.forEach((line, index) => {
-      ctx.fillText(line, boxX + boxWidth - padding, boxY + padding + (index * lineHeight));
-      });
+      // Draw messages from newest to oldest
+      for (let i = dialogueMessages.length - 1; i >= 0; i--) {
+        const message = dialogueMessages[i];
+        
+        // Skip expired messages
+        if (message.expiryTime < currentTime) {
+          continue;
+        }
+        
+        // Split text into lines for wrapping
+        const words = message.text.split(' ');
+        let lines = [];
+        let currentLine = words.length > 0 ? words[0] : '';
+        
+        ctx.font = "16px Arial";
+        
+        // Create wrapped lines
+        for (let j = 1; j < words.length; j++) {
+          const testLine = currentLine + ' ' + words[j];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth) {
+            lines.push(currentLine);
+            currentLine = words[j];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        lines.push(currentLine);
+        
+        // Calculate box height based on number of lines
+        const boxHeight = (lines.length * lineHeight) + (padding * 2);
+        
+        // Check if we're going off-screen and need to stop drawing
+        if (currentY + boxHeight > height) {
+          break;
+        }
+        
+        // Draw the background box
+        const boxWidth = maxWidth + (padding * 2);
+        const boxX = width - boxWidth - 10;
+        const boxY = currentY;
+        
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Draw the text - right aligned
+        ctx.fillStyle = message.color;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "top";
+        
+        lines.forEach((line, index) => {
+          ctx.fillText(line, boxX + boxWidth - padding, boxY + padding + (index * lineHeight));
+        });
+        
+        // Update Y position for next message
+        currentY += boxHeight + 5; // 5px gap between boxes
+      }
     }
 
     // Variables for message history
@@ -1460,43 +1475,43 @@ Message history - H to pause and view message history
       ctx.font = "16px Arial";
       
       visibleMessages.forEach(message => {
-      // Format timestamp
-      const timestamp = new Date(message.expiryTime - (defaultDialogueTime * 1000));
-      const timeString = timestamp.toTimeString().split(' ')[0];
-      
-      // Draw timestamp
-      ctx.fillStyle = "#888888";
-      ctx.fillText(timeString, margin + 40, y);
-      
-      // Calculate text dimensions and position
-      const textMaxWidth = windowWidth - 250;
-      
-      // Split text into lines for wrapping
-      const words = message.text.split(' ');
-      let lines = [];
-      let currentLine = words.length > 0 ? words[0] : '';
-      
-      // Create wrapped lines
-      for (let i = 1; i < words.length; i++) {
-        const testLine = currentLine + ' ' + words[i];
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > textMaxWidth) {
-        lines.push(currentLine);
-        currentLine = words[i];
-        } else {
-        currentLine = testLine;
+        // Format timestamp
+        const timestamp = new Date(message.expiryTime - (defaultDialogueTime * 1000));
+        const timeString = timestamp.toTimeString().split(' ')[0];
+        
+        // Draw timestamp
+        ctx.fillStyle = "#888888";
+        ctx.fillText(timeString, margin + 40, y);
+        
+        // Calculate text dimensions and position
+        const textMaxWidth = windowWidth - 250;
+        
+        // Split text into lines for wrapping
+        const words = message.text.split(' ');
+        let lines = [];
+        let currentLine = words.length > 0 ? words[0] : '';
+        
+        // Create wrapped lines
+        for (let i = 1; i < words.length; i++) {
+          const testLine = currentLine + ' ' + words[i];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > textMaxWidth) {
+            lines.push(currentLine);
+            currentLine = words[i];
+          } else {
+            currentLine = testLine;
+          }
         }
-      }
-      lines.push(currentLine);
-      
-      // Draw message text
-      ctx.fillStyle = message.color;
-      lines.forEach((line, index) => {
-        ctx.fillText(line, margin + 150, y + (index * lineHeight));
-      });
-      
-      // Move Y position for next message
-      y += (lines.length * lineHeight) + 15;
+        lines.push(currentLine);
+        
+        // Draw message text
+        ctx.fillStyle = message.color;
+        lines.forEach((line, index) => {
+          ctx.fillText(line, margin + 150, y + (index * lineHeight));
+        });
+        
+        // Move Y position for next message
+        y += (lines.length * lineHeight) + 15;
       });
       
       // Restore clipping
@@ -1504,31 +1519,31 @@ Message history - H to pause and view message history
       
       // Draw scroll indicators if needed
       if (messageHistoryScrollPosition > 0) {
-      // Draw up arrow
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.moveTo(width - margin - 30, contentAreaTop + 20);
-      ctx.lineTo(width - margin - 15, contentAreaTop + 5);
-      ctx.lineTo(width - margin - 45, contentAreaTop + 5);
-      ctx.closePath();
-      ctx.fill();
+        // Draw up arrow
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.moveTo(width - margin - 30, contentAreaTop + 20);
+        ctx.lineTo(width - margin - 15, contentAreaTop + 5);
+        ctx.lineTo(width - margin - 45, contentAreaTop + 5);
+        ctx.closePath();
+        ctx.fill();
       }
       
       // Check if we need to show down arrow (if more content exists below)
       const totalContentHeight = visibleMessages.reduce((total, msg) => {
-      const lines = Math.ceil(ctx.measureText(msg.text).width / (windowWidth - 150));
-      return total + (lines * lineHeight) + 15;
+        const lines = Math.ceil(ctx.measureText(msg.text).width / (windowWidth - 150));
+        return total + (lines * lineHeight) + 15;
       }, 0);
       
       if (messageHistoryScrollPosition < totalContentHeight - contentAreaHeight && totalContentHeight > contentAreaHeight) {
-      // Draw down arrow
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.moveTo(width - margin - 30, contentAreaBottom - 20);
-      ctx.lineTo(width - margin - 15, contentAreaBottom - 5);
-      ctx.lineTo(width - margin - 45, contentAreaBottom - 5);
-      ctx.closePath();
-      ctx.fill();
+        // Draw down arrow
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.moveTo(width - margin - 30, contentAreaBottom - 20);
+        ctx.lineTo(width - margin - 15, contentAreaBottom - 5);
+        ctx.lineTo(width - margin - 45, contentAreaBottom - 5);
+        ctx.closePath();
+        ctx.fill();
       }
     }
 
@@ -1600,6 +1615,8 @@ Message history - H to pause and view message history
       
       // Calculate time since last frame
       const deltaTime = ((currentTime - lastFrameTime) / 1000) * deltaTimeMultiplier; // Convert to seconds, then scale by deltaTimeMultiplier
+      // Helps with keeping track of unpaused time
+      let trueDeltaTimeMillis = currentTime - lastFrameTime;
       lastFrameTime = currentTime;
 
       // Pause check is placed here to ensure deltaTime will not jump when unpausing
@@ -1615,6 +1632,9 @@ Message history - H to pause and view message history
         requestAnimationFrame(animate)
         return;
       }
+
+      // Keep track of how much time has been spent outside of pause
+      unpausedElapsedTimeMillis += trueDeltaTimeMillis;
       
       // Cap deltaTime to prevent huge jumps if tab was inactive
       const cappedDeltaTime = Math.min(deltaTime, 0.5);
@@ -2017,6 +2037,8 @@ $playerWon = false;
     // Track the start time
     const startTime = Date.now();
     let lastFrameTime = performance.now();
+    // Track the unpaused elapsed time
+    let unpausedElapsedTimeMillis = 0;
     // Time multiplier
     // 1 = normal speed
     // 2 = double speed
@@ -2356,9 +2378,8 @@ $playerWon = false;
             const contactY = centerY + this.distance * Math.sin(this.bearing);
             
             // Format timestamp as minutes:seconds since start
-            const elapsedMs = Date.now() - startTime;
-            const minutes = Math.floor(elapsedMs / 60000);
-            const seconds = Math.floor((elapsedMs % 60000) / 1000);
+            const minutes = Math.floor(unpausedElapsedTimeMillis / 60000);
+            const seconds = Math.floor((unpausedElapsedTimeMillis % 60000) / 1000);
             const timestamp = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             this.lastDetectedTime = timestamp;
@@ -2388,9 +2409,8 @@ $playerWon = false;
             const contactY = centerY + this.distance * Math.sin(this.bearing);
             
             // Format timestamp as minutes:seconds since start
-            const elapsedMs = Date.now() - startTime;
-            const minutes = Math.floor(elapsedMs / 60000);
-            const seconds = Math.floor((elapsedMs % 60000) / 1000);
+            const minutes = Math.floor(unpausedElapsedTimeMillis / 60000);
+            const seconds = Math.floor((unpausedElapsedTimeMillis % 60000) / 1000);
             const timestamp = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             
             this.lastDetectedTime = timestamp;
@@ -3240,62 +3260,77 @@ $playerWon = false;
 
     // Function to draw dialogue messages in the top right corner
     function drawDialogue() {
-      // Check if the last message, the most recent one, has expired
-      // If so, don't draw anything
       const currentTime = Date.now();
-      if (dialogueMessages[dialogueMessages.length - 1].expiryTime < currentTime) {
-      return;
+      
+      // If no messages or all messages expired, don't draw anything
+      if (dialogueMessages.length === 0 || dialogueMessages[dialogueMessages.length - 1].expiryTime < currentTime) {
+        return;
       }
       
-      // Get the latest message
-      const message = dialogueMessages[dialogueMessages.length - 1];
-      
-      // Calculate text dimensions and position
       const maxWidth = 300;
       const padding = 15;
-      
-      // Split text into lines for wrapping
-      const words = message.text.split(' ');
-      let lines = [];
-      let currentLine = words.length > 0 ? words[0] : '';
-      
-      ctx.font = "16px Arial";
-      
-      // Create wrapped lines
-      for (let i = 1; i < words.length; i++) {
-      const testLine = currentLine + ' ' + words[i];
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth) {
-        lines.push(currentLine);
-        currentLine = words[i];
-      } else {
-        currentLine = testLine;
-      }
-      }
-      lines.push(currentLine);
-      
-      // Calculate box height based on number of lines
       const lineHeight = 20;
-      const boxHeight = (lines.length * lineHeight) + (padding * 2);
+      let currentY = 10; // Start at the top
       
-      // Draw the background box
-      const boxWidth = maxWidth + (padding * 2);
-      const boxX = width - boxWidth - 10;
-      const boxY = 10;
-      
-      ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-      ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-      ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
-      
-      // Draw the text - changed to right align
-      ctx.fillStyle = message.color;
-      ctx.textAlign = "right";
-      ctx.textBaseline = "top";
-      
-      lines.forEach((line, index) => {
-      ctx.fillText(line, boxX + boxWidth - padding, boxY + padding + (index * lineHeight));
-      });
+      // Draw messages from newest to oldest
+      for (let i = dialogueMessages.length - 1; i >= 0; i--) {
+        const message = dialogueMessages[i];
+        
+        // Skip expired messages
+        if (message.expiryTime < currentTime) {
+          continue;
+        }
+        
+        // Split text into lines for wrapping
+        const words = message.text.split(' ');
+        let lines = [];
+        let currentLine = words.length > 0 ? words[0] : '';
+        
+        ctx.font = "16px Arial";
+        
+        // Create wrapped lines
+        for (let j = 1; j < words.length; j++) {
+          const testLine = currentLine + ' ' + words[j];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > maxWidth) {
+            lines.push(currentLine);
+            currentLine = words[j];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        lines.push(currentLine);
+        
+        // Calculate box height based on number of lines
+        const boxHeight = (lines.length * lineHeight) + (padding * 2);
+        
+        // Check if we're going off-screen and need to stop drawing
+        if (currentY + boxHeight > height) {
+          break;
+        }
+        
+        // Draw the background box
+        const boxWidth = maxWidth + (padding * 2);
+        const boxX = width - boxWidth - 10;
+        const boxY = currentY;
+        
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Draw the text - right aligned
+        ctx.fillStyle = message.color;
+        ctx.textAlign = "right";
+        ctx.textBaseline = "top";
+        
+        lines.forEach((line, index) => {
+          ctx.fillText(line, boxX + boxWidth - padding, boxY + padding + (index * lineHeight));
+        });
+        
+        // Update Y position for next message
+        currentY += boxHeight + 5; // 5px gap between boxes
+      }
     }
 
     // Variables for message history
@@ -3360,43 +3395,43 @@ $playerWon = false;
       ctx.font = "16px Arial";
       
       visibleMessages.forEach(message => {
-      // Format timestamp
-      const timestamp = new Date(message.expiryTime - (defaultDialogueTime * 1000));
-      const timeString = timestamp.toTimeString().split(' ')[0];
-      
-      // Draw timestamp
-      ctx.fillStyle = "#888888";
-      ctx.fillText(timeString, margin + 40, y);
-      
-      // Calculate text dimensions and position
-      const textMaxWidth = windowWidth - 250;
-      
-      // Split text into lines for wrapping
-      const words = message.text.split(' ');
-      let lines = [];
-      let currentLine = words.length > 0 ? words[0] : '';
-      
-      // Create wrapped lines
-      for (let i = 1; i < words.length; i++) {
-        const testLine = currentLine + ' ' + words[i];
-        const metrics = ctx.measureText(testLine);
-        if (metrics.width > textMaxWidth) {
-        lines.push(currentLine);
-        currentLine = words[i];
-        } else {
-        currentLine = testLine;
+        // Format timestamp
+        const timestamp = new Date(message.expiryTime - (defaultDialogueTime * 1000));
+        const timeString = timestamp.toTimeString().split(' ')[0];
+        
+        // Draw timestamp
+        ctx.fillStyle = "#888888";
+        ctx.fillText(timeString, margin + 40, y);
+        
+        // Calculate text dimensions and position
+        const textMaxWidth = windowWidth - 250;
+        
+        // Split text into lines for wrapping
+        const words = message.text.split(' ');
+        let lines = [];
+        let currentLine = words.length > 0 ? words[0] : '';
+        
+        // Create wrapped lines
+        for (let i = 1; i < words.length; i++) {
+          const testLine = currentLine + ' ' + words[i];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width > textMaxWidth) {
+            lines.push(currentLine);
+            currentLine = words[i];
+          } else {
+            currentLine = testLine;
+          }
         }
-      }
-      lines.push(currentLine);
-      
-      // Draw message text
-      ctx.fillStyle = message.color;
-      lines.forEach((line, index) => {
-        ctx.fillText(line, margin + 150, y + (index * lineHeight));
-      });
-      
-      // Move Y position for next message
-      y += (lines.length * lineHeight) + 15;
+        lines.push(currentLine);
+        
+        // Draw message text
+        ctx.fillStyle = message.color;
+        lines.forEach((line, index) => {
+          ctx.fillText(line, margin + 150, y + (index * lineHeight));
+        });
+        
+        // Move Y position for next message
+        y += (lines.length * lineHeight) + 15;
       });
       
       // Restore clipping
@@ -3404,31 +3439,31 @@ $playerWon = false;
       
       // Draw scroll indicators if needed
       if (messageHistoryScrollPosition > 0) {
-      // Draw up arrow
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.moveTo(width - margin - 30, contentAreaTop + 20);
-      ctx.lineTo(width - margin - 15, contentAreaTop + 5);
-      ctx.lineTo(width - margin - 45, contentAreaTop + 5);
-      ctx.closePath();
-      ctx.fill();
+        // Draw up arrow
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.moveTo(width - margin - 30, contentAreaTop + 20);
+        ctx.lineTo(width - margin - 15, contentAreaTop + 5);
+        ctx.lineTo(width - margin - 45, contentAreaTop + 5);
+        ctx.closePath();
+        ctx.fill();
       }
       
       // Check if we need to show down arrow (if more content exists below)
       const totalContentHeight = visibleMessages.reduce((total, msg) => {
-      const lines = Math.ceil(ctx.measureText(msg.text).width / (windowWidth - 150));
-      return total + (lines * lineHeight) + 15;
+        const lines = Math.ceil(ctx.measureText(msg.text).width / (windowWidth - 150));
+        return total + (lines * lineHeight) + 15;
       }, 0);
       
       if (messageHistoryScrollPosition < totalContentHeight - contentAreaHeight && totalContentHeight > contentAreaHeight) {
-      // Draw down arrow
-      ctx.fillStyle = "#FFFFFF";
-      ctx.beginPath();
-      ctx.moveTo(width - margin - 30, contentAreaBottom - 20);
-      ctx.lineTo(width - margin - 15, contentAreaBottom - 5);
-      ctx.lineTo(width - margin - 45, contentAreaBottom - 5);
-      ctx.closePath();
-      ctx.fill();
+        // Draw down arrow
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.moveTo(width - margin - 30, contentAreaBottom - 20);
+        ctx.lineTo(width - margin - 15, contentAreaBottom - 5);
+        ctx.lineTo(width - margin - 45, contentAreaBottom - 5);
+        ctx.closePath();
+        ctx.fill();
       }
     }
 
@@ -3500,6 +3535,8 @@ $playerWon = false;
       
       // Calculate time since last frame
       const deltaTime = ((currentTime - lastFrameTime) / 1000) * deltaTimeMultiplier; // Convert to seconds, then scale by deltaTimeMultiplier
+      // Helps with keeping track of unpaused time
+      let trueDeltaTimeMillis = currentTime - lastFrameTime;
       lastFrameTime = currentTime;
 
       // Pause check is placed here to ensure deltaTime will not jump when unpausing
@@ -3515,6 +3552,9 @@ $playerWon = false;
         requestAnimationFrame(animate)
         return;
       }
+
+      // Keep track of how much time has been spent outside of pause
+      unpausedElapsedTimeMillis += trueDeltaTimeMillis;
       
       // Cap deltaTime to prevent huge jumps if tab was inactive
       const cappedDeltaTime = Math.min(deltaTime, 0.5);
