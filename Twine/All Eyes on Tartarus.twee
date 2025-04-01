@@ -112,6 +112,12 @@ Message history - H to pause and view message history
 <!-- Mission 1 -->
 <canvas id="mission1" width="800" height="800"></canvas>
 <script>
+    // Stops the previous audio
+    if (typeof audio !== 'undefined') {
+      audio.pause();
+      // And probably remove it from the memory
+      delete audio;
+    }
   (function() {
     const canvas = document.getElementById("mission1");
     const ctx = canvas.getContext("2d");
