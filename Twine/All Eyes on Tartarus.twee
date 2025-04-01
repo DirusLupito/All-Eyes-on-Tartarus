@@ -106,7 +106,7 @@ Mission 1: Across the Point
 
 Controls:
 Thermal Scan - Use A/D to rotate
-Contact Report - Left click to fire at, X to Dismiss
+Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
 Pause - P to toggle pause
 Message history - H to pause and view message history
 <!-- Mission 1 -->
@@ -208,6 +208,8 @@ Message history - H to pause and view message history
     let friendlyTookAShot = false;
     let madeFirstClick = false;
     let firedFirstSpread = false;
+    let firedSpreadAtMissile = false;
+    let firedSpreadAtInvalidTarget = false;
     // Dialogue message colors for certain characters
     const engineerColor = "#00FF00";
     const captainColor = "#34eb7a";
@@ -287,7 +289,7 @@ Message history - H to pause and view message history
         ctx.fillText(`DETECTED: ${this.timestamp}`, boxX + 5, boxY + 15);
         ctx.fillText(`POTENTIAL ${this.contactType} CONTACT`, boxX + 5, boxY + 30);
         ctx.fillText("CLICK TO REPORT CONTACT", boxX + 5, boxY + 45);
-        ctx.fillText("X TO DISMISS", boxX + 5, boxY + 60);
+        ctx.fillText("X TO DISMISS, Q TO FIRE SPREAD", boxX + 5, boxY + 60);
       }
       
       contains(mouseX, mouseY) {
@@ -582,7 +584,7 @@ Message history - H to pause and view message history
       }
 
       // Launch a missile at the given contact
-      launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed) {
+      launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack) {
         // Check if there are missiles available (undefined or null indicates infinite missiles)
         if (this.numMissiles > 0 || this.numMissiles === undefined || this.numMissiles === null) {
           // Basic idea: We have four parametric equations, two for the target's position as a function
@@ -642,14 +644,6 @@ Message history - H to pause and view message history
           // t=1/(evx^2+evy^2-mspeed^2) (-evx  exi-evy  eyi+evx  mxi+evy  myi+1/2  \[Sqrt](4  (evx (exi-mxi)+evy (eyi-myi))^2-4  (evx^2+evy^2-mspeed^2)  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))
           // a=ArcTan[(-evy  (exi-mxi)  (eyi-myi)+evx  (eyi-myi)^2+(-exi+mxi)  \[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)),(evy  (exi-mxi)^2-(eyi-myi)  (evx  exi-evx  mxi+\[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))]
 
-          // We first check to see if we're firing at a ghost
-          if (targetContact.contactType === "GHOST") {
-            // If we're firing at a ghost, launch directly at ghost's last sighted position
-            // Looks odd otherwise (Why is my missile going to this random position this game is buggy!!!)
-            this.launchMissileAtPoint(targetContact.distance * Math.cos(targetContact.bearing), targetContact.distance * Math.sin(targetContact.bearing), missileFuelTime, missileArmingTime, missileMovementSpeed);
-            return;
-          }
-
           // Convert both contacts' polar coordinates to Cartesian
           // For the missile launcher (this contact)
           const mxi = Math.cos(this.realBearing) * this.realDistance; // Missile initial x
@@ -670,6 +664,53 @@ Message history - H to pause and view message history
           const dx = exi - mxi;
           const dy = eyi - myi;
           const distSquared = dx*dx + dy*dy;
+
+          // We first check to see if we're firing at a ghost
+          if (targetContact.contactType === "GHOST") {
+            // If we're firing at a ghost, launch directly at ghost's last sighted position
+            // Looks odd otherwise (Why is my missile going to this random position this game is buggy!!!)
+
+            // Handle firing a spread as well
+            if (isSpreadAttack) {
+              // Check if the player ship is the launcher
+              // and if firedFirstSpread is false
+              // If so, write dialogue 
+              if(this.contactType === "PLAYER" && !firedFirstSpread) {
+                addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
+                firedFirstSpread = true;
+              }
+
+              // Calculate distance in radius units
+              const distance = Math.sqrt(distSquared);
+               
+              // Calculate number of missiles based on distance
+              // Add 1 missile for every spreadAttackMissilePerRadiusAmount * radius
+              let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+               
+              // Set minimum and maximum number of missiles
+              numMissiles = Math.max(2, numMissiles);
+               
+              // Calculate increased arming time (0.5 seconds per missile)
+              const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+
+              // Figure out angle between this contact and the target contact
+              const selectedAngle = Math.atan2(dy, dx);
+               
+              // Launch a spread of missiles
+              const spreadAngle = Math.PI / 6; // 30 degrees
+              for (let i = 0; i < numMissiles; i++) {
+                const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              }
+               
+              // Launch one more missile directly at the target
+              this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              return;
+            }
+
+            this.launchMissileAtPoint(targetContact.distance * Math.cos(targetContact.bearing), targetContact.distance * Math.sin(targetContact.bearing), missileFuelTime, missileArmingTime, missileMovementSpeed);
+            return;
+          }
           
           // Calculate the determinant inside the square root
           const determinant = 4 * Math.pow(evx*dx + evy*dy, 2) - 
@@ -717,13 +758,20 @@ Message history - H to pause and view message history
             if (selectedTime > missileFuelTime) {
               selectedTime = null;
             } 
-            
+
             // If we found a valid solution, launch the missile
             if (selectedTime !== null) {
               // this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
-              // With chanceOfSpreadAttack chance, instead fire a spread of missiles at the target and its immediate surroundings
-              // Only do this if firing at a non-missile contact and at a contact that is at least 0.25 radius away
-              if (Math.random() < chanceOfSpreadAttack && !targetContact.isMissile && Math.sqrt(distSquared) > 0.25 * radius) {
+              // If isSpreadAttack, instead fire a spread of missiles at the target and its immediate surroundings
+              // Only do this if firing at a non-missile contact
+              if (isSpreadAttack && !targetContact.isMissile) {
+                // Check if the player ship is the launcher
+                // and if firedFirstSpread is false
+                // If so, write dialogue 
+                if(this.contactType === "PLAYER" && !firedFirstSpread) {
+                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
+                  firedFirstSpread = true;
+                }
 
                 // Calculate distance in radius units
                 const distance = Math.sqrt(distSquared);
@@ -748,14 +796,30 @@ Message history - H to pause and view message history
                 // Launch one more missile directly at the target
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
               } else {
+                // Check if player tried to fire spread at missile
+                if (this.contactType === "PLAYER" && targetContact.isMissile && !firedSpreadAtMissile && isSpreadAttack) {
+                  addDialogue("Captain: Gunnery control, belay that order! That's a missile, don't waste a spread! Sensors, you should have known better!", captainColor);
+                  firedSpreadAtMissile = true;
+                }
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
               }
             } else {
               // No valid solution found, launch directly at current position as fallback
+              // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
+              if (this.contactType === "PLAYER" && !firedSpreadAtInvalidTarget && isSpreadAttack) {
+                addDialogue("Captain: Velocity readouts indicate to me that we can't hit that! Gunnery control, fire only once!", captainColor);
+                firedSpreadAtInvalidTarget = true;
+              }
+
               this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
             }
           } else {
             // No intercept solution exists, launch directly at current position
+            // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
+            if (this.contactType === "PLAYER" && !firedSpreadAtInvalidTarget && isSpreadAttack) {
+              addDialogue("Captain: Velocity readouts indicate to me that we can't hit that! Gunnery control, fire only once!", captainColor);
+              firedSpreadAtInvalidTarget = true;
+            }
             this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
           }
 
@@ -1665,7 +1729,7 @@ Message history - H to pause and view message history
           const target = friendlyContacts[Math.floor(Math.random() * friendlyContacts.length)];
           if (typeof target !== 'undefined') {
             // Actually fire the missile
-            contact.launchMissileAtContact(target, 30, 0.9, 10);
+            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
           }
         }
       }
@@ -1682,7 +1746,7 @@ Message history - H to pause and view message history
           const target = hostileContacts[Math.floor(Math.random() * hostileContacts.length)];
           if (typeof target !== 'undefined') {
             // Actually fire the missile
-            contact.launchMissileAtContact(target, 30, 0.9, 10);
+            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
           }
         }
       }
@@ -1788,7 +1852,7 @@ Message history - H to pause and view message history
           // Fire at the contact report's associated contact
           // contacts[0] is the player ship, so we will use it to launch the missile
           // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
-          contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10);
+          contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
 
           // Remove the report after clicking
           contactReports.splice(i, 1);
@@ -1846,6 +1910,25 @@ Message history - H to pause and view message history
             if (contactReports[i].contains(mouseX, mouseY)) {
               // Dismiss the contact report
               console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
+              contactReports.splice(i, 1);
+              break;
+            }
+          }
+        }
+      } else if (event.key === 'q' || event.key === 'q') {
+        // Check if the mouse is over a contact report
+        // If paused, do nothing
+        if (!gamePaused) {
+          for (let i = 0; i < contactReports.length; i++) {
+            if (contactReports[i].contains(mouseX, mouseY)) {
+              // Fire a spread at the contact in the contact report
+              
+              // Fire at the contact report's associated contact
+              // contacts[0] is the player ship, so we will use it to launch the missile
+              // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack)
+              contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, true);
+
+              console.log(`Spread fired at Contact report at ${contactReports[i].timestamp}`);
               contactReports.splice(i, 1);
               break;
             }
@@ -2004,7 +2087,7 @@ When firing a spread, make sure to also spread the missiles out in time so they 
 
 Controls:
 Thermal Scan - Use A/D to rotate
-Contact Report - Left click to fire at, X to Dismiss
+Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
 Pause - P to toggle pause
 Message history - H to pause and view message history
 <script>
@@ -2109,6 +2192,8 @@ $playerWon = false;
     let friendlyTookAShot = false;
     let madeFirstClick = false;
     let firedFirstSpread = false;
+    let firedSpreadAtMissile = false;
+    let firedSpreadAtInvalidTarget = false;
     // Dialogue message colors for certain characters
     const engineerColor = "#00FF00";
     const captainColor = "#34eb7a";
@@ -2188,7 +2273,7 @@ $playerWon = false;
         ctx.fillText(`DETECTED: ${this.timestamp}`, boxX + 5, boxY + 15);
         ctx.fillText(`POTENTIAL ${this.contactType} CONTACT`, boxX + 5, boxY + 30);
         ctx.fillText("CLICK TO REPORT CONTACT", boxX + 5, boxY + 45);
-        ctx.fillText("X TO DISMISS", boxX + 5, boxY + 60);
+        ctx.fillText("X TO DISMISS, Q TO FIRE SPREAD", boxX + 5, boxY + 60);
       }
       
       contains(mouseX, mouseY) {
@@ -2483,7 +2568,7 @@ $playerWon = false;
       }
 
       // Launch a missile at the given contact
-      launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed) {
+      launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack) {
         // Check if there are missiles available (undefined or null indicates infinite missiles)
         if (this.numMissiles > 0 || this.numMissiles === undefined || this.numMissiles === null) {
           // Basic idea: We have four parametric equations, two for the target's position as a function
@@ -2543,14 +2628,6 @@ $playerWon = false;
           // t=1/(evx^2+evy^2-mspeed^2) (-evx  exi-evy  eyi+evx  mxi+evy  myi+1/2  \[Sqrt](4  (evx (exi-mxi)+evy (eyi-myi))^2-4  (evx^2+evy^2-mspeed^2)  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))
           // a=ArcTan[(-evy  (exi-mxi)  (eyi-myi)+evx  (eyi-myi)^2+(-exi+mxi)  \[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)),(evy  (exi-mxi)^2-(eyi-myi)  (evx  exi-evx  mxi+\[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))]
 
-          // We first check to see if we're firing at a ghost
-          if (targetContact.contactType === "GHOST") {
-            // If we're firing at a ghost, launch directly at ghost's last sighted position
-            // Looks odd otherwise (Why is my missile going to this random position this game is buggy!!!)
-            this.launchMissileAtPoint(targetContact.distance * Math.cos(targetContact.bearing), targetContact.distance * Math.sin(targetContact.bearing), missileFuelTime, missileArmingTime, missileMovementSpeed);
-            return;
-          }
-
           // Convert both contacts' polar coordinates to Cartesian
           // For the missile launcher (this contact)
           const mxi = Math.cos(this.realBearing) * this.realDistance; // Missile initial x
@@ -2571,6 +2648,53 @@ $playerWon = false;
           const dx = exi - mxi;
           const dy = eyi - myi;
           const distSquared = dx*dx + dy*dy;
+
+          // We first check to see if we're firing at a ghost
+          if (targetContact.contactType === "GHOST") {
+            // If we're firing at a ghost, launch directly at ghost's last sighted position
+            // Looks odd otherwise (Why is my missile going to this random position this game is buggy!!!)
+
+            // Handle firing a spread as well
+            if (isSpreadAttack) {
+              // Check if the player ship is the launcher
+              // and if firedFirstSpread is false
+              // If so, write dialogue 
+              if(this.contactType === "PLAYER" && !firedFirstSpread) {
+                addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
+                firedFirstSpread = true;
+              }
+
+              // Calculate distance in radius units
+              const distance = Math.sqrt(distSquared);
+               
+              // Calculate number of missiles based on distance
+              // Add 1 missile for every spreadAttackMissilePerRadiusAmount * radius
+              let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+               
+              // Set minimum and maximum number of missiles
+              numMissiles = Math.max(2, numMissiles);
+               
+              // Calculate increased arming time (0.5 seconds per missile)
+              const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+
+              // Figure out angle between this contact and the target contact
+              const selectedAngle = Math.atan2(dy, dx);
+               
+              // Launch a spread of missiles
+              const spreadAngle = Math.PI / 6; // 30 degrees
+              for (let i = 0; i < numMissiles; i++) {
+                const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              }
+               
+              // Launch one more missile directly at the target
+              this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              return;
+            }
+
+            this.launchMissileAtPoint(targetContact.distance * Math.cos(targetContact.bearing), targetContact.distance * Math.sin(targetContact.bearing), missileFuelTime, missileArmingTime, missileMovementSpeed);
+            return;
+          }
           
           // Calculate the determinant inside the square root
           const determinant = 4 * Math.pow(evx*dx + evy*dy, 2) - 
@@ -2618,18 +2742,18 @@ $playerWon = false;
             if (selectedTime > missileFuelTime) {
               selectedTime = null;
             } 
-            
+
             // If we found a valid solution, launch the missile
             if (selectedTime !== null) {
               // this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
-              // With chanceOfSpreadAttack chance, instead fire a spread of missiles at the target and its immediate surroundings
-              // Only do this if firing at a non-missile contact and at a contact that is at least 0.25 radius away
-              if (Math.random() < chanceOfSpreadAttack && !targetContact.isMissile && Math.sqrt(distSquared) > 0.25 * radius) {
+              // If isSpreadAttack, instead fire a spread of missiles at the target and its immediate surroundings
+              // Only do this if firing at a non-missile contact
+              if (isSpreadAttack && !targetContact.isMissile) {
                 // Check if the player ship is the launcher
                 // and if firedFirstSpread is false
                 // If so, write dialogue 
                 if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                  addDialogue("Captain: Let's bring the pain. Gunnery control, fire a spread of missiles at that contact!", captainColor);
+                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
                   firedFirstSpread = true;
                 }
 
@@ -2656,14 +2780,30 @@ $playerWon = false;
                 // Launch one more missile directly at the target
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
               } else {
+                // Check if player tried to fire spread at missile
+                if (this.contactType === "PLAYER" && targetContact.isMissile && !firedSpreadAtMissile && isSpreadAttack) {
+                  addDialogue("Captain: Gunnery control, belay that order! That's a missile, don't waste a spread! Sensors, you should have known better!", captainColor);
+                  firedSpreadAtMissile = true;
+                }
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
               }
             } else {
               // No valid solution found, launch directly at current position as fallback
+              // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
+              if (this.contactType === "PLAYER" && !firedSpreadAtInvalidTarget && isSpreadAttack) {
+                addDialogue("Captain: Velocity readouts indicate to me that we can't hit that! Gunnery control, fire only once!", captainColor);
+                firedSpreadAtInvalidTarget = true;
+              }
+
               this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
             }
           } else {
             // No intercept solution exists, launch directly at current position
+            // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
+            if (this.contactType === "PLAYER" && !firedSpreadAtInvalidTarget && isSpreadAttack) {
+              addDialogue("Captain: Velocity readouts indicate to me that we can't hit that! Gunnery control, fire only once!", captainColor);
+              firedSpreadAtInvalidTarget = true;
+            }
             this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
           }
 
@@ -3585,7 +3725,7 @@ $playerWon = false;
           const target = friendlyContacts[Math.floor(Math.random() * friendlyContacts.length)];
           if (typeof target !== 'undefined') {
             // Actually fire the missile
-            contact.launchMissileAtContact(target, 30, 0.9, 10);
+            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
           }
         }
       }
@@ -3608,7 +3748,7 @@ $playerWon = false;
               addDialogue("Warspite: Unidentified contacts presumed hostile! Fire at will!", friendlyColor);
               friendlyTookAShot = true;
             }
-            contact.launchMissileAtContact(target, 30, 0.9, 10);
+            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
           }
         }
       }
@@ -3713,8 +3853,8 @@ $playerWon = false;
 
           // Fire at the contact report's associated contact
           // contacts[0] is the player ship, so we will use it to launch the missile
-          // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
-          contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10);
+          // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack)
+          contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
 
           // Remove the report after clicking
           contactReports.splice(i, 1);
@@ -3771,6 +3911,25 @@ $playerWon = false;
             if (contactReports[i].contains(mouseX, mouseY)) {
               // Dismiss the contact report
               console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
+              contactReports.splice(i, 1);
+              break;
+            }
+          }
+        }
+      } else if (event.key === 'q' || event.key === 'q') {
+        // Check if the mouse is over a contact report
+        // If paused, do nothing
+        if (!gamePaused) {
+          for (let i = 0; i < contactReports.length; i++) {
+            if (contactReports[i].contains(mouseX, mouseY)) {
+              // Fire a spread at the contact in the contact report
+              
+              // Fire at the contact report's associated contact
+              // contacts[0] is the player ship, so we will use it to launch the missile
+              // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack)
+              contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, true);
+
+              console.log(`Spread fired at Contact report at ${contactReports[i].timestamp}`);
               contactReports.splice(i, 1);
               break;
             }
