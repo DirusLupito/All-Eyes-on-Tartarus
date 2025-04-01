@@ -740,6 +740,16 @@ Message history - H to pause and view message history
             return;
           }
           
+          // Check if player tried to fire spread at missile (moved up to check in all cases)
+          if (this.contactType === &quot;PLAYER&quot; &amp;&amp; targetContact.isMissile &amp;&amp; isSpreadAttack) {
+            if (!firedSpreadAtMissile) {
+              addDialogue(&quot;Captain: Gunnery control, belay that order! That&#39;s a missile, don&#39;t waste a spread! Sensors, you should have known better!&quot;, captainColor);
+            }
+            firedSpreadAtMissile = true;
+            // Continue with normal single missile firing
+            isSpreadAttack = false;
+          }
+          
           // Calculate the determinant inside the square root
           const determinant = 4 * Math.pow(evx*dx + evy*dy, 2) - 
                               4 * (evx*evx + evy*evy - mspeed*mspeed) * distSquared;
@@ -824,33 +834,77 @@ Message history - H to pause and view message history
                 // Launch one more missile directly at the target
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
               } else {
-                // Check if player tried to fire spread at missile
-                if (this.contactType === &quot;PLAYER&quot; &amp;&amp; targetContact.isMissile &amp;&amp; !firedSpreadAtMissile &amp;&amp; isSpreadAttack) {
-                  addDialogue(&quot;Captain: Gunnery control, belay that order! That&#39;s a missile, don&#39;t waste a spread! Sensors, you should have known better!&quot;, captainColor);
-                  firedSpreadAtMissile = true;
-                }
+                
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
               }
             } else {
               // No valid solution found, launch directly at current position as fallback
-              // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
-              if (this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedSpreadAtInvalidTarget &amp;&amp; isSpreadAttack) {
-                addDialogue(&quot;Captain: Velocity readouts indicate to me that we can&#39;t hit that! Gunnery control, fire only once!&quot;, captainColor);
-                firedSpreadAtInvalidTarget = true;
+              
+              // NPC ships will never fire a spread at invalid targets
+              if (isSpreadAttack &amp;&amp; this.contactType !== &quot;PLAYER&quot;) {
+                // Just fire a single missile to conserve ammo
+                this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              } else {
+                // For player, allow them to mess up and fire a spread if that&#39;s what they requested
+                if (this.contactType === &quot;PLAYER&quot; &amp;&amp; isSpreadAttack) {
+                  // Calculate spread as in normal spread code
+                  const distance = Math.sqrt(distSquared);
+                  let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+                  numMissiles = Math.max(2, numMissiles);
+                  const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                  
+                  // Direct angle toward target&#39;s current position
+                  const selectedAngle = Math.atan2(dy, dx);
+                  
+                  // Launch spread
+                  const spreadAngle = Math.PI / 6; // 30 degrees
+                  for (let i = 0; i &lt; numMissiles; i++) {
+                    const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                    this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                  }
+                  
+                  // Launch direct missile too
+                  this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                } else {
+                  // Just fire a single missile for non-spread or non-player
+                  this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+                }
               }
-
-              this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
             }
           } else {
             // No intercept solution exists, launch directly at current position
-            // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
-            if (this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedSpreadAtInvalidTarget &amp;&amp; isSpreadAttack) {
-              addDialogue(&quot;Captain: Velocity readouts indicate to me that we can&#39;t hit that! Gunnery control, fire only once!&quot;, captainColor);
-              firedSpreadAtInvalidTarget = true;
+            
+            // NPC ships will never fire a spread at invalid targets
+            if (isSpreadAttack &amp;&amp; this.contactType !== &quot;PLAYER&quot;) {
+              // Just fire a single missile to conserve ammo
+              this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+            } else {
+              // For player, allow them to mess up and fire a spread if that&#39;s what they requested
+              if (this.contactType === &quot;PLAYER&quot; &amp;&amp; isSpreadAttack) {
+                // Calculate spread as in normal spread code
+                const distance = Math.sqrt(distSquared);
+                let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+                numMissiles = Math.max(2, numMissiles);
+                const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                
+                // Direct angle toward target&#39;s current position
+                const selectedAngle = Math.atan2(dy, dx);
+                
+                // Launch spread
+                const spreadAngle = Math.PI / 6; // 30 degrees
+                for (let i = 0; i &lt; numMissiles; i++) {
+                  const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                  this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                }
+                
+                // Launch direct missile too
+                this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              } else {
+                // Just fire a single missile for non-spread or non-player
+                this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              }
             }
-            this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
           }
-
         }
       }
       
@@ -2715,6 +2769,16 @@ $playerWon = false;
             return;
           }
           
+          // Check if player tried to fire spread at missile (moved up to check in all cases)
+          if (this.contactType === &quot;PLAYER&quot; &amp;&amp; targetContact.isMissile &amp;&amp; isSpreadAttack) {
+            if (!firedSpreadAtMissile) {
+              addDialogue(&quot;Captain: Gunnery control, belay that order! That&#39;s a missile, don&#39;t waste a spread! Sensors, you should have known better!&quot;, captainColor);
+            }
+            firedSpreadAtMissile = true;
+            // Continue with normal single missile firing
+            isSpreadAttack = false;
+          }
+          
           // Calculate the determinant inside the square root
           const determinant = 4 * Math.pow(evx*dx + evy*dy, 2) - 
                               4 * (evx*evx + evy*evy - mspeed*mspeed) * distSquared;
@@ -2799,33 +2863,77 @@ $playerWon = false;
                 // Launch one more missile directly at the target
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
               } else {
-                // Check if player tried to fire spread at missile
-                if (this.contactType === &quot;PLAYER&quot; &amp;&amp; targetContact.isMissile &amp;&amp; !firedSpreadAtMissile &amp;&amp; isSpreadAttack) {
-                  addDialogue(&quot;Captain: Gunnery control, belay that order! That&#39;s a missile, don&#39;t waste a spread! Sensors, you should have known better!&quot;, captainColor);
-                  firedSpreadAtMissile = true;
-                }
+                
                 this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
               }
             } else {
               // No valid solution found, launch directly at current position as fallback
-              // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
-              if (this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedSpreadAtInvalidTarget &amp;&amp; isSpreadAttack) {
-                addDialogue(&quot;Captain: Velocity readouts indicate to me that we can&#39;t hit that! Gunnery control, fire only once!&quot;, captainColor);
-                firedSpreadAtInvalidTarget = true;
+              
+              // NPC ships will never fire a spread at invalid targets
+              if (isSpreadAttack &amp;&amp; this.contactType !== &quot;PLAYER&quot;) {
+                // Just fire a single missile to conserve ammo
+                this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              } else {
+                // For player, allow them to mess up and fire a spread if that&#39;s what they requested
+                if (this.contactType === &quot;PLAYER&quot; &amp;&amp; isSpreadAttack) {
+                  // Calculate spread as in normal spread code
+                  const distance = Math.sqrt(distSquared);
+                  let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+                  numMissiles = Math.max(2, numMissiles);
+                  const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                  
+                  // Direct angle toward target&#39;s current position
+                  const selectedAngle = Math.atan2(dy, dx);
+                  
+                  // Launch spread
+                  const spreadAngle = Math.PI / 6; // 30 degrees
+                  for (let i = 0; i &lt; numMissiles; i++) {
+                    const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                    this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                  }
+                  
+                  // Launch direct missile too
+                  this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                } else {
+                  // Just fire a single missile for non-spread or non-player
+                  this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+                }
               }
-
-              this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
             }
           } else {
             // No intercept solution exists, launch directly at current position
-            // Check if player tried to fire spread at this invalid target (firedSpreadAtInvalidTarget)
-            if (this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedSpreadAtInvalidTarget &amp;&amp; isSpreadAttack) {
-              addDialogue(&quot;Captain: Velocity readouts indicate to me that we can&#39;t hit that! Gunnery control, fire only once!&quot;, captainColor);
-              firedSpreadAtInvalidTarget = true;
+            
+            // NPC ships will never fire a spread at invalid targets
+            if (isSpreadAttack &amp;&amp; this.contactType !== &quot;PLAYER&quot;) {
+              // Just fire a single missile to conserve ammo
+              this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+            } else {
+              // For player, allow them to mess up and fire a spread if that&#39;s what they requested
+              if (this.contactType === &quot;PLAYER&quot; &amp;&amp; isSpreadAttack) {
+                // Calculate spread as in normal spread code
+                const distance = Math.sqrt(distSquared);
+                let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+                numMissiles = Math.max(2, numMissiles);
+                const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                
+                // Direct angle toward target&#39;s current position
+                const selectedAngle = Math.atan2(dy, dx);
+                
+                // Launch spread
+                const spreadAngle = Math.PI / 6; // 30 degrees
+                for (let i = 0; i &lt; numMissiles; i++) {
+                  const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                  this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                }
+                
+                // Launch direct missile too
+                this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              } else {
+                // Just fire a single missile for non-spread or non-player
+                this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              }
             }
-            this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
           }
-
         }
       }
       
