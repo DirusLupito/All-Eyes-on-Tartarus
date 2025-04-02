@@ -181,13 +181,14 @@ Message history - H to pause and view message history
     const missileScanSpeed = 60; // degrees per second
 
     // Random missile launch parameters
-    const baseMissileLaunchChance = 0.0001;
+    const baseMissileLaunchChance = 0;
     let missileLaunchChance = baseMissileLaunchChance;
-    let missileLaunchIncrease = 0.00001;
+    let missileLaunchIncrease = 0;
     // Missile attack type parameters
     const chanceOfSpreadAttack = 0.0;
     const spreadAttackMissilePerRadiusAmount = 0.05; // Add 1 more missile for every radius amount of distance to target
-    let allowedToFireAtSpot = false; // If true, the player can fire at any point on the screen, not just contacts
+    let allowedToFireAtSpot = false; // If true, the player can fire at any point on the screen, not just contacts. If false, they can't.
+    let allowedToFire = false; // If true, the player can cause a missile to be launched. If false, all controls related to firing are disabled. 
 
     // Contact report parameters
     const contactReports = [];
@@ -199,22 +200,40 @@ Message history - H to pause and view message history
 
     // Dialogue message parameters
     const dialogueMessages = []; // Array to store dialogue messages with text, color, and time they should disappear
-    const defaultDialogueTime = 5; // Default time for dialogue messages to disappear
+    const defaultDialogueTime = 8; // Default time for dialogue messages to disappear
     // Dialogue flags
     let isFirstContact = true;
     let isFirstMissile = true;
-    let madeFirstKill = false;
-    let madeSecondKill = false;
-    let friendlyTookAShot = false;
-    let madeFirstClick = false;
+    let shotDownFirstMissile = false;
     let firedFirstSpread = false;
     let firedSpreadAtMissile = false;
     let firedSpreadAtInvalidTarget = false;
+    let response1 = false;
+    let response2 = false;
+    let response2a = false;
+    let response3 = false;
+    let response3a = false;
+    let response4 = false;
+    let response4a = false;
+    let response5 = false;
+    let response5a = false;
+    let response6 = false;
+    let response6a = false;
+    let response7 = false;
+    let response7a = false;
+    let response8 = false;
+    let response8a = false;
+    let response9 = false;
+    let response9a = false;
+    let response10 = false;
+    let response10a = false;
     // Dialogue message colors for certain characters
     const engineerColor = "#00FF00";
     const captainColor = "#34eb7a";
     const friendlyColor = "#FF00FF"
-  
+    const unidentifiedColor = "#FFFFFF"
+    const pirateColor = "#FF0000"
+
     // Function to create explosion effect
     function createExplosion(x, y) {
       // Play explosion sound (Unused for now)
@@ -676,7 +695,7 @@ Message history - H to pause and view message history
               // and if firedFirstSpread is false
               // If so, write dialogue 
               if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
+                addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor);
                 firedFirstSpread = true;
               }
 
@@ -779,7 +798,7 @@ Message history - H to pause and view message history
                 // and if firedFirstSpread is false
                 // If so, write dialogue 
                 if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
+                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor);
                   firedFirstSpread = true;
                 }
 
@@ -1217,6 +1236,16 @@ Message history - H to pause and view message history
             console.log("Missile collided with contact:", contact);
             console.log("Missile destroyed:", this);
 
+            // Check if it was a friendly missile that collided with a hostile missile or a hostile missile that collided with a friendly missile
+            // Also ensure this dialogue only plays once using shotDownFirstMissile
+            if ((this.isMissile && this.contactType === "FRIENDLY" && contact.isMissile && contact.contactType === "HOSTILE") ||
+                (this.isMissile && this.contactType === "HOSTILE" && contact.isMissile && contact.contactType === "FRIENDLY")) {
+              if (!shotDownFirstMissile) {
+                addDialogue("Engineer: Enemy missile destroyed!", engineerColor);
+                shotDownFirstMissile = true;
+              }
+            }
+
             contacts.splice(contacts.indexOf(this), 1);
             contacts.splice(contacts.indexOf(contact), 1);
             return;
@@ -1368,7 +1397,7 @@ Message history - H to pause and view message history
       // Calculate the endpoint of the rotating line
       const endX = centerX + radius * Math.cos(angle);
       const endY = centerY + radius * Math.sin(angle);
-  
+
       // Draw the rotating line
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
@@ -1697,22 +1726,38 @@ Message history - H to pause and view message history
       // Normalize angle to be between -pi and pi
       return a - Math.PI * 2 * Math.floor((a + Math.PI) / (Math.PI * 2));
     }
+      
+    // Function to create custom timeouts that respect pause state
+    function createTimeout(callback, delay) {
+      window.customTimeouts.push({
+        callback: callback,
+        delay: delay,
+        elapsed: 0
+      });
+    }
     
     function animate(currentTime) {
     
       // Game over check
       if (gameOver) {
-        // Draw game over message
-        drawGameOver();
+        // If viewing message history, draw that instead of game over menu
+        if (isViewingMessageHistory) {
+          drawMessageHistory();
+        } else {
+          // Draw game over message
+          drawGameOver();
+        }
 
-        // Don't animate anymore
+        // Keep animating, but only up to here
+        requestAnimationFrame(animate)
         return;
       }
-
+      
       // Check if game should end now
       // Check if all player ships are gone
       if (areAllContactsGone("PLAYER")) {
         gameOver = true;
+        $playerWonM1 = false;
         gameOverMessage = "DEFEAT!";
         gameOverColor = "red";
         // Play defeat sound
@@ -1754,6 +1799,239 @@ Message history - H to pause and view message history
       // Keep track of how much time has been spent outside of pause
       unpausedElapsedTimeMillis += trueDeltaTimeMillis;
       
+      // Custom timeout handling system
+      if (!window.customTimeouts) {
+        window.customTimeouts = [];
+      }
+      
+      // Process any active timeouts
+      for (let i = window.customTimeouts.length - 1; i >= 0; i--) {
+        const timeout = window.customTimeouts[i];
+        timeout.elapsed += trueDeltaTimeMillis;
+        
+        if (timeout.elapsed >= timeout.delay) {
+          // Execute the callback and remove from array
+          timeout.callback();
+          window.customTimeouts.splice(i, 1);
+        }
+      }
+      
+      // Dialogue check - figure out what stage of the mission we're in and what to say next
+      if (!response1 && !response10 && !isFirstContact) {
+        addDialogue("Captain: Unidentified contact, please identify yourself!", captainColor);
+        response10 = true;
+        createTimeout(() => {
+          addDialogue("???: Please help! We are heavily damaged and need assistance.", unidentifiedColor);
+          response1 = true;
+        }, 5000); // 5 seconds delay for the unidentified contact's response
+      }
+
+      if (response1 && !response2 && !response2a) {
+        response2a = true; // prevents this from being called again
+        createTimeout(() => {
+          addDialogue("Engineer: Captain, I don't like this. Their signature doesn't match any civilian vessels.", engineerColor);
+          response2 = true;
+        }, 3000);
+      }
+
+      if (response2 && !response3 && !response3a) {
+        response3a = true; // prevents this from being called again
+        createTimeout(() => {
+          addDialogue("Captain: Unidentified vessel, transmit proper identification codes immediately.", captainColor);
+          createTimeout(() => {
+        addDialogue("???: We are... *static*... merchant vessel... *static*... systems failing...", unidentifiedColor);
+        response3 = true;
+          }, 4000);
+        }, 2000);
+      }
+
+      if (response3 && !response4 && !response4a) {
+        response4a = true; // prevents this from being called again
+        createTimeout(() => {
+          addDialogue("Engineer: Blueshift! Long range optics indicate blueshift! I think they're moving toward us!", engineerColor);
+          // Set the pirate ship to move toward the player
+          const pirateShip = contacts[1];
+          // Calculate direction toward player (which is at center, 0,0)
+          pirateShip.movementDirection = Math.atan2(
+        -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
+        -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
+          );
+          // Increase speed
+          pirateShip.movementSpeed = 1.2;
+          pirateShip.directionChangeFrequency = 0; // Stop changing direction randomly
+          
+          createTimeout(() => {
+            addDialogue("Captain: Unidentified vessel, power down engines now!", captainColor);
+            createTimeout(() => {
+              addDialogue("???: *static*... we are... *static*... merchant vessel... *static*...", unidentifiedColor);
+              createTimeout(() => {
+                addDialogue("Captain: Sensors, I need you to be ready for anything. Keep the thermal scanner directed at that contact.", captainColor);
+              }, 5000);
+            }, 5000); // 5 seconds delay for the unidentified contact's response
+            response4 = true;
+          }, 3000);
+        }, 5000);
+      }
+
+      // Check distance of pirate ship to player and trigger missile attack when close enough
+      const pirateShip = contacts[1];
+      if (response4 && !response5 && pirateShip.realDistance < radius * 0.5 && !response5a) {
+        response5a = true; // prevents this from being called again
+        addDialogue("Engineer: Massive EM spike! Bearing same as unidentified contact!", engineerColor);
+        
+        createTimeout(() => {
+          addDialogue("Captain: Keep me updated!", captainColor);
+
+          let battleStartTimeMillis = unpausedElapsedTimeMillis;
+          
+          // Launch three missiles from the pirate ship
+          // First missile - direct at player
+          pirateShip.launchMissileAtContact(contacts[0], 20, 1.0, 12, false);
+          
+          // Create two special trajectory missiles at 45/-45 degrees
+          // These will initially go at angles, then redirect
+          const playerBearing = Math.atan2(
+            -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
+            -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
+          );
+          
+          // Launch missile at +45 degrees
+          pirateShip.launchMissileAlongAngle(playerBearing + Math.PI/4, 20, 1.0, 12);
+          
+          // Launch missile at -45 degrees
+          pirateShip.launchMissileAlongAngle(playerBearing - Math.PI/4, 20, 1.0, 12);
+          
+          // Set a timer to redirect the angled missiles after a few seconds
+          createTimeout(() => {
+            // Find the two angled missiles (they should be the most recent hostile missiles)
+            const missiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE");
+            if (missiles.length >= 2) {
+              // Get the last two created missiles (angled ones)
+              const missile1 = missiles[missiles.length-1];
+              const missile2 = missiles[missiles.length-2];
+              
+              // Make them redirect toward the player
+              missile1.targetContact = contacts[0];
+              missile1.hasTarget = true;
+              
+              missile2.targetContact = contacts[0];
+              missile2.hasTarget = true;
+            }
+            addDialogue("Pirate: It was nice knowing you, Captain.", pirateColor);
+          }, 3000); // Redirect after 3 seconds
+          
+          response5 = true;
+        }, 2000);
+      }
+
+      // Check if all missiles were destroyed to reset attack
+      if (response5 && !response6 && !response6a) {
+        // Count how many hostile missiles are active
+        const activeMissiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE").length;
+        
+        if (activeMissiles === 0) {
+          response6a = true; // prevents this from being called again
+          // All missiles were destroyed, pirate will attack again
+          createTimeout(() => {
+            addDialogue("Captain: Good work shooting down those missiles!", captainColor);
+              createTimeout(() => {
+              addDialogue("Engineer: Captain, they're preparing to fire again!", engineerColor);
+              
+              // Launch three more missiles
+              // First missile - direct at player
+              pirateShip.launchMissileAtContact(contacts[0], 20, 1.0, 12, false);
+              
+              // Create two special trajectory missiles at 45/-45 degrees again
+              const playerBearing = Math.atan2(
+                -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
+                -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
+              );
+              
+              // Launch missile at +45 degrees
+              pirateShip.launchMissileAlongAngle(playerBearing + Math.PI/4, 20, 1.0, 12);
+              
+              // Launch missile at -45 degrees
+              pirateShip.launchMissileAlongAngle(playerBearing - Math.PI/4, 20, 1.0, 12);
+              
+              // Set a timer to redirect the angled missiles after a few seconds
+              createTimeout(() => {
+                // Find the two angled missiles
+                const missiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE");
+                if (missiles.length >= 2) {
+                // Get the last two created missiles (angled ones)
+                const missile1 = missiles[missiles.length-1];
+                const missile2 = missiles[missiles.length-2];
+                
+                // Make them redirect toward the player
+                missile1.targetContact = contacts[0];
+                missile1.hasTarget = true;
+                
+                missile2.targetContact = contacts[0];
+                missile2.hasTarget = true;
+                
+                addDialogue("Engineer: Same attack pattern! The side missiles are curving back!", engineerColor);
+                }
+              }, 3000); // Redirect after 3 seconds
+              
+              response6 = true;
+            }, 4000);
+          }, 3000);
+        }
+      }
+
+      // Check if second wave of missiles was destroyed
+      if (response6 && !response7 && !response7a) {
+        response7a = true; // prevents this from being called again
+        // Count how many hostile missiles are active
+        const activeMissiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE").length;
+        
+        if (activeMissiles === 0) {
+          createTimeout(() => {
+            addDialogue("Captain: Their attack failed again. Sensors, get me a firing solution. I want those scum wiped out.", captainColor);
+            createTimeout(() => {
+              addDialogue("Engineer: Working on it Captain!", engineerColor);
+              response7 = true;
+            }, 3000);
+          }, 2000);
+        }
+      }
+
+      // If pirate ship gets within the 0.1ls range, add a dialogue message warning of the imminent ram
+      if (!response9a && pirateShip.realDistance < radius * 0.1) {
+        response9a = true; // prevents this from being called again
+        addDialogue("Captain: They're insane! They're going to ram us! Blow them up NOW!", captainColor);
+      }
+
+      // Check for collision between pirate ship and player
+      if (pirateShip && !gameOver) {
+        // Calculate distance between pirate ship and player
+        const playerShip = contacts[0];
+        const dx = Math.cos(pirateShip.realBearing) * pirateShip.realDistance - Math.cos(playerShip.realBearing) * playerShip.realDistance;
+        const dy = Math.sin(pirateShip.realBearing) * pirateShip.realDistance - Math.sin(playerShip.realBearing) * playerShip.realDistance;
+        const distanceBetweenShips = Math.sqrt(dx*dx + dy*dy);
+        
+        // If ships are too close, trigger collision and game over
+        if (distanceBetweenShips < (pirateShip.size + playerShip.size)) {
+          // Create explosion effect at collision point
+          const collisionX = centerX + playerShip.distance * Math.cos(playerShip.bearing);
+          const collisionY = centerY + playerShip.distance * Math.sin(playerShip.bearing);
+          createExplosion(collisionX, collisionY);
+          
+          // Set game over state
+          gameOver = true;
+          $playerWonM1 = false;
+          gameOverMessage = "DEFEAT!";
+          gameOverColor = "red";
+          
+          // Play collision/explosion sound
+          const audio = new Audio("../assets/defeat.mp3");
+          audio.play();
+          
+          // Add final dialogue
+          addDialogue("Engineer: Visual contact! Brace for impact!", engineerColor);
+        }
+      }
+      
       // Cap deltaTime to prevent huge jumps if tab was inactive
       const cappedDeltaTime = Math.min(deltaTime, 0.5);
       
@@ -1764,55 +2042,8 @@ Message history - H to pause and view message history
 
       // Sort contacts into friendly and hostile arrays
       // Do not include missiles in these arrays
-      const friendlyContacts = contacts.filter(contact => contact.contactType === "FRIENDLY" || contact.contactType === "PLAYER");
+      const friendlyContacts = contacts.filter(contact => contact.contactType === "FRIENDLY" || contact.contactType === "PLAYER" && !contact.isMissile);
       const hostileContacts = contacts.filter(contact => contact.contactType === "HOSTILE" && !contact.isMissile);
-
-      // Keep track of launch chance for both sides
-      const hostileLaunchChance = missileLaunchChance;
-      const friendlyLaunchChance = missileLaunchChance;
-
-      missileLaunched = false;
-
-      // Randomly make hostile contacts fire missiles at player or friendly contacts
-      for (let contact of hostileContacts) {
-        // Skip missiles
-        if (contact.isMissile) continue;
-
-        if (Math.random() < missileLaunchChance && typeof friendlyContacts !== 'undefined' && friendlyContacts.length > 0) {
-          // Randomly select a target from friendly contacts
-          const target = friendlyContacts[Math.floor(Math.random() * friendlyContacts.length)];
-          if (typeof target !== 'undefined') {
-            // Actually fire the missile
-            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
-          }
-        }
-      }
-      
-      // Randomly make friendly contacts fire missiles at hostile contacts
-      for (let contact of friendlyContacts) {
-        // Skip the player contact
-        if (contact.contactType === "PLAYER") continue;
-        // Skip missiles
-        if (contact.isMissile) continue;
-        
-        if (Math.random() < missileLaunchChance && typeof hostileContacts !== 'undefined' && hostileContacts.length > 0) {
-          // Randomly select a target from hostile contacts
-          const target = hostileContacts[Math.floor(Math.random() * hostileContacts.length)];
-          if (typeof target !== 'undefined') {
-            // Actually fire the missile
-            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
-          }
-        }
-      }
-
-      // If a missile was launched, reset the missileLaunchChance to base value
-      if (missileLaunched) {
-        missileLaunchChance = baseMissileLaunchChance;
-      } else {
-        // Otherwise increase the missile launch chance
-        missileLaunchChance += missileLaunchIncrease * cappedDeltaTime;
-        if (missileLaunchChance > 1.0) missileLaunchChance = 1.0;
-      }
       
       // Update and draw contacts
       for (let contact of contacts) {
@@ -1887,26 +2118,35 @@ Message history - H to pause and view message history
 
           // If this is the first contact report clicked, add a dialogue message
           if (isFirstContact) {
-            addDialogue(`Engineer: I've got something on scope!`, engineerColor);
-            isFirstContact = false;
-          }
-
-          // If this isn't the first contact report clicked and the associated contact is a missile, add a dialogue message for that
-          if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
-            addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor);
-            // Wait for 5 seconds, then have the captain respond
+            addDialogue(`Engineer: I've got something on scope! I can't pick up any IFF information.`, engineerColor);
+            // Wait for 3 seconds, then set isFirstContact to false
             setTimeout(() => {
-              addDialogue(`Captain: They've seen us! Fire countermissile!`, captainColor);
-            }, 5000);
-            isFirstMissile = false;
+              isFirstContact = false;
+            }, 3000);
           }
 
           wasOnContactReport = true;
 
-          // Fire at the contact report's associated contact
-          // contacts[0] is the player ship, so we will use it to launch the missile
-          // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
-          contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
+          // If this isn't the first contact report clicked and the associated contact is a missile, add a dialogue message for that
+          if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
+            addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor);
+            // Wait for 3 seconds, then have the captain respond
+            setTimeout(() => {
+              addDialogue(`Captain: They're pirates! Fire countermissile! General Quarters!`, captainColor, 12);
+              // Now mark the player ship as allowed to fire
+              allowedToFire = true;
+              allowedToFireAtSpot = true;
+            }, 1000);
+            isFirstMissile = false;
+          }
+      
+          // If not allowed to fire, do nothing
+          if (allowedToFire) {
+            // Fire at the contact report's associated contact
+            // contacts[0] is the player ship, so we will use it to launch the missile
+            // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
+            contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
+          }
 
           // Remove the report after clicking
           contactReports.splice(i, 1);
@@ -1919,18 +2159,7 @@ Message history - H to pause and view message history
         const dx = mouseX - centerX;
         const dy = mouseY - centerY;
 
-        // Add dialogue if this is the first time the player has fired from a click
-        if (!madeFirstClick) {
-          addDialogue("Engineer: Captain, I think we need to fire at this position!", engineerColor);
-          madeFirstClick = true;
-          setTimeout(() => {
-            addDialogue("Captain: Affirmative. I'm networking your console into the fire control system.", captainColor);
-            allowedToFireAtSpot = true;
-          }, 3000);
-          return; // Do nothing until the captain responds
-        }
-
-        if (!allowedToFireAtSpot) return; // Don't fire if not allowed
+        if (!allowedToFireAtSpot || !allowedToFire) return; // Don't fire if not allowed
         
 
         // Try to fire at the given coordinates
@@ -1970,6 +2199,9 @@ Message history - H to pause and view message history
           }
         }
       } else if (event.key === 'q' || event.key === 'q') {
+        // If not allowed to fire, do nothing
+        if (!allowedToFire) return;
+
         // Check if the mouse is over a contact report
         // If paused, do nothing
         if (!gamePaused) {
@@ -2008,21 +2240,19 @@ Message history - H to pause and view message history
         }
       } else if (event.key === 'h' || event.key === 'H') {
         // Toggle message history view
-        if (!gameOver) {
-          if (isViewingMessageHistory) {
-            // Exit message history view but stay paused
-            isViewingMessageHistory = false;
-            drawPauseMenu();
-          } else {
-            // If game is not already paused, pause it
-            if (!gamePaused) {
-              gamePaused = true;
-            }
-            // Switch to message history view
-            isViewingMessageHistory = true;
-            // Reset scroll position when first opening
-            messageHistoryScrollPosition = 0;
+        if (isViewingMessageHistory) {
+          // Exit message history view but stay paused
+          isViewingMessageHistory = false;
+          drawPauseMenu();
+        } else {
+          // If game is not already paused, pause it
+          if (!gamePaused) {
+            gamePaused = true;
           }
+          // Switch to message history view
+          isViewingMessageHistory = true;
+          // Reset scroll position when first opening
+          messageHistoryScrollPosition = 0;
         }
       } else if (event.key === 'ArrowUp') {
         // Scroll message history up
@@ -2054,13 +2284,13 @@ Message history - H to pause and view message history
                   true, 0, true, 0,
                   true, "PLAYER SHIP, Heavy Cruiser\nCRS Bounty\nCairn Class", [255, 255, 255],
                   "PLAYER", 100),
-      // Real example contacts - speeds now per second
+      // The pirate ship. Only has 6 missiles ready to fire, but it's ready to make each one count
       new Contact(Math.PI/16, radius * 0.75, 5, 
-                  1.2, 0.3, Math.random() * Math.PI * 2, 
+                  0, 0, 0, 
                   false, 0, true, 0.3,
                   true, 1, true, 1,
                   false, "", [255, 0, 0],
-                  "HOSTILE"),
+                  "HOSTILE", 6),
       // ELINT Ghosts (No thermal, no radar detection)
       new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
                   120, 30, Math.random() * Math.PI * 2, 
@@ -2225,7 +2455,8 @@ $playerWon = false;
     // Missile attack type parameters
     const chanceOfSpreadAttack = 0.5;
     const spreadAttackMissilePerRadiusAmount = 0.05; // Add 1 more missile for every radius amount of distance to target
-    let allowedToFireAtSpot = false; // If true, the player can fire at any point on the screen, not just contacts
+    let allowedToFireAtSpot = false; // If true, the player can fire at any point on the screen, not just contacts. If false, they can't.
+    let allowedToFire = true; // If true, the player can cause a missile to be launched. If false, all controls related to firing are disabled. 
 
     // Contact report parameters
     const contactReports = [];
@@ -2714,7 +2945,7 @@ $playerWon = false;
               // and if firedFirstSpread is false
               // If so, write dialogue 
               if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
+                addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor);
                 firedFirstSpread = true;
               }
 
@@ -2817,7 +3048,7 @@ $playerWon = false;
                 // and if firedFirstSpread is false
                 // If so, write dialogue 
                 if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire at spread at that contact!", captainColor);
+                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor);
                   firedFirstSpread = true;
                 }
 
@@ -3747,15 +3978,30 @@ $playerWon = false;
       // Normalize angle to be between -pi and pi
       return a - Math.PI * 2 * Math.floor((a + Math.PI) / (Math.PI * 2));
     }
+      
+    // Function to create custom timeouts that respect pause state
+    function createTimeout(callback, delay) {
+      window.customTimeouts.push({
+        callback: callback,
+        delay: delay,
+        elapsed: 0
+      });
+    }
     
     function animate(currentTime) {
     
       // Game over check
       if (gameOver) {
-        // Draw game over message
-        drawGameOver();
+        // If viewing message history, draw that instead of game over menu
+        if (isViewingMessageHistory) {
+          drawMessageHistory();
+        } else {
+          // Draw game over message
+          drawGameOver();
+        }
 
-        // Don't animate anymore
+        // Keep animating, but only up to here
+        requestAnimationFrame(animate)
         return;
       }
 
@@ -3814,7 +4060,7 @@ $playerWon = false;
 
       // Sort contacts into friendly and hostile arrays
       // Do not include missiles in these arrays
-      const friendlyContacts = contacts.filter(contact => contact.contactType === "FRIENDLY" || contact.contactType === "PLAYER");
+      const friendlyContacts = contacts.filter(contact => contact.contactType === "FRIENDLY" || contact.contactType === "PLAYER" && !contact.isMissile);
       const hostileContacts = contacts.filter(contact => contact.contactType === "HOSTILE" && !contact.isMissile);
 
       // Keep track of launch chance for both sides
@@ -3943,26 +4189,35 @@ $playerWon = false;
 
           // If this is the first contact report clicked, add a dialogue message
           if (isFirstContact) {
-            addDialogue(`Engineer: I've got something on scope!`, engineerColor);
-            isFirstContact = false;
-          }
-
-          // If this isn't the first contact report clicked and the associated contact is a missile, add a dialogue message for that
-          if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
-            addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor);
-            // Wait for 5 seconds, then have the captain respond
+            addDialogue(`Engineer: I've got something on scope! I can't pick up any IFF information.`, engineerColor);
+            // Wait for 3 seconds, then set isFirstContact to false
             setTimeout(() => {
-              addDialogue(`Captain: Gunnery control, fire countermissile!`, captainColor);
-            }, 5000);
-            isFirstMissile = false;
+              isFirstContact = false;
+            }, 3000);
           }
 
           wasOnContactReport = true;
 
-          // Fire at the contact report's associated contact
-          // contacts[0] is the player ship, so we will use it to launch the missile
-          // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack)
-          contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
+          // If this isn't the first contact report clicked and the associated contact is a missile, add a dialogue message for that
+          if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
+            addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor);
+            // Wait for 3 seconds, then have the captain respond
+            setTimeout(() => {
+              addDialogue(`Captain: They're pirates! Fire countermissile! General Quarters!`, captainColor, 12);
+              // Now mark the player ship as allowed to fire
+              allowedToFire = true;
+              allowedToFireAtSpot = true;
+            }, 1000);
+            isFirstMissile = false;
+          }
+      
+          // If not allowed to fire, do nothing
+          if (allowedToFire) {
+            // Fire at the contact report's associated contact
+            // contacts[0] is the player ship, so we will use it to launch the missile
+            // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
+            contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
+          }
 
           // Remove the report after clicking
           contactReports.splice(i, 1);
@@ -3986,7 +4241,7 @@ $playerWon = false;
           return; // Do nothing until the captain responds
         }
 
-        if (!allowedToFireAtSpot) return; // Don't fire if not allowed
+        if (!allowedToFireAtSpot || !allowedToFire) return; // Don't fire if not allowed
 
         // Try to fire at the given coordinates
         // contacts[0] is the player ship, so we will use it to launch the missile
@@ -4025,6 +4280,9 @@ $playerWon = false;
           }
         }
       } else if (event.key === 'q' || event.key === 'q') {
+        // If not allowed to fire, do nothing
+        if (!allowedToFire) return;
+
         // Check if the mouse is over a contact report
         // If paused, do nothing
         if (!gamePaused) {
@@ -4063,21 +4321,19 @@ $playerWon = false;
         }
       } else if (event.key === 'h' || event.key === 'H') {
         // Toggle message history view
-        if (!gameOver) {
-          if (isViewingMessageHistory) {
-            // Exit message history view but stay paused
-            isViewingMessageHistory = false;
-            drawPauseMenu();
-          } else {
-            // If game is not already paused, pause it
-            if (!gamePaused) {
-              gamePaused = true;
-            }
-            // Switch to message history view
-            isViewingMessageHistory = true;
-            // Reset scroll position when first opening
-            messageHistoryScrollPosition = 0;
+        if (isViewingMessageHistory) {
+          // Exit message history view but stay paused
+          isViewingMessageHistory = false;
+          drawPauseMenu();
+        } else {
+          // If game is not already paused, pause it
+          if (!gamePaused) {
+            gamePaused = true;
           }
+          // Switch to message history view
+          isViewingMessageHistory = true;
+          // Reset scroll position when first opening
+          messageHistoryScrollPosition = 0;
         }
       } else if (event.key === 'ArrowUp') {
         // Scroll message history up
