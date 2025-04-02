@@ -138,7 +138,7 @@ Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
 Pause - P to toggle pause
 Message history - H to pause and view message history
 &lt;!-- Mission 1 --&gt;
-&lt;canvas id=&quot;mission1&quot; width=&quot;800&quot; height=&quot;800&quot;&gt;&lt;/canvas&gt;
+&lt;canvas id=&quot;mission1&quot; width=&quot;1200&quot; height=&quot;800&quot;&gt;&lt;/canvas&gt;
 &lt;script&gt;
     // Stops the previous audio
     if (typeof audio !== &#39;undefined&#39;) {
@@ -261,6 +261,8 @@ Message history - H to pause and view message history
     const friendlyColor = &quot;#FF00FF&quot;
     const unidentifiedColor = &quot;#FFFFFF&quot;
     const pirateColor = &quot;#FF0000&quot;
+    // Dialogue portrait paths
+    const captainPortraitFilePath = &quot;../assets/characters/CaptainPortrait.png&quot;;
 
     // Function to create explosion effect
     function createExplosion(x, y) {
@@ -723,7 +725,7 @@ Message history - H to pause and view message history
               // and if firedFirstSpread is false
               // If so, write dialogue 
               if(this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedFirstSpread) {
-                addDialogue(&quot;Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!&quot;, captainColor);
+                addDialogue(&quot;Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
                 firedFirstSpread = true;
               }
 
@@ -762,7 +764,7 @@ Message history - H to pause and view message history
           // Check if player tried to fire spread at missile (moved up to check in all cases)
           if (this.contactType === &quot;PLAYER&quot; &amp;&amp; targetContact.isMissile &amp;&amp; isSpreadAttack) {
             if (!firedSpreadAtMissile) {
-              addDialogue(&quot;Captain: Gunnery control, belay that order! That&#39;s a missile, don&#39;t waste a spread! Sensors, you should have known better!&quot;, captainColor);
+              addDialogue(&quot;Captain: Gunnery control, belay that order! That&#39;s a missile, don&#39;t waste a spread! Sensors, you should have known better!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
             }
             firedSpreadAtMissile = true;
             // Continue with normal single missile firing
@@ -826,7 +828,7 @@ Message history - H to pause and view message history
                 // and if firedFirstSpread is false
                 // If so, write dialogue 
                 if(this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedFirstSpread) {
-                  addDialogue(&quot;Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!&quot;, captainColor);
+                  addDialogue(&quot;Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
                   firedFirstSpread = true;
                 }
 
@@ -1504,12 +1506,13 @@ Message history - H to pause and view message history
     }
 
     // Function to add a new dialogue message
-    function addDialogue(text, color, duration = defaultDialogueTime) {
+    function addDialogue(text, color, duration = defaultDialogueTime, imageFilePath) {
       // Add the message to the array with current time + duration as expiry time
       dialogueMessages.push({
       text: text,
       color: color,
-      expiryTime: Date.now() + (duration * 1000) // Multiply by 1000 to convert to milliseconds
+      expiryTime: Date.now() + (duration * 1000), // Multiply by 1000 to convert to milliseconds
+      image: imageFilePath
       });
     }
 
@@ -1526,6 +1529,10 @@ Message history - H to pause and view message history
       const padding = 15;
       const lineHeight = 20;
       let currentY = 10; // Start at the top
+      
+      // Image dimensions
+      const imageWidth = 80;
+      const imageHeight = 120;
       
       // Draw messages from newest to oldest
       for (let i = dialogueMessages.length - 1; i &gt;= 0; i--) {
@@ -1556,31 +1563,59 @@ Message history - H to pause and view message history
         }
         lines.push(currentLine);
         
-        // Calculate box height based on number of lines
-        const boxHeight = (lines.length * lineHeight) + (padding * 2);
+        // Calculate box dimensions based on whether there&#39;s an image
+        const hasImage = message.image !== undefined;
+        const boxWidth = maxWidth + (padding * 2) + (hasImage ? imageWidth + padding : 0);
+        const boxHeight = Math.max((lines.length * lineHeight) + (padding * 2), hasImage ? imageHeight + (padding * 2) : 0);
         
         // Check if we&#39;re going off-screen and need to stop drawing
         if (currentY + boxHeight &gt; height) {
           break;
         }
         
-        // Draw the background box
-        const boxWidth = maxWidth + (padding * 2);
         const boxX = width - boxWidth - 10;
         const boxY = currentY;
         
+        // Draw the background box
         ctx.fillStyle = &quot;rgba(0, 0, 0, 0.7)&quot;;
         ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
         ctx.strokeStyle = &quot;rgba(255, 255, 255, 0.5)&quot;;
         ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
         
-        // Draw the text - right aligned
+        // Draw the image if specified
+        if (hasImage) {
+          // If image hasn&#39;t been loaded yet, create and cache it
+          if (!message.imageObject) {
+            message.imageObject = new Image();
+            message.imageObject.src = message.image;
+          }
+          
+          // Position image inside the box with some padding
+          const imgX = boxX + padding;
+          const imgY = boxY + (boxHeight - imageHeight) / 2; // Center vertically
+          
+          // Only draw if the image is loaded
+          if (message.imageObject.complete) {
+            ctx.drawImage(message.imageObject, imgX, imgY, imageWidth, imageHeight);
+          }
+        }
+        
+        // Draw the text - right aligned if no image, left aligned if there is an image
         ctx.fillStyle = message.color;
-        ctx.textAlign = &quot;right&quot;;
+        ctx.textAlign = hasImage ? &quot;left&quot; : &quot;right&quot;;
         ctx.textBaseline = &quot;top&quot;;
         
+        // Calculate text position
+        const textX = hasImage 
+          ? boxX + imageWidth + (padding * 2) // If image, position text after image
+          : boxX + boxWidth - padding; // If no image, position from right edge
+        
+        const textY = boxY + (hasImage 
+          ? (boxHeight - (lines.length * lineHeight)) / 2 // Center text vertically if there&#39;s an image
+          : padding); // Default padding if no image
+        
         lines.forEach((line, index) =&gt; {
-          ctx.fillText(line, boxX + boxWidth - padding, boxY + padding + (index * lineHeight));
+          ctx.fillText(line, textX, textY + (index * lineHeight));
         });
         
         // Update Y position for next message
@@ -1846,7 +1881,7 @@ Message history - H to pause and view message history
       
       // Dialogue check - figure out what stage of the mission we&#39;re in and what to say next
       if (!response1 &amp;&amp; !response10 &amp;&amp; !isFirstContact) {
-        addDialogue(&quot;Captain: Unidentified contact, please identify yourself!&quot;, captainColor);
+        addDialogue(&quot;Captain: Unidentified contact, please identify yourself!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
         response10 = true;
         createTimeout(() =&gt; {
           addDialogue(&quot;???: Please help! We are heavily damaged and need assistance.&quot;, unidentifiedColor);
@@ -1865,7 +1900,7 @@ Message history - H to pause and view message history
       if (response2 &amp;&amp; !response3 &amp;&amp; !response3a) {
         response3a = true; // prevents this from being called again
         createTimeout(() =&gt; {
-          addDialogue(&quot;Captain: Unidentified vessel, transmit proper identification codes immediately.&quot;, captainColor);
+          addDialogue(&quot;Captain: Unidentified vessel, transmit proper identification codes immediately.&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
           createTimeout(() =&gt; {
         addDialogue(&quot;???: We are... *static*... merchant vessel... *static*... systems failing...&quot;, unidentifiedColor);
         response3 = true;
@@ -1889,7 +1924,7 @@ Message history - H to pause and view message history
           pirateShip.directionChangeFrequency = 0; // Stop changing direction randomly
           
           createTimeout(() =&gt; {
-            addDialogue(&quot;Captain: Unidentified vessel, power down engines now!&quot;, captainColor);
+            addDialogue(&quot;Captain: Unidentified vessel, power down engines now!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
             createTimeout(() =&gt; {
               addDialogue(&quot;???: *static*... we are... *static*... merchant vessel... *static*...&quot;, unidentifiedColor);
               createTimeout(() =&gt; {
@@ -1908,7 +1943,7 @@ Message history - H to pause and view message history
         addDialogue(&quot;Engineer: Massive EM spike! Bearing same as unidentified contact!&quot;, engineerColor);
         
         createTimeout(() =&gt; {
-          addDialogue(&quot;Captain: Keep me updated!&quot;, captainColor);
+          addDialogue(&quot;Captain: Keep me updated!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
 
           let battleStartTimeMillis = unpausedElapsedTimeMillis;
           
@@ -1961,7 +1996,7 @@ Message history - H to pause and view message history
           response6a = true; // prevents this from being called again
           // All missiles were destroyed, pirate will attack again
           createTimeout(() =&gt; {
-            addDialogue(&quot;Captain: Good work shooting down those missiles!&quot;, captainColor);
+            addDialogue(&quot;Captain: Good work shooting down those missiles!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
               createTimeout(() =&gt; {
               addDialogue(&quot;Engineer: Captain, they&#39;re preparing to fire again!&quot;, engineerColor);
               
@@ -2015,7 +2050,7 @@ Message history - H to pause and view message history
         
         if (activeMissiles === 0) {
           createTimeout(() =&gt; {
-            addDialogue(&quot;Captain: Their attack failed again. Sensors, get me a firing solution. I want those scum wiped out.&quot;, captainColor);
+            addDialogue(&quot;Captain: Their attack failed again. Sensors, get me a firing solution. I want those scum wiped out.&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
             createTimeout(() =&gt; {
               addDialogue(&quot;Engineer: Working on it Captain!&quot;, engineerColor);
               response7 = true;
@@ -2027,7 +2062,7 @@ Message history - H to pause and view message history
       // If pirate ship gets within the 0.1ls range, add a dialogue message warning of the imminent ram
       if (!response9a &amp;&amp; pirateShip.realDistance &lt; radius * 0.1) {
         response9a = true; // prevents this from being called again
-        addDialogue(&quot;Captain: They&#39;re insane! They&#39;re going to ram us! Blow them up NOW!&quot;, captainColor);
+        addDialogue(&quot;Captain: They&#39;re insane! They&#39;re going to ram us! Blow them up NOW!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
       }
 
       // Check for collision between pirate ship and player
