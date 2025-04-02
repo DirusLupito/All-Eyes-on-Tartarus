@@ -1865,7 +1865,7 @@ Message history - H to pause and view message history
             createTimeout(() => {
               addDialogue("???: *static*... we are... *static*... merchant vessel... *static*...", unidentifiedColor);
               createTimeout(() => {
-                addDialogue("Captain: Sensors, I need you to be ready for anything. Keep the thermal scanner directed at that contact.", captainColor);
+                addDialogue("Captain: Sensors, we can't shoot unless fired upon first. I need you to report the instant you pick up any incoming missiles so I can authorize return fire.", captainColor, 12);
               }, 5000);
             }, 5000); // 5 seconds delay for the unidentified contact's response
             response4 = true;
