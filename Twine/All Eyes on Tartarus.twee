@@ -110,7 +110,28 @@ Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
 Pause - P to toggle pause
 Message history - H to pause and view message history
 <!-- Mission 1 -->
-<canvas id="mission1" width="1200" height="800"></canvas>
+<!-- Removal of padding allows for much more game room on small monitors -->
+<style>
+tw-story {
+  padding: 0% 0%;
+  padding-top: 0%;
+  padding-right: 0%;
+  padding-bottom: 0%;
+  padding-left: 0%;
+}
+
+@media (min-width: 576px) {
+  tw-story {
+    padding: 0% 0%;
+    padding-top: 0%;
+    padding-right: 0%;
+    padding-bottom: 0%;
+    padding-left: 0%;
+  }
+}
+</style>
+
+<canvas id="mission1" width="1350" height="800"></canvas>
 <script>
     // Stops the previous audio
     if (typeof audio !== 'undefined') {
@@ -123,7 +144,7 @@ Message history - H to pause and view message history
     const ctx = canvas.getContext("2d");
     const width = canvas.width;
     const height = canvas.height;
-    const centerX = width / 2;
+    const centerX = width / 3;
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 10;
 
@@ -1497,7 +1518,7 @@ Message history - H to pause and view message history
         return;
       }
       
-      const maxWidth = 300;
+      const maxWidth = 375;
       const padding = 15;
       const lineHeight = 20;
       let currentY = 10; // Start at the top
@@ -1536,7 +1557,8 @@ Message history - H to pause and view message history
         lines.push(currentLine);
         
         // Calculate box dimensions based on whether there's an image
-        const hasImage = message.image !== undefined;
+        // Has image is true if the image property is defined.
+        const hasImage = message.image !== undefined && message.image !== null && message.image !== "" ;
         const boxWidth = maxWidth + (padding * 2) + (hasImage ? imageWidth + padding : 0);
         const boxHeight = Math.max((lines.length * lineHeight) + (padding * 2), hasImage ? imageHeight + (padding * 2) : 0);
         
@@ -1567,7 +1589,7 @@ Message history - H to pause and view message history
           const imgY = boxY + (boxHeight - imageHeight) / 2; // Center vertically
           
           // Only draw if the image is loaded
-          if (message.imageObject.complete) {
+          if (message.imageObject.complete && message.imageObject.naturalWidth > 0) {
             ctx.drawImage(message.imageObject, imgX, imgY, imageWidth, imageHeight);
           }
         }
@@ -1900,7 +1922,7 @@ Message history - H to pause and view message history
             createTimeout(() => {
               addDialogue("???: *static*... we are... *static*... merchant vessel... *static*...", unidentifiedColor);
               createTimeout(() => {
-                addDialogue("Captain: Sensors, we can't shoot unless fired upon first. I need you to report the instant you pick up any incoming missiles so I can authorize return fire.", captainColor, 12);
+                addDialogue("Captain: Sensors, we can't shoot unless fired upon first. I need you to report the instant you pick up any incoming missiles so I can authorize return fire.", captainColor, 12, captainPortraitFilePath);
               }, 5000);
             }, 5000); // 5 seconds delay for the unidentified contact's response
             response4 = true;
@@ -2155,7 +2177,7 @@ Message history - H to pause and view message history
           if (isFirstContact) {
             addDialogue(`Engineer: I've got something on scope! I can't pick up any IFF information.`, engineerColor);
             // Wait for 3 seconds, then set isFirstContact to false
-            setTimeout(() => {
+            createTimeout(() => {
               isFirstContact = false;
             }, 3000);
           }
@@ -2166,7 +2188,7 @@ Message history - H to pause and view message history
           if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
             addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor);
             // Wait for 3 seconds, then have the captain respond
-            setTimeout(() => {
+            createTimeout(() => {
               addDialogue(`Captain: They're pirates! Fire countermissile! General Quarters!`, captainColor, 12);
               // Now mark the player ship as allowed to fire
               allowedToFire = true;
@@ -2349,7 +2371,7 @@ Message history - H to pause and view message history
     lastFrameTime = performance.now();
 
     // Add the initial dialogue message
-    addDialogue("Captain: Sensors! What do we have?",  captainColor);
+    addDialogue("Captain: Sensors! What do we have?",  captainColor, defaultDialogueTime, captainPortraitFilePath);
 
     requestAnimationFrame(animate);
   })();
@@ -2417,8 +2439,30 @@ Message history - H to pause and view message history
   }
 </script>
 
+<!-- Removal of padding allows for much more game room on small monitors -->
+<style>
+  tw-story {
+    padding: 0% 0%;
+    padding-top: 0%;
+    padding-right: 0%;
+    padding-bottom: 0%;
+    padding-left: 0%;
+  }
+  
+  @media (min-width: 576px) {
+    tw-story {
+      padding: 0% 0%;
+      padding-top: 0%;
+      padding-right: 0%;
+      padding-bottom: 0%;
+      padding-left: 0%;
+    }
+  }
+  </style>
+  
+
 <!-- Debug Mission -->
-<canvas id="debugMission" width="1200" height="800"></canvas>
+<canvas id="debugMission" width="1350" height="800"></canvas>
 <script>
 $playerWon = false;
   (function() {
@@ -2426,7 +2470,7 @@ $playerWon = false;
     const ctx = canvas.getContext("2d");
     const width = canvas.width;
     const height = canvas.height;
-    const centerX = width / 2;
+    const centerX = width / 3;
     const centerY = height / 2;
     const radius = Math.min(width, height) / 2 - 10;
 
@@ -2518,6 +2562,8 @@ $playerWon = false;
     const engineerColor = "#00FF00";
     const captainColor = "#34eb7a";
     const friendlyColor = "#FF00FF"
+    // Dialogue portrait paths
+    const captainPortraitFilePath = "../assets/characters/CaptainPortrait.png";
   
     // Function to create explosion effect
     function createExplosion(x, y) {
@@ -2980,7 +3026,7 @@ $playerWon = false;
               // and if firedFirstSpread is false
               // If so, write dialogue 
               if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor);
+                addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                 firedFirstSpread = true;
               }
 
@@ -3019,7 +3065,7 @@ $playerWon = false;
           // Check if player tried to fire spread at missile (moved up to check in all cases)
           if (this.contactType === "PLAYER" && targetContact.isMissile && isSpreadAttack) {
             if (!firedSpreadAtMissile) {
-              addDialogue("Captain: Gunnery control, belay that order! That's a missile, don't waste a spread! Sensors, you should have known better!", captainColor);
+              addDialogue("Captain: Gunnery control, belay that order! That's a missile, don't waste a spread! Sensors, you should have known better!", captainColor, defaultDialogueTime, captainPortraitFilePath);
             }
             firedSpreadAtMissile = true;
             // Continue with normal single missile firing
@@ -3083,7 +3129,7 @@ $playerWon = false;
                 // and if firedFirstSpread is false
                 // If so, write dialogue 
                 if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor);
+                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                   firedFirstSpread = true;
                 }
 
@@ -3528,7 +3574,7 @@ $playerWon = false;
                 addDialogue("Engineer: Telemetry indicates one less hostile!", engineerColor);
                 madeFirstKill = true;
               } else if (!madeSecondKill) {
-                addDialogue("Captain: Good hit. Let's finish the last of these scum!", captainColor);
+                addDialogue("Captain: Good hit. Let's finish the last of these scum!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                 madeSecondKill = true;
               }
             }
@@ -3763,12 +3809,13 @@ $playerWon = false;
     }
 
     // Function to add a new dialogue message
-    function addDialogue(text, color, duration = defaultDialogueTime) {
+    function addDialogue(text, color, duration = defaultDialogueTime, imageFilePath) {
       // Add the message to the array with current time + duration as expiry time
       dialogueMessages.push({
       text: text,
       color: color,
-      expiryTime: Date.now() + (duration * 1000) // Multiply by 1000 to convert to milliseconds
+      expiryTime: Date.now() + (duration * 1000), // Multiply by 1000 to convert to milliseconds
+      image: imageFilePath
       });
     }
 
@@ -3781,10 +3828,14 @@ $playerWon = false;
         return;
       }
       
-      const maxWidth = 300;
+      const maxWidth = 375;
       const padding = 15;
       const lineHeight = 20;
       let currentY = 10; // Start at the top
+      
+      // Image dimensions
+      const imageWidth = 80;
+      const imageHeight = 120;
       
       // Draw messages from newest to oldest
       for (let i = dialogueMessages.length - 1; i >= 0; i--) {
@@ -3815,31 +3866,60 @@ $playerWon = false;
         }
         lines.push(currentLine);
         
-        // Calculate box height based on number of lines
-        const boxHeight = (lines.length * lineHeight) + (padding * 2);
+        // Calculate box dimensions based on whether there's an image
+        // Has image is true if the image property is defined.
+        const hasImage = message.image !== undefined && message.image !== null && message.image !== "" ;
+        const boxWidth = maxWidth + (padding * 2) + (hasImage ? imageWidth + padding : 0);
+        const boxHeight = Math.max((lines.length * lineHeight) + (padding * 2), hasImage ? imageHeight + (padding * 2) : 0);
         
         // Check if we're going off-screen and need to stop drawing
         if (currentY + boxHeight > height) {
           break;
         }
         
-        // Draw the background box
-        const boxWidth = maxWidth + (padding * 2);
         const boxX = width - boxWidth - 10;
         const boxY = currentY;
         
+        // Draw the background box
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
         ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
         ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
         ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
         
-        // Draw the text - right aligned
+        // Draw the image if specified
+        if (hasImage) {
+          // If image hasn't been loaded yet, create and cache it
+          if (!message.imageObject) {
+            message.imageObject = new Image();
+            message.imageObject.src = message.image;
+          }
+          
+          // Position image inside the box with some padding
+          const imgX = boxX + padding;
+          const imgY = boxY + (boxHeight - imageHeight) / 2; // Center vertically
+          
+          // Only draw if the image is loaded
+          if (message.imageObject.complete && message.imageObject.naturalWidth > 0) {
+            ctx.drawImage(message.imageObject, imgX, imgY, imageWidth, imageHeight);
+          }
+        }
+        
+        // Draw the text - right aligned if no image, left aligned if there is an image
         ctx.fillStyle = message.color;
-        ctx.textAlign = "right";
+        ctx.textAlign = hasImage ? "left" : "right";
         ctx.textBaseline = "top";
         
+        // Calculate text position
+        const textX = hasImage 
+          ? boxX + imageWidth + (padding * 2) // If image, position text after image
+          : boxX + boxWidth - padding; // If no image, position from right edge
+        
+        const textY = boxY + (hasImage 
+          ? (boxHeight - (lines.length * lineHeight)) / 2 // Center text vertically if there's an image
+          : padding); // Default padding if no image
+        
         lines.forEach((line, index) => {
-          ctx.fillText(line, boxX + boxWidth - padding, boxY + padding + (index * lineHeight));
+          ctx.fillText(line, textX, textY + (index * lineHeight));
         });
         
         // Update Y position for next message
@@ -4085,6 +4165,23 @@ $playerWon = false;
       // Keep track of how much time has been spent outside of pause
       unpausedElapsedTimeMillis += trueDeltaTimeMillis;
       
+      // Custom timeout handling system
+      if (!window.customTimeouts) {
+        window.customTimeouts = [];
+      }
+      
+      // Process any active timeouts
+      for (let i = window.customTimeouts.length - 1; i >= 0; i--) {
+        const timeout = window.customTimeouts[i];
+        timeout.elapsed += trueDeltaTimeMillis;
+        
+        if (timeout.elapsed >= timeout.delay) {
+          // Execute the callback and remove from array
+          timeout.callback();
+          window.customTimeouts.splice(i, 1);
+        }
+      }
+      
       // Cap deltaTime to prevent huge jumps if tab was inactive
       const cappedDeltaTime = Math.min(deltaTime, 0.5);
       
@@ -4225,10 +4322,7 @@ $playerWon = false;
           // If this is the first contact report clicked, add a dialogue message
           if (isFirstContact) {
             addDialogue(`Engineer: I've got something on scope! I can't pick up any IFF information.`, engineerColor);
-            // Wait for 3 seconds, then set isFirstContact to false
-            setTimeout(() => {
-              isFirstContact = false;
-            }, 3000);
+            isFirstContact = false;
           }
 
           wasOnContactReport = true;
@@ -4237,7 +4331,7 @@ $playerWon = false;
           if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
             addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor);
             // Wait for 3 seconds, then have the captain respond
-            setTimeout(() => {
+            createTimeout(() => {
               addDialogue(`Captain: They're pirates! Fire countermissile! General Quarters!`, captainColor, 12);
               // Now mark the player ship as allowed to fire
               allowedToFire = true;
@@ -4269,8 +4363,8 @@ $playerWon = false;
         if (!madeFirstClick) {
           addDialogue("Engineer: Captain, I think we need to fire at this position!", engineerColor);
           madeFirstClick = true;
-          setTimeout(() => {
-            addDialogue("Captain: Affirmative. I'm networking your console into the fire control system.", captainColor);
+          createTimeout(() => {
+            addDialogue("Captain: Affirmative. I'm networking your console into the fire control system.", captainColor, defaultDialogueTime, captainPortraitFilePath);
             allowedToFireAtSpot = true;
           }, 3000);
           return; // Do nothing until the captain responds
@@ -4504,7 +4598,7 @@ $playerWon = false;
     lastFrameTime = performance.now();
 
     // Add the initial dialogue message
-    addDialogue("Captain: Sensors! What's going on?!",  captainColor);
+    addDialogue("Captain: Sensors! What's going on?!",  captainColor, defaultDialogueTime, captainPortraitFilePath);
 
     requestAnimationFrame(animate);
   })();
