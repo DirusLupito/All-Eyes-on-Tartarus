@@ -55,7 +55,11 @@
 }</style><script role="script" id="twine-user-script" type="text/twine-javascript"></script><tw-passagedata pid="1" name="Intro 1" tags="" position="600,200" size="100,100">All Eyes on Tartarus
 To mute audio, right click the tab in the browser and select &quot;Mute Tab&quot;.
 (set: $playerWon to false)
-(set: $playerWonM1 to false)
+(set: $playerWonO1 to false)
+(set: $playerWonO2 to false)
+(set: $playerWonO3 to false)
+(set: $playerWonO4 to false)
+(set: $playerWonO5 to false)
 &lt;!-- Allow audio button  (unmute all audio) --&gt;
 &lt;button id=&quot;playAudioButton&quot;&gt;Allow Audio&lt;/button&gt;
 &lt;script&gt;
@@ -130,14 +134,22 @@ To mute audio, right click the tab in the browser and select &quot;Mute Tab&quot
 &lt;/div&gt;
 
 
-[[Continue-&gt;Intro 4]]</tw-passagedata><tw-passagedata pid="4" name="Intro 4" tags="" position="1200,200" size="100,100">Mission 1: Across the Point
+[[Continue-&gt;Operation 1]]
+[[Debug Operation-&gt;Debug Operation]]</tw-passagedata><tw-passagedata pid="4" name="Operation 1" tags="" position="1200,200" size="100,100">Operation 1: Across the Point
+
+Tips:
+Use your thermal scanner, especially when missiles are flying at you.
+The captain won&#39;t fire until you identify an incoming missile.
+Click the contact report box, not the contact itself to report contacts.
+When weapon fire is authorized, you can click on a spot to fire at that spot.
 
 Controls:
+F11 for fullscreen
 Thermal Scan - Use A/D to rotate
 Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
 Pause - P to toggle pause
 Message history - H to pause and view message history
-&lt;!-- Mission 1 --&gt;
+&lt;!-- Operation 1 --&gt;
 &lt;!-- Removal of padding allows for much more game room on small monitors --&gt;
 &lt;style&gt;
 tw-story {
@@ -159,7 +171,7 @@ tw-story {
 }
 &lt;/style&gt;
 
-&lt;canvas id=&quot;mission1&quot; width=&quot;1350&quot; height=&quot;750&quot;&gt;&lt;/canvas&gt;
+&lt;canvas id=&quot;operation1&quot; width=&quot;1350&quot; height=&quot;750&quot;&gt;&lt;/canvas&gt;
 &lt;script&gt;
     // Stops the previous audio
     if (typeof audio !== &#39;undefined&#39;) {
@@ -168,7 +180,7 @@ tw-story {
       delete audio;
     }
   (function() {
-    const canvas = document.getElementById(&quot;mission1&quot;);
+    const canvas = document.getElementById(&quot;operation1&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
     const width = canvas.width;
     const height = canvas.height;
@@ -1842,7 +1854,7 @@ tw-story {
       // Check if all player ships are gone
       if (areAllContactsGone(&quot;PLAYER&quot;)) {
         gameOver = true;
-        $playerWonM1 = false;
+        $playerWonO1 = false;
         gameOverMessage = &quot;DEFEAT!&quot;;
         gameOverColor = &quot;red&quot;;
         // Play defeat sound
@@ -1853,7 +1865,7 @@ tw-story {
       // Check if all hostile contacts are gone
       if (areAllContactsGone(&quot;HOSTILE&quot;)) {
         gameOver = true;
-        $playerWonM1 = true;
+        $playerWonO1 = true;
         gameOverMessage = &quot;VICTORY!&quot;;
         gameOverColor = &quot;green&quot;;
         // Play victory sound
@@ -1901,7 +1913,7 @@ tw-story {
         }
       }
       
-      // Dialogue check - figure out what stage of the mission we&#39;re in and what to say next
+      // Dialogue check - figure out what stage of the operation we&#39;re in and what to say next
       if (!response1 &amp;&amp; !response10 &amp;&amp; !isFirstContact) {
         addDialogue(&quot;Captain: Unidentified contact, please identify yourself!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
         response10 = true;
@@ -2104,7 +2116,7 @@ tw-story {
           
           // Set game over state
           gameOver = true;
-          $playerWonM1 = false;
+          $playerWonO1 = false;
           gameOverMessage = &quot;DEFEAT!&quot;;
           gameOverColor = &quot;red&quot;;
           
@@ -2405,10 +2417,21 @@ tw-story {
   })();
 &lt;/script&gt;
 
-[[See Mission Results-&gt;Mission Result 1]]
-[[Back-&gt;Intro 3]]</tw-passagedata><tw-passagedata pid="5" name="Mission Result 1" tags="" position="1200,400" size="100,100">[[No victory Click to go Back.-&gt;Intro 4]]
-(if: $playerWonM1 is true)[[[You won. Click to continue-&gt;Intro 5]]]</tw-passagedata><tw-passagedata pid="6" name="Intro 5" tags="" position="1400,200" size="100,100">Debug mission. On a routine patrol the Torch and Warspite encounter two hostiles.
-Whether they survive depends on the player.
+[[See Operation Results-&gt;Operation Result 1]]
+[[Back-&gt;Intro 3]]</tw-passagedata><tw-passagedata pid="5" name="Operation Result 1" tags="" position="1200,400" size="100,100">[[Click to go Back.-&gt;Operation 1]]
+(if: $playerWonO1 is true)[[[Victory! Click to continue-&gt;Operation 2]]]
+(set: $playerWonO2 to true)
+(set: $playerWonO3 to true)
+(set: $playerWonO4 to true)
+(set: $playerWonO5 to true)
+&lt;!-- TODO remove this --&gt;</tw-passagedata><tw-passagedata pid="6" name="Operation 2" tags="" position="1400,200" size="100,100">[[See Operation Results-&gt;Operation Result 2]]
+[[Back-&gt;Operation 1]]</tw-passagedata><tw-passagedata pid="7" name="Operation Result 2" tags="" position="1400,400" size="100,100">[[Click to go Back.-&gt;Operation 2]]
+(if: $playerWonO2 is true)[[[Victory! Click to continue-&gt;Operation 3]]]</tw-passagedata><tw-passagedata pid="8" name="Operation 3" tags="" position="1600,200" size="100,100">[[See Operation Results-&gt;Operation Result 3]]
+[[Back-&gt;Operation 2]]</tw-passagedata><tw-passagedata pid="9" name="Operation Result 3" tags="" position="1600,400" size="100,100">[[Click to go Back.-&gt;Operation 3]]
+(if: $playerWonO3 is true)[[[Victory! Click to continue-&gt;Operation 4]]]</tw-passagedata><tw-passagedata pid="10" name="Operation 4" tags="" position="1800,200" size="100,100">[[See Operation Results-&gt;Operation Result 4]]
+[[Back-&gt;Operation 3]]</tw-passagedata><tw-passagedata pid="11" name="Operation Result 4" tags="" position="1800,400" size="100,100">[[Click to go Back.-&gt;Operation 4]]
+(if: $playerWonO4 is true)[[[Victory! Click to continue-&gt;Operation 5]]]</tw-passagedata><tw-passagedata pid="12" name="Operation 5" tags="" position="2000,200" size="100,100">[[See Operation Results-&gt;Operation Result 5]]
+[[Back-&gt;Operation 4]]</tw-passagedata><tw-passagedata pid="13" name="Operation Result 5" tags="" position="2000,400" size="100,100">[[Click to go Back.-&gt;Operation 5]]</tw-passagedata><tw-passagedata pid="14" name="Debug Operation" tags="" position="1000,600" size="100,100">Debug Operation.
 
 TRIVIA:
 LS: Light Second = 299,792,458 Meters
@@ -2480,12 +2503,12 @@ Message history - H to pause and view message history
   &lt;/style&gt;
   
 
-&lt;!-- Debug Mission --&gt;
-&lt;canvas id=&quot;debugMission&quot; width=&quot;1350&quot; height=&quot;720&quot;&gt;&lt;/canvas&gt;
+&lt;!-- Debug Operation --&gt;
+&lt;canvas id=&quot;debugOperation&quot; width=&quot;1350&quot; height=&quot;720&quot;&gt;&lt;/canvas&gt;
 &lt;script&gt;
 $playerWon = false;
   (function() {
-    const canvas = document.getElementById(&quot;debugMission&quot;);
+    const canvas = document.getElementById(&quot;debugOperation&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
     const width = canvas.width;
     const height = canvas.height;
@@ -4622,7 +4645,7 @@ $playerWon = false;
     requestAnimationFrame(animate);
   })();
 &lt;/script&gt;
-[[Back-&gt;Intro 4]]</tw-passagedata></tw-storydata>
+[[Back-&gt;Intro 3]]</tw-passagedata></tw-storydata>
 <script title="Twine engine code" data-main="harlowe">(function(){"use strict";
 var require,define;!function(){var e={},r={};require=function(i){var n=e[i];return n&&(r[i]=n[1].apply(void 0,n[0].map(require)),e[i]=void 0),r[i]},(define=function(r,i,n){if("function"==typeof r)return r();e[r]=[i,n]}).amd=!0}();/*!
  * https://github.com/paulmillr/es6-shim

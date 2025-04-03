@@ -16,7 +16,11 @@ All Eyes on Tartarus
 All Eyes on Tartarus
 To mute audio, right click the tab in the browser and select "Mute Tab".
 (set: $playerWon to false)
-(set: $playerWonM1 to false)
+(set: $playerWonO1 to false)
+(set: $playerWonO2 to false)
+(set: $playerWonO3 to false)
+(set: $playerWonO4 to false)
+(set: $playerWonO5 to false)
 <!-- Allow audio button  (unmute all audio) -->
 <button id="playAudioButton">Allow Audio</button>
 <script>
@@ -99,17 +103,25 @@ Construimus, Batuimus
 </div>
 
 
-[[Continue->Intro 4]]
+[[Continue->Operation 1]]
+[[Debug Operation->Debug Operation]]
 
-:: Intro 4 {"position":"1200,200","size":"100,100"}
-Mission 1: Across the Point
+:: Operation 1 {"position":"1200,200","size":"100,100"}
+Operation 1: Across the Point
+
+Tips:
+Use your thermal scanner, especially when missiles are flying at you.
+The captain won't fire until you identify an incoming missile.
+Click the contact report box, not the contact itself to report contacts.
+When weapon fire is authorized, you can click on a spot to fire at that spot.
 
 Controls:
+F11 for fullscreen
 Thermal Scan - Use A/D to rotate
 Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
 Pause - P to toggle pause
 Message history - H to pause and view message history
-<!-- Mission 1 -->
+<!-- Operation 1 -->
 <!-- Removal of padding allows for much more game room on small monitors -->
 <style>
 tw-story {
@@ -131,7 +143,7 @@ tw-story {
 }
 </style>
 
-<canvas id="mission1" width="1350" height="750"></canvas>
+<canvas id="operation1" width="1350" height="750"></canvas>
 <script>
     // Stops the previous audio
     if (typeof audio !== 'undefined') {
@@ -140,7 +152,7 @@ tw-story {
       delete audio;
     }
   (function() {
-    const canvas = document.getElementById("mission1");
+    const canvas = document.getElementById("operation1");
     const ctx = canvas.getContext("2d");
     const width = canvas.width;
     const height = canvas.height;
@@ -1814,7 +1826,7 @@ tw-story {
       // Check if all player ships are gone
       if (areAllContactsGone("PLAYER")) {
         gameOver = true;
-        $playerWonM1 = false;
+        $playerWonO1 = false;
         gameOverMessage = "DEFEAT!";
         gameOverColor = "red";
         // Play defeat sound
@@ -1825,7 +1837,7 @@ tw-story {
       // Check if all hostile contacts are gone
       if (areAllContactsGone("HOSTILE")) {
         gameOver = true;
-        $playerWonM1 = true;
+        $playerWonO1 = true;
         gameOverMessage = "VICTORY!";
         gameOverColor = "green";
         // Play victory sound
@@ -1873,7 +1885,7 @@ tw-story {
         }
       }
       
-      // Dialogue check - figure out what stage of the mission we're in and what to say next
+      // Dialogue check - figure out what stage of the operation we're in and what to say next
       if (!response1 && !response10 && !isFirstContact) {
         addDialogue("Captain: Unidentified contact, please identify yourself!", captainColor, defaultDialogueTime, captainPortraitFilePath);
         response10 = true;
@@ -2076,7 +2088,7 @@ tw-story {
           
           // Set game over state
           gameOver = true;
-          $playerWonM1 = false;
+          $playerWonO1 = false;
           gameOverMessage = "DEFEAT!";
           gameOverColor = "red";
           
@@ -2377,19 +2389,61 @@ tw-story {
   })();
 </script>
 
-[[See Mission Results->Mission Result 1]]
+[[See Operation Results->Operation Result 1]]
 [[Back->Intro 3]]
 
+:: Operation Result 1 {"position":"1200,400","size":"100,100"}
 
-:: Mission Result 1 {"position":"1200,400","size":"100,100"}
+[[Click to go Back.->Operation 1]]
+(if: $playerWonO1 is true)[[[Victory! Click to continue->Operation 2]]]
+(set: $playerWonO2 to true)
+(set: $playerWonO3 to true)
+(set: $playerWonO4 to true)
+(set: $playerWonO5 to true)
+<!-- TODO remove this -->
 
-[[No victory Click to go Back.->Intro 4]]
-(if: $playerWonM1 is true)[[[You won. Click to continue->Intro 5]]]
+:: Operation 2 {"position":"1400,200","size":"100,100"}
+
+[[See Operation Results->Operation Result 2]]
+[[Back->Operation 1]]
+
+:: Operation Result 2 {"position":"1400,400","size":"100,100"}
+
+[[Click to go Back.->Operation 2]]
+(if: $playerWonO2 is true)[[[Victory! Click to continue->Operation 3]]]
+
+:: Operation 3 {"position":"1600,200","size":"100,100"}
+
+[[See Operation Results->Operation Result 3]]
+[[Back->Operation 2]]
+
+:: Operation Result 3 {"position":"1600,400","size":"100,100"}
+
+[[Click to go Back.->Operation 3]]
+(if: $playerWonO3 is true)[[[Victory! Click to continue->Operation 4]]]
+
+:: Operation 4 {"position":"1800,200","size":"100,100"}
+
+[[See Operation Results->Operation Result 4]]
+[[Back->Operation 3]]
+
+:: Operation Result 4 {"position":"1800,400","size":"100,100"}
+
+[[Click to go Back.->Operation 4]]
+(if: $playerWonO4 is true)[[[Victory! Click to continue->Operation 5]]]
+
+:: Operation 5 {"position":"2000,200","size":"100,100"}
+
+[[See Operation Results->Operation Result 5]]
+[[Back->Operation 4]]
+
+:: Operation Result 5 {"position":"2000,400","size":"100,100"}
+
+[[Click to go Back.->Operation 5]]
 
 
-:: Intro 5 {"position":"1400,200","size":"100,100"}
-Debug mission. On a routine patrol the Torch and Warspite encounter two hostiles.
-Whether they survive depends on the player.
+:: Debug Operation {"position":"1000,600","size":"100,100"}
+Debug Operation.
 
 TRIVIA:
 LS: Light Second = 299,792,458 Meters
@@ -2461,12 +2515,12 @@ Message history - H to pause and view message history
   </style>
   
 
-<!-- Debug Mission -->
-<canvas id="debugMission" width="1350" height="720"></canvas>
+<!-- Debug Operation -->
+<canvas id="debugOperation" width="1350" height="720"></canvas>
 <script>
 $playerWon = false;
   (function() {
-    const canvas = document.getElementById("debugMission");
+    const canvas = document.getElementById("debugOperation");
     const ctx = canvas.getContext("2d");
     const width = canvas.width;
     const height = canvas.height;
@@ -4603,7 +4657,7 @@ $playerWon = false;
     requestAnimationFrame(animate);
   })();
 </script>
-[[Back->Intro 4]]
+[[Back->Intro 3]]
 
 
 :: StoryStylesheet [stylesheet]
