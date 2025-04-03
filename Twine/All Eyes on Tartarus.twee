@@ -131,7 +131,7 @@ tw-story {
 }
 </style>
 
-<canvas id="mission1" width="1350" height="800"></canvas>
+<canvas id="mission1" width="1350" height="750"></canvas>
 <script>
     // Stops the previous audio
     if (typeof audio !== 'undefined') {
@@ -2462,7 +2462,7 @@ Message history - H to pause and view message history
   
 
 <!-- Debug Mission -->
-<canvas id="debugMission" width="1350" height="800"></canvas>
+<canvas id="debugMission" width="1350" height="720"></canvas>
 <script>
 $playerWon = false;
   (function() {
