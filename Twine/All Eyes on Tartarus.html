@@ -60,6 +60,7 @@ To mute audio, right click the tab in the browser and select &quot;Mute Tab&quot
 (set: $playerWonO3 to false)
 (set: $playerWonO4 to false)
 (set: $playerWonO5 to false)
+(set: $tutorialOperationAllowed to false)
 (set: $operation1Allowed to false)
 (set: $operation2Allowed to false)
 (set: $operation3Allowed to false)
@@ -143,11 +144,2558 @@ To mute audio, right click the tab in the browser and select &quot;Mute Tab&quot
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
+(set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 
-
+[[Tutorial-&gt;Tutorial Operation]]
 [[Continue-&gt;Operation 1]]
-[[Debug Operation-&gt;Debug Operation]]</tw-passagedata><tw-passagedata pid="4" name="Operation 1" tags="" position="1200,200" size="100,100">Operation 1: Across the Point
+[[Debug Operation-&gt;Debug Operation]]</tw-passagedata><tw-passagedata pid="4" name="Tutorial Operation" tags="" position="1000,400" size="100,100">Tutorial.
+
+Controls:
+F11 for fullscreen
+Thermal Scan - Use A/D to rotate
+Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
+Pause - P to toggle pause
+Message history - H to pause and view message history
+
+&lt;!-- Removal of padding allows for much more game room on small monitors --&gt;
+&lt;style&gt;
+tw-story {
+  padding: 0% 0%;
+  padding-top: 0%;
+  padding-right: 0%;
+  padding-bottom: 0%;
+  padding-left: 0%;
+}
+
+@media (min-width: 576px) {
+  tw-story {
+    padding: 0% 0%;
+    padding-top: 0%;
+    padding-right: 0%;
+    padding-bottom: 0%;
+    padding-left: 0%;
+  }
+}
+&lt;/style&gt;
+
+&lt;canvas id=&quot;tutorialOperation&quot; width=&quot;1350&quot; height=&quot;750&quot;&gt;&lt;/canvas&gt;
+&lt;script&gt;
+    // Mark the tutorial operation as being usable
+    $tutorialOperationAllowed = true;
+    // Stops the previous audio
+    if (typeof audio !== &#39;undefined&#39;) {
+      audio.pause();
+      // And probably remove it from the memory
+      delete audio;
+    }
+  (function() {
+    const canvas = document.getElementById(&quot;tutorialOperation&quot;);
+    const ctx = canvas.getContext(&quot;2d&quot;);
+    const width = canvas.width;
+    const height = canvas.height;
+    const centerX = width / 3;
+    const centerY = height / 2;
+    const radius = Math.min(width, height) / 2 - 10;
+
+    // Array of elint beep audios. Rather than create and play a new beep each time there is a detection,
+    // we will instead reuse numBeeps number of beeps. This is to prevent the audio from overlapping and
+    // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
+    const numBeeps = 20;
+    const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    
+    // Track the start time
+    const startTime = Date.now();
+    let lastFrameTime = performance.now();
+    // Track the unpaused elapsed time
+    let unpausedElapsedTimeMillis = 0;
+    // Time multiplier
+    // 1 = normal speed
+    // 2 = double speed
+    // 0.5 = half speed
+    const deltaTimeMultiplier = 2.4;
+    // Detection chance time multiplier
+    // Intended to address the fact that PC performance can affect detection chances
+    const detectionTimeMultiplier = 1;
+
+    // Game state variables
+    let gameOver = false;
+    let gamePaused = true;
+    let gameOverMessage = &quot;&quot;;
+    let gameOverColor = &quot;&quot;;
+
+    // If the game is paused, go ahead and draw the pause screen
+    if (gamePaused) {
+      requestAnimationFrame(drawPauseMenu);
+    }
+
+    // Customizable parameters - now in units per second instead of per frame
+    const radarSpeed = 30; // degrees per second
+    const fadeRate = 6;   // fade opacity per second
+    const ELINTHalfAngle = Math.PI/36; // 5 degrees in radians
+    
+    // Radar line angle
+    let angle = 0;
+    // Thermal scan angle
+    let thermalScanAngle = 0;
+    
+    // Thermal scan parameters
+    const thermalScanWidth = Math.PI/6; // 30 degrees in radians
+    const thermalScanRadius = radius * 0.25; // 0.25ls circle
+    const thermalScanSpeed = 30; // degrees per second
+    let thermalScanCenter = 0; // Center of thermal scan area
+    let thermalScanReversed = false; // Direction of thermal scan rotation
+
+    // Missile thermal scan parameters
+    const missileScanWidth = Math.PI/6; // 30 degrees in radians
+    const missileScanRadius = radius * 0.05; // 0.05ls circle
+    const missileScanSpeed = 60; // degrees per second
+
+    // Random missile launch parameters
+    const baseMissileLaunchChance = 0;
+    let missileLaunchChance = baseMissileLaunchChance;
+    let missileLaunchIncrease = 0;
+    // Missile attack type parameters
+    const chanceOfSpreadAttack = 0.0;
+    const spreadAttackMissilePerRadiusAmount = 0.05; // Add 1 more missile for every radius amount of distance to target
+    let allowedToFireAtSpot = false; // If true, the player can fire at any point on the screen, not just contacts. If false, they can&#39;t.
+    let allowedToFire = false; // If true, the player can cause a missile to be launched. If false, all controls related to firing are disabled. 
+    // Tartarus missile parameters
+    const tartarusMissileFuelTime = 120; // Lifetime of Tartarus missiles in seconds. Default 120
+    const tartarusMissileArmingTime = 1.0; // Time it takes for Tartarus missiles to arm in seconds. Default 1.0
+    const tartarusMissileSpeed = 12; // Speed of Tartarus missiles in ls/s. Default 12
+
+    // Contact report parameters
+    let contactReports = [];
+    const reportLifetime = 10; // lifetime in seconds
+
+    // IFF Parameters
+    const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
+    const acceptedTypes = [&quot;FRIENDLY&quot;, &quot;HOSTILE&quot;, &quot;NEUTRAL&quot;, &quot;GHOST&quot;, &quot;PLAYER&quot;]; // Accepted contact types
+
+    // Tutorial mission variables
+    let tutorialStage = 0;
+    let disableRadar = true;
+    let disableThermal = true;
+    let tutorialContactId = null;
+    let tutorialMissileInterval = null;
+    let infiniteMissiles = false;
+    const tutorialActions = {
+      reportedFirstRadarContact: false,
+      reportedRealRadarContact: false,  
+      reportedStealthContact: false,
+      reportedMissile: false,
+      shotDownMissile: false,
+      destroyedFinalTarget: false
+    };
+
+    // Dialogue message parameters
+    const dialogueMessages = []; // Array to store dialogue messages with text, color, and time they should disappear
+    const defaultDialogueTime = 12; // Default time for dialogue messages to disappear
+    // Dialogue flags
+    let isFirstContact = true;
+    let isFirstMissile = true;
+    let shotDownFirstMissile = false;
+    let firedFirstSpread = false;
+    let firedSpreadAtMissile = false;
+    let firedSpreadAtInvalidTarget = false;
+    // Dialogue message colors for certain characters
+    const engineerColor = &quot;#00FF00&quot;;
+    const captainColor = &quot;#34eb7a&quot;;
+    const helmsmanColor = &quot;#9ceb34&quot;;
+    const friendlyColor = &quot;#FF00FF&quot;
+    const aiColor = &quot;#c0ffbd&quot;
+    const unidentifiedColor = &quot;#FFFFFF&quot;
+    const pirateColor = &quot;#FF0000&quot;
+    // Dialogue portrait paths
+    const captainPortraitFilePath = &quot;../assets/characters/CaptainPortrait.png&quot;;
+
+    // Function to create explosion effect
+    function createExplosion(x, y) {
+      // Play explosion sound (Unused for now)
+      // const explosionSound = new Audio(&quot;../assets/MissileHit.mp3&quot;);
+      // explosionSound.play();
+
+      // Visual explosion effect (flash)
+      ctx.beginPath();
+      ctx.arc(x, y, 30, 0, Math.PI * 2);
+      ctx.fillStyle = &quot;rgba(255, 200, 50, 0.8)&quot;;
+      ctx.fill();
+    }
+
+    // Function to check if all contacts of a specific type are gone
+    function areAllContactsGone(type) {
+      return !contacts.some(contact =&gt; contact.contactType === type &amp;&amp; !contact.destroyed);
+    }
+
+    // Contact Report class
+    class ContactReport {
+      constructor(x, y, timestamp, contactType, contact) {
+        this.x = x;
+        this.y = y;
+        this.timestamp = timestamp;
+        this.contactType = contactType;
+        this.contact = contact;
+        this.timeCreated = Date.now();
+        this.age = 0;
+        this.maxAge = reportLifetime;
+      }
+      
+      update(deltaTime) {
+        // Increment age, but only if the contact is no longer visible or no longer exists
+        if (!this.contact || !this.contact.visible || this.contact.destroyed || typeof this.contact === &#39;undefined&#39;) {
+          this.age += deltaTime;
+        }
+        return this.age &lt; this.maxAge;
+      }
+      
+      draw() {
+        // Calculate opacity based on age
+        const opacity = 1 - (this.age / this.maxAge);
+        
+        // Determine position (ensure it&#39;s on screen)
+        const boxWidth = 180;
+        const boxHeight = 75; // Increased height to fit new line
+        let boxX = this.x + 15;
+        let boxY = this.y - boxHeight - 15;
+        
+        // Adjust if would go off screen
+        if (boxX + boxWidth &gt; width) boxX = this.x - boxWidth - 15;
+        if (boxY &lt; 0) boxY = this.y + 15;
+        
+        // Draw connection line
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(boxX + (boxX &gt; this.x ? 0 : boxWidth), boxY + boxHeight/2);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Draw box
+        ctx.fillStyle = `rgba(0, 0, 0, ${opacity * 0.7})`;
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        ctx.strokeStyle = `rgba(0, 255, 255, ${opacity})`;
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Draw text
+        ctx.font = &quot;10px monospace&quot;;
+        ctx.fillStyle = `rgba(0, 255, 255, ${opacity})`;
+        ctx.textAlign = &quot;left&quot;;
+        ctx.fillText(`DETECTED: ${this.timestamp}`, boxX + 5, boxY + 15);
+        ctx.fillText(`POTENTIAL ${this.contactType} CONTACT`, boxX + 5, boxY + 30);
+        ctx.fillText(&quot;CLICK TO REPORT CONTACT&quot;, boxX + 5, boxY + 45);
+        ctx.fillText(&quot;X TO DISMISS, Q TO FIRE SPREAD&quot;, boxX + 5, boxY + 60);
+      }
+      
+      contains(mouseX, mouseY) {
+        // Determine box position
+        const boxWidth = 180;
+        const boxHeight = 75; // TODO: Make boxWidth and boxHeight not exist both here and in draw() separately in order to make it easier to change
+        let boxX = this.x + 15;
+        let boxY = this.y - boxHeight - 15;
+        
+        // Adjust if would go off screen
+        if (boxX + boxWidth &gt; width) boxX = this.x - boxWidth - 15;
+        if (boxY &lt; 0) boxY = this.y + 15;
+        
+        return mouseX &gt;= boxX &amp;&amp; mouseX &lt;= boxX + boxWidth &amp;&amp; 
+               mouseY &gt;= boxY &amp;&amp; mouseY &lt;= boxY + boxHeight;
+      }
+    }
+
+    // Contact class definition
+    class Contact {
+      constructor(bearing, distance, size, movementSpeed, directionChangeFrequency, movementDirection, 
+                  visible, opacity, emittingRadiation, emissionDetectionChance, 
+                  radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
+                  iffBroadcasting, iffString, contactColor, contactType, numMissilesLoaded) {
+        // Affects displayed position
+        this.bearing = bearing;
+        this.distance = distance;
+        this.size = size;
+        
+        // Affects real position for sim (moves independently of the displayed blip)
+        this.realBearing = bearing;
+        this.realDistance = distance;
+        
+        // Movement parameters for sim (now per second rather than per frame)
+        this.movementSpeed = movementSpeed;
+        this.directionChangeFrequency = directionChangeFrequency;
+        this.movementDirection = movementDirection;
+        this.directionChangeCounter = 0;
+        
+        // Visibility properties for contact blip
+        this.visible = visible;
+        this.opacity = opacity;
+        this.fadeSpeed = 0.6; // fade per second
+
+        // ELINT detection properties
+        this.emittingRadiation = emittingRadiation;
+        this.emissionDetectionChance = emissionDetectionChance;
+        this.radiationDetected = false;
+        this.radiationDetectionDuration = 0;
+        
+        // Radar detection properties
+        this.radarDetectable = radarDetectable;
+        this.radarDetectionChance = radarDetectionChance;
+        this.lastDetectedTime = null;
+
+        // Thermal detection properties
+        this.thermalDetectable = thermalDetectable;
+        this.thermalDetectionChance = thermalDetectionChance;
+
+        // IFF (Identification Friend or Foe) properties
+        this.iffBroadcasting = iffBroadcasting;
+        this.iffString = iffString;
+        this.contactColor = contactColor;
+
+        // How many missiles are aboard the ship
+        this.numMissiles = numMissilesLoaded;
+
+        // Currently, there are five types of contacts: &quot;FRIENDLY&quot;, &quot;HOSTILE&quot;, &quot;NEUTRAL&quot;, &quot;GHOST&quot;, and &quot;PLAYER&quot;
+        // Anything else is treated as &quot;GHOST&quot;
+        if (acceptedTypes.includes(contactType)) {
+          this.contactType = contactType;
+        } else {
+          this.contactType = &quot;GHOST&quot;;
+        }
+        // Ghosts must not be thermally detectable
+        if (this.contactType === &quot;GHOST&quot;) {
+          this.thermalDetectable = false;
+        }
+      }
+      
+      updatePosition(deltaTime) {
+        // Randomly change direction occasionally, now based on elapsed time
+        this.directionChangeCounter += deltaTime;
+        if (this.directionChangeCounter &gt; (1 / this.directionChangeFrequency)) {
+          this.movementDirection += (Math.random() - 0.5) * Math.PI / 2; // Change by up to +/-45 degrees
+          this.directionChangeCounter = 0;
+        }
+        
+        // Convert polar movement to cartesian
+        let dx = Math.cos(this.movementDirection) * this.movementSpeed * deltaTime;
+        let dy = Math.sin(this.movementDirection) * this.movementSpeed * deltaTime;
+        
+        // Convert contact position from polar to cartesian
+        let contactX = Math.cos(this.realBearing) * this.realDistance;
+        let contactY = Math.sin(this.realBearing) * this.realDistance;
+        
+        // Update position
+        contactX += dx;
+        contactY += dy;
+        
+        // Convert back to polar coordinates
+        this.realDistance = Math.sqrt(contactX * contactX + contactY * contactY);
+        this.realBearing = Math.atan2(contactY, contactX);
+        
+        // Keep contact within radar bounds
+        if (this.realDistance &gt; radius * 0.95) {
+          // If near edge, bounce back, unless a missile, in which case it should self-destruct
+          if (this.isMissile) {
+            // Create explosion effect
+            createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
+                           centerY + this.realDistance * Math.sin(this.realBearing));
+            
+            // Remove from contacts array
+            const index = contacts.indexOf(this);
+            if (index &gt; -1) {
+              contacts.splice(index, 1);
+            }
+            return;
+          }
+          this.movementDirection = Math.atan2(-contactY, -contactX);
+          this.realDistance = radius * 0.95;
+        } else if (this.realDistance &lt; 0) {
+          // If somehow at a negative distance, reset to 0
+          this.realDistance = 0;
+        }
+        
+        // Check for radiation detection
+        this.checkRadiationDetection(deltaTime);
+        
+        // Decrease radiation detection duration
+        if (this.radiationDetected) {
+          this.radiationDetectionDuration -= deltaTime;
+          if (this.radiationDetectionDuration &lt;= 0) {
+            this.radiationDetected = false;
+          }
+        }
+      }
+      
+      checkRadiationDetection(deltaTime) {
+        // Adjust chance based on time
+        const timeAdjustedChance = this.emissionDetectionChance * deltaTime * detectionTimeMultiplier;
+        
+        if (this.emittingRadiation &amp;&amp; Math.random() &lt; timeAdjustedChance) {
+          // Play a beep
+          // Iterate through beeps to find one that is not currently playing
+          for (let i = 0; i &lt; numBeeps; i++) {
+            if (elintBeeps[i].paused) {
+              elintBeeps[i].play();
+              break;
+            }
+          }
+
+          this.radiationDetected = true;
+          this.radiationDetectionDuration = 0.25; // Show for 0.25 second
+        }
+      }
+      
+      checkDetection(radarAngle, thermalScanAbsoluteAngle, thermalScanRadius, deltaTime) {
+        // Check if radar is sweeping over the contact
+        const angleDiff = Math.abs(normalizeAngle(radarAngle - this.realBearing));
+        let wasNewDetection = false;
+        
+        // Adjust chances based on time
+        // If something has a 100% chance of being detected, it should be detected
+        const timeAdjustedRadarChance = this.radarDetectionChance &gt;= 1 ? 1 : this.radarDetectionChance * deltaTime * detectionTimeMultiplier;
+        //const timeAdjustedThermalChance = this.thermalDetectionChance * deltaTime * detectionTimeMultiplier;
+        const timeAdjustedThermalChance = this.thermalDetectionChance &gt; 0 ? 1 : 0; // If something is thermal detectable, it should be detected
+        
+        if (angleDiff &lt; 0.1 &amp;&amp; this.radarDetectable &amp;&amp; Math.random() &lt; timeAdjustedRadarChance) {
+          // Check if this is a new detection
+          if (!this.visible) {
+            wasNewDetection = true;
+          }
+
+          this.visible = true;
+          this.opacity = 1.0;
+          // Update the displayed contact position to the real position
+          this.bearing = this.realBearing;
+          this.distance = this.realDistance;
+          
+          // Create a contact report for new detections
+          if (wasNewDetection) {
+            // Play a ping
+            const audio = new Audio(&quot;../assets/RadarPing.mp3&quot;);
+            audio.play();
+            const contactX = centerX + this.distance * Math.cos(this.bearing);
+            const contactY = centerY + this.distance * Math.sin(this.bearing);
+            
+            // Format timestamp as minutes:seconds since start
+            const minutes = Math.floor(unpausedElapsedTimeMillis / 60000);
+            const seconds = Math.floor((unpausedElapsedTimeMillis % 60000) / 1000);
+            const timestamp = `${minutes.toString().padStart(2, &#39;0&#39;)}:${seconds.toString().padStart(2, &#39;0&#39;)}`;
+            
+            this.lastDetectedTime = timestamp;
+            contactReports.push(new ContactReport(contactX, contactY, timestamp, &quot;RADAR&quot;, this));
+          }
+        }
+        
+        // Check if thermal scan is over the contact
+        const thermalDiff = Math.abs(normalizeAngle(thermalScanAbsoluteAngle - this.realBearing));
+        
+        if (thermalDiff &lt; 0.1 &amp;&amp; this.realDistance &lt; thermalScanRadius &amp;&amp; 
+            this.thermalDetectable &amp;&amp; Math.random() &lt; timeAdjustedThermalChance) {
+          // Check if this is a new detection
+          if (!this.visible) {
+            wasNewDetection = true;
+          }
+
+          this.visible = true;
+          this.opacity = 1.0;
+          // Update the displayed contact position to the real position
+          this.bearing = this.realBearing;
+          this.distance = this.realDistance;
+          
+          // Create a contact report for new detections
+          if (wasNewDetection) {
+            const contactX = centerX + this.distance * Math.cos(this.bearing);
+            const contactY = centerY + this.distance * Math.sin(this.bearing);
+            
+            // Format timestamp as minutes:seconds since start
+            const minutes = Math.floor(unpausedElapsedTimeMillis / 60000);
+            const seconds = Math.floor((unpausedElapsedTimeMillis % 60000) / 1000);
+            const timestamp = `${minutes.toString().padStart(2, &#39;0&#39;)}:${seconds.toString().padStart(2, &#39;0&#39;)}`;
+            
+            this.lastDetectedTime = timestamp;
+            contactReports.push(new ContactReport(contactX, contactY, timestamp, &quot;THERMAL&quot;, this));
+          }
+        }
+      }
+
+      // Launch a missile along a given bearing
+      launchMissileAlongAngle(targetBearing, missileFuelTime, missileArmingTime, missileMovementSpeed) {
+        // Check if there are missiles available (undefined or null indicates infinite missiles)
+        if (this.numMissiles &gt; 0 || this.numMissiles === undefined || this.numMissiles === null) {
+          // General idea: Create a unit circle around this contact, then create a contact at the 
+          // corresponding point on the circle with the matching bearing.
+
+          // Figure out the polar coordinates of a point on the unit circle with angle targetBearing
+          const targetX = Math.cos(targetBearing);
+          const targetY = Math.sin(targetBearing);
+
+          // Center the unit circle around the launcher&#39;s position
+          const missileX = Math.cos(this.realBearing) * this.realDistance;
+          const missileY = Math.sin(this.realBearing) * this.realDistance;
+
+          // Figure out the actual position in the game world that the missile is being launched towards
+          const trueTargetX = missileX + targetX;
+          const trueTargetY = missileY + targetY;
+
+          // Convert back to polar coordinates
+          const targetContactBearing = Math.atan2(trueTargetY, trueTargetX);
+          const targetContactDistance = Math.sqrt(trueTargetX * trueTargetX + trueTargetY * trueTargetY);
+
+          // Create a new contact that just gives a bearing and unit distance
+          // to tell the missile what direction to aim in
+          // If this is not done, then missiles launched will not know
+          // which direction to go in. They will only know where to spawn.
+          let targetContact = new Contact(targetContactBearing, targetContactDistance);
+
+          // Set the missile&#39;s contact type to match whoever launched it, unless the contact is a player
+          // Set it to friendly in that latter case
+          let contactType = this.contactType;
+          if (this.contactType === &quot;PLAYER&quot;) {
+            contactType = &quot;FRIENDLY&quot;;
+          }
+          const missile = new MissileContact(this.realBearing, this.realDistance, targetContact, missileFuelTime, contactType, missileArmingTime, missileMovementSpeed);
+          contacts.push(missile);
+
+          // Reduce the number of missiles available if applicable
+          if (this.numMissiles !== undefined &amp;&amp; this.numMissiles !== null) {
+            this.numMissiles--;
+          }
+        } 
+      }
+
+      // Launch a missile at the given position (Requires target contact just to tell the missile who it&#39;s initially targeting)
+      launchMissileAtPoint(targetX, targetY, missileFuelTime, missileArmingTime, missileMovementSpeed) {
+        // Check if there are missiles available (undefined or null indicates infinite missiles)
+        if (this.numMissiles &gt; 0 || this.numMissiles === undefined || this.numMissiles === null) {
+          
+          // Figure out the angle of the line which points from this contact to the target
+          // Convert contact position from polar to Cartesian
+          const contactX = Math.cos(this.realBearing) * this.realDistance;
+          const contactY = Math.sin(this.realBearing) * this.realDistance;
+
+          // Calculate angle from contact to target
+          const targetAngle = Math.atan2(targetY - contactY, targetX - contactX);
+
+          // Delegate to launchMissileAlongAngle with the target angle
+          this.launchMissileAlongAngle(targetAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+        }
+      }
+
+      // Launch a missile at the given contact
+      launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack) {
+        // Check if there are missiles available (undefined or null indicates infinite missiles)
+        if (this.numMissiles &gt; 0 || this.numMissiles === undefined || this.numMissiles === null) {
+          // Basic idea: We have four parametric equations, two for the target&#39;s position as a function
+          // of time, and two for the missile&#39;s position as a function of time. 
+          // The missile position in x is given by
+          //
+          // missileX(t) = t * missileVelocityX + missileX(0)    &lt;-- missileX(0) is the initial x position of the missile, so in this case, the launcher&#39;s x position
+          //
+          // The missile position in y is given by
+          //
+          // missileY(t) = t * missileVelocityY + missileY(0)  &lt;-- missileY(0) is the initial y position of the missile, so in this case, the launcher&#39;s y position
+          //
+          // The target position in x is given by
+          //
+          // targetX(t) = t * targetVelocityX + targetX(0)  &lt;-- targetX(0) is the initial x position of the target contact, so in this case, its current x position
+          //
+          // The target position in y is given by
+          //
+          // targetY(t) = t * targetVelocityY + targetY(0)  &lt;-- targetY(0) is the initial y position of the target contact, so in this case, its current y position
+          //
+          // We want all four quantities to equal, so we arrive at a system of two equations:
+          //
+          // missileX(t) = targetX(t) &amp;&amp; missileY(t) = targetY(t)
+          //
+          // We actually have two unknowns. Time is of course one of them, but the other is the angle at which we must launch the missile to collide with the target.
+          // It is this quantity we are interested in. We know that launch angle is actually a part of the missile&#39;s velocity vector, so we can write
+          //
+          // missileVelocityX = missileSpeed * cos(missileLaunchAngle) &amp;&amp; missileVelocityY = missileSpeed * sin(missileLaunchAngle)
+          //
+          // We then substitute these into the system of equations, and solve for time and missileLaunchAngle. 
+          // It is somewhat challenging to solve this, but by using a symbolic algebra system like the one used by Wolfram Mathematica, we get that there
+          // are actually two solutions for both time and angle. We will look at both solutions and chooose which, if any, is the correct one to use.
+          // For instance, if angle or time are undefined or infinite, we know that something is wrong with that solution, likely because none is possible.
+          // This could happen in a case where we&#39;re shooting at something going away faster than we can catch up to it, for instance.
+          // Moreover, if time is negative, then our window of opportunity has already passed, and we should not launch the missile using the given solution.
+          // Those interested in the derivation of this equation for themselves should be familiar with solutions of equations of the form 
+          //
+          // sin(x) + b cos(x) = c for real valued constants b and c
+
+          // Time, angle equations 1.
+          // These symbols correspond to these quantities:
+          // evx - Enemy velocity x
+          // evy - Enemy velocity y
+          // mxi - Missile initial x position
+          // myi - Missile initial y position
+          // exi - Enemy initial x position
+          // eyi - Enemy initial y position
+          // mspeed - Missile speed
+          // t - Time
+          // a - Angle
+
+          // In Mathematica code, solution pair 1 is given by
+          // t=1/(evx^2+evy^2-mspeed^2) (-evx  exi-evy  eyi+evx  mxi+evy  myi-1/2  \[Sqrt](4  (evx (exi-mxi)+evy (eyi-myi))^2-4  (evx^2+evy^2-mspeed^2)  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))
+          // a=ArcTan[(-evy  (exi-mxi)  (eyi-myi)+evx  (eyi-myi)^2+(exi-mxi)  \[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)),(evy  (exi-mxi+(eyi-myi)  (-evx  exi+evx  mxi+\[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))]
+          
+          // In Mathematica code, solution pair 2 is given by
+          // t=1/(evx^2+evy^2-mspeed^2) (-evx  exi-evy  eyi+evx  mxi+evy  myi+1/2  \[Sqrt](4  (evx (exi-mxi)+evy (eyi-myi))^2-4  (evx^2+evy^2-mspeed^2)  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))
+          // a=ArcTan[(-evy  (exi-mxi)  (eyi-myi)+evx  (eyi-myi)^2+(-exi+mxi)  \[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2)),(evy  (exi-mxi)^2-(eyi-myi)  (evx  exi-evx  mxi+\[Sqrt](-evy^2  (exi-mxi)^2+2  evx  evy  (exi-mxi)  (eyi-myi)-evx^2  (eyi-myi)^2+mspeed^2  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))))/(mspeed  (exi^2+eyi^2-2  exi  mxi+mxi^2-2  eyi  myi+myi^2))]
+
+          // Convert both contacts&#39; polar coordinates to Cartesian
+          // For the missile launcher (this contact)
+          const mxi = Math.cos(this.realBearing) * this.realDistance; // Missile initial x
+          const myi = Math.sin(this.realBearing) * this.realDistance; // Missile initial y
+          
+          // For the target
+          const exi = Math.cos(targetContact.realBearing) * targetContact.realDistance; // Enemy initial x
+          const eyi = Math.sin(targetContact.realBearing) * targetContact.realDistance; // Enemy initial y
+          
+          // Calculate enemy velocity components
+          const evx = Math.cos(targetContact.movementDirection) * targetContact.movementSpeed; // Enemy velocity x
+          const evy = Math.sin(targetContact.movementDirection) * targetContact.movementSpeed; // Enemy velocity y
+          
+          // Missile speed
+          const mspeed = missileMovementSpeed;
+          
+          // Calculate values needed for the formulas
+          const dx = exi - mxi;
+          const dy = eyi - myi;
+          const distSquared = dx*dx + dy*dy;
+
+          // We first check to see if we&#39;re firing at a ghost
+          if (targetContact.contactType === &quot;GHOST&quot;) {
+            // If we&#39;re firing at a ghost, launch directly at ghost&#39;s last sighted position
+            // Looks odd otherwise (Why is my missile going to this random position this game is buggy!!!)
+
+            // Handle firing a spread as well
+            if (isSpreadAttack) {
+              // Check if the player ship is the launcher
+              // and if firedFirstSpread is false
+              // If so, write dialogue 
+              if(this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedFirstSpread) {
+                firedFirstSpread = true;
+              }
+
+              // Calculate distance in radius units
+              const distance = Math.sqrt(distSquared);
+               
+              // Calculate number of missiles based on distance
+              // Add 1 missile for every spreadAttackMissilePerRadiusAmount * radius
+              let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+               
+              // Set minimum and maximum number of missiles
+              numMissiles = Math.max(2, numMissiles);
+               
+              // Calculate increased arming time (0.5 seconds per missile)
+              const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+
+              // Figure out angle between this contact and the target contact
+              const selectedAngle = Math.atan2(dy, dx);
+               
+              // Launch a spread of missiles
+              const spreadAngle = Math.PI / 6; // 30 degrees
+              for (let i = 0; i &lt; numMissiles; i++) {
+                const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              }
+               
+              // Launch one more missile directly at the target
+              this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              return;
+            }
+
+            this.launchMissileAtPoint(targetContact.distance * Math.cos(targetContact.bearing), targetContact.distance * Math.sin(targetContact.bearing), missileFuelTime, missileArmingTime, missileMovementSpeed);
+            return;
+          }
+          
+          // Check if player tried to fire spread at missile (moved up to check in all cases)
+          if (this.contactType === &quot;PLAYER&quot; &amp;&amp; targetContact.isMissile &amp;&amp; isSpreadAttack) {
+            if (!firedSpreadAtMissile) {
+              addDialogue(&quot;Captain: Gunnery control, belay that order! That&#39;s a missile, don&#39;t waste a spread! Sensors, you should have known better!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
+            }
+            firedSpreadAtMissile = true;
+            // Continue with normal single missile firing
+            isSpreadAttack = false;
+          }
+          
+          // Calculate the determinant inside the square root
+          const determinant = 4 * Math.pow(evx*dx + evy*dy, 2) - 
+                              4 * (evx*evx + evy*evy - mspeed*mspeed) * distSquared;
+          
+          // Only proceed if the determinant is positive (solutions exist)
+          if (determinant &gt;= 0) {
+            // Calculate solutions for time
+            const t1 = 1/(evx*evx + evy*evy - mspeed*mspeed) * 
+                     (-evx*exi - evy*eyi + evx*mxi + evy*myi - 0.5 * Math.sqrt(determinant));
+            
+            const t2 = 1/(evx*evx + evy*evy - mspeed*mspeed) * 
+                     (-evx*exi - evy*eyi + evx*mxi + evy*myi + 0.5 * Math.sqrt(determinant));
+            
+            // Calculate the square root term for angle calculations
+            const sqrtTerm = Math.sqrt(-evy*evy*dx*dx + 
+                                       2*evx*evy*dx*dy - 
+                                       evx*evx*dy*dy + 
+                                       mspeed*mspeed*distSquared);
+            
+            // Calculate angles for both solutions
+            const a1x = (-evy*dx*dy + evx*dy*dy + dx*sqrtTerm) / (mspeed*distSquared);
+            const a1y = (evy*dx*dx + dy*(-evx*exi + evx*mxi + sqrtTerm)) / (mspeed*distSquared);
+            const a1 = Math.atan2(a1y, a1x);
+            
+            const a2x = (-evy*dx*dy + evx*dy*dy - dx*sqrtTerm) / (mspeed*distSquared);
+            const a2y = (evy*dx*dx - dy*(evx*exi - evx*mxi + sqrtTerm)) / (mspeed*distSquared);
+            const a2 = Math.atan2(a2y, a2x);
+            
+            // Choose the best solution (positive time, earliest intercept)
+            let selectedTime = null;
+            let selectedAngle = null;
+            
+            if (t1 &gt; 0 &amp;&amp; (selectedTime === null || t1 &lt; selectedTime)) {
+              selectedTime = t1;
+              selectedAngle = a1;
+            }
+            
+            if (t2 &gt; 0 &amp;&amp; (selectedTime === null || t2 &lt; selectedTime)) {
+              selectedTime = t2;
+              selectedAngle = a2;
+            }
+
+            // If selected time is greater than missile fuel time, reset selected time to null
+            if (selectedTime &gt; missileFuelTime) {
+              selectedTime = null;
+            } 
+
+            // If we found a valid solution, launch the missile
+            if (selectedTime !== null) {
+              // this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              // If isSpreadAttack, instead fire a spread of missiles at the target and its immediate surroundings
+              // Only do this if firing at a non-missile contact
+              if (isSpreadAttack &amp;&amp; !targetContact.isMissile) {
+                // Check if the player ship is the launcher
+                // and if firedFirstSpread is false
+                // If so, write dialogue 
+                if(this.contactType === &quot;PLAYER&quot; &amp;&amp; !firedFirstSpread) {
+                  firedFirstSpread = true;
+                }
+
+                // Calculate distance in radius units
+                const distance = Math.sqrt(distSquared);
+                
+                // Calculate number of missiles based on distance
+                // Add 1 missile for every spreadAttackMissilePerRadiusAmount * radius
+                let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+                
+                // Set minimum and maximum number of missiles
+                numMissiles = Math.max(2, numMissiles);
+                
+                // Calculate increased arming time (0.5 seconds per missile)
+                const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                
+                // Launch a spread of missiles
+                const spreadAngle = Math.PI / 6; // 30 degrees
+                for (let i = 0; i &lt; numMissiles; i++) {
+                  const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                  this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                }
+                
+                // Launch one more missile directly at the target
+                this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              } else {
+                
+                this.launchMissileAlongAngle(selectedAngle, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              }
+            } else {
+              // No valid solution found, launch directly at current position as fallback
+              
+              // NPC ships will never fire a spread at invalid targets
+              if (isSpreadAttack &amp;&amp; this.contactType !== &quot;PLAYER&quot;) {
+                // Just fire a single missile to conserve ammo
+                this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              } else {
+                // For player, allow them to mess up and fire a spread if that&#39;s what they requested
+                if (this.contactType === &quot;PLAYER&quot; &amp;&amp; isSpreadAttack) {
+                  // Calculate spread as in normal spread code
+                  const distance = Math.sqrt(distSquared);
+                  let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+                  numMissiles = Math.max(2, numMissiles);
+                  const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                  
+                  // Direct angle toward target&#39;s current position
+                  const selectedAngle = Math.atan2(dy, dx);
+                  
+                  // Launch spread
+                  const spreadAngle = Math.PI / 6; // 30 degrees
+                  for (let i = 0; i &lt; numMissiles; i++) {
+                    const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                    this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                  }
+                  
+                  // Launch direct missile too
+                  this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                } else {
+                  // Just fire a single missile for non-spread or non-player
+                  this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+                }
+              }
+            }
+          } else {
+            // No intercept solution exists, launch directly at current position
+            
+            // NPC ships will never fire a spread at invalid targets
+            if (isSpreadAttack &amp;&amp; this.contactType !== &quot;PLAYER&quot;) {
+              // Just fire a single missile to conserve ammo
+              this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+            } else {
+              // For player, allow them to mess up and fire a spread if that&#39;s what they requested
+              if (this.contactType === &quot;PLAYER&quot; &amp;&amp; isSpreadAttack) {
+                // Calculate spread as in normal spread code
+                const distance = Math.sqrt(distSquared);
+                let numMissiles = Math.floor(distance / (spreadAttackMissilePerRadiusAmount * radius)) + 1;
+                numMissiles = Math.max(2, numMissiles);
+                const increasedArmingTime = missileArmingTime + (0.5 * numMissiles);
+                
+                // Direct angle toward target&#39;s current position
+                const selectedAngle = Math.atan2(dy, dx);
+                
+                // Launch spread
+                const spreadAngle = Math.PI / 6; // 30 degrees
+                for (let i = 0; i &lt; numMissiles; i++) {
+                  const angle = selectedAngle - spreadAngle / 2 + i * spreadAngle / (numMissiles - 1);
+                  this.launchMissileAlongAngle(angle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+                }
+                
+                // Launch direct missile too
+                this.launchMissileAlongAngle(selectedAngle, missileFuelTime, increasedArmingTime, missileMovementSpeed);
+              } else {
+                // Just fire a single missile for non-spread or non-player
+                this.launchMissileAtPoint(exi, eyi, missileFuelTime, missileArmingTime, missileMovementSpeed);
+              }
+            }
+          }
+        }
+      }
+      
+      draw(deltaTime) {
+        // If IFF is broadcasting, the contact should always be visible and updating its contact position
+        if (this.iffBroadcasting) {
+          this.visible = true;
+          this.opacity = 1.0;
+          this.bearing = this.realBearing;
+          this.distance = this.realDistance;
+        }
+
+        if (this.visible) {
+          // Draw the contact at the last detected position
+          const contactX = centerX + this.distance * Math.cos(this.bearing);
+          const contactY = centerY + this.distance * Math.sin(this.bearing);
+          
+          ctx.beginPath();
+          ctx.arc(contactX, contactY, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${this.contactColor[0]}, ${this.contactColor[1]}, ${this.contactColor[2]}, ${this.opacity})`;
+          ctx.fill();
+          
+          // Draw IFF bubble if broadcasting and mouse is nearby
+          if (this.iffBroadcasting &amp;&amp; typeof mouseX !== &#39;undefined&#39; &amp;&amp; typeof mouseY !== &#39;undefined&#39;) {
+            // Calculate distance from mouse to contact
+            const dx = mouseX - contactX;
+            const dy = mouseY - contactY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate opacity based on distance (fully visible when close, fades out as distance increases)
+            const iffOpacity = Math.max(0, 1 - (distance / iffBoxDisplayDistance));
+            
+            // Only draw if opacity &gt; 0
+            if (iffOpacity &gt; 0) {
+              // Draw IFF bubble
+              const bubblePadding = 10;
+              const lines = this.iffString.split(&#39;\n&#39;);
+              const lineHeight = 16;
+              const bubbleWidth = lines.reduce((max, line) =&gt; Math.max(max, ctx.measureText(line).width), 0) + (bubblePadding * 2);
+              var bubbleHeight = ((lines.length + 1) * lineHeight) + (bubblePadding * 2); // Add 1 for the missile count line
+              
+              // Add extra height for missile count if it exists
+              const hasMissiles = this.numMissiles !== undefined &amp;&amp; this.numMissiles !== null;
+              if (hasMissiles) {
+                bubbleHeight += lineHeight;
+              }
+              
+              // Calculate box position - default is to the right of the contact
+              let boxX = contactX + 15;
+              let boxY = contactY - 10;
+              
+              // Adjust if the box would go off the right edge of the canvas
+              if (boxX + bubbleWidth &gt; width) {
+                boxX = contactX - bubbleWidth - 15; // Move to the left of the contact
+              }
+              
+              // Adjust if the box would go off the top or bottom of the canvas
+              if (boxY &lt; 0) {
+                boxY = 0; // Align with top of canvas
+              } else if (boxY + bubbleHeight &gt; height) {
+                boxY = height - bubbleHeight; // Align with bottom of canvas
+              }
+              
+              // Draw bubble background
+              ctx.fillStyle = `rgba(0, 0, 0, ${iffOpacity * 0.7})`;
+              ctx.fillRect(boxX, boxY, bubbleWidth, bubbleHeight);
+              ctx.strokeStyle = `rgba(0, 255, 255, ${iffOpacity})`;
+              ctx.strokeRect(boxX, boxY, bubbleWidth, bubbleHeight);
+              
+              // Draw IFF string
+              ctx.fillStyle = `rgba(0, 255, 255, ${iffOpacity})`;
+              ctx.font = &quot;12px monospace&quot;;
+              ctx.textAlign = &quot;left&quot;;
+              lines.forEach((line, i) =&gt; {
+                ctx.fillText(line, boxX + bubblePadding, boxY + 15 + (i * lineHeight));
+              });
+              
+              // Draw IFF status
+              // ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
+              // Frienly contacts have a green IFF broadcast, hostile contacts have a red IFF broadcast
+              // Neutral contacts have a yellow IFF broadcast. Ghosts should not have an IFF broadcast but if they do, it should be white
+              if (this.contactType === &quot;FRIENDLY&quot; || this.contactType === &quot;PLAYER&quot;) {
+                ctx.fillStyle = `rgba(0, 255, 0, ${iffOpacity})`;
+              } else if (this.contactType === &quot;HOSTILE&quot;) {
+                ctx.fillStyle = `rgba(255, 0, 0, ${iffOpacity})`;
+              } else if (this.contactType === &quot;NEUTRAL&quot;) {
+                ctx.fillStyle = `rgba(255, 255, 0, ${iffOpacity})`;
+              } else {
+                ctx.fillStyle = `rgba(255, 255, 255, ${iffOpacity})`;
+              }
+              ctx.fillText(&quot;IFF: BROADCASTING&quot;, boxX + bubblePadding, boxY + 15 + (lines.length * lineHeight));
+              
+              // Show missile count if available
+              if (hasMissiles) {
+                ctx.fillText(`MISSILES: ${this.numMissiles}`, boxX + bubblePadding, boxY + 15 + ((lines.length + 1) * lineHeight));
+              }
+            }
+          }
+          
+          // Fade out the contact - now based on time
+          this.opacity -= this.fadeSpeed * deltaTime;
+          if (this.opacity &lt;= 0) {
+            this.visible = false;
+          }
+        }
+        
+        // Draw ELINT radiation cone if detected
+        if (this.radiationDetected) {
+          const startAngle = this.realBearing - ELINTHalfAngle;
+          const endAngle = this.realBearing + ELINTHalfAngle;
+          
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+          ctx.lineTo(centerX, centerY);
+          ctx.fillStyle = &quot;rgba(255, 255, 0, 0.3)&quot;;
+          ctx.fill();
+          
+          // Draw the ELINT cone boundary lines
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + radius * Math.cos(startAngle), 
+            centerY + radius * Math.sin(startAngle)
+          );
+          ctx.moveTo(centerX, centerY);
+          ctx.lineTo(
+            centerX + radius * Math.cos(endAngle), 
+            centerY + radius * Math.sin(endAngle)
+          );
+          ctx.strokeStyle = &quot;#FFFF00&quot;;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+        }
+      }
+    }
+
+    // Extend Contacts to add heat seeking missiles
+    class MissileContact extends Contact {
+      constructor(bearing, distance, targetContact, fuelTime, contactType, armingTime, movementSpeed = 10) {
+        // If the contact type is not one of the accepted types, default to &quot;HOSTILE&quot;
+        if (!acceptedTypes.includes(contactType)) {
+          contactType = &quot;HOSTILE&quot;;
+        }
+        // Figure out the movement direction based on the target contact and the current bearing and distance
+        // We are at (bearing, distance) and the target is at (targetContact.bearing, targetContact.distance), in polar coordinates
+        // We want to move towards the target, so we need to calculate the angle between the two points
+        // This is done by calculating the angle between the two points in cartesian coordinates and then converting it to polar coordinates
+        // Figure out our position in cartesian coordinates
+        const missileX = Math.cos(bearing) * distance;
+        const missileY = Math.sin(bearing) * distance;
+        // Figure out the target position in cartesian coordinates
+        // so long as the target contact is not null or undefined or something like that
+        if (targetContact) {
+          var targetXv = Math.cos(targetContact.bearing) * targetContact.distance;
+          var targetYv = Math.sin(targetContact.bearing) * targetContact.distance;
+        } else {
+          // If the target contact is null or undefined, default to the point at the radius and bearing
+          var targetXv = Math.cos(bearing) * radius;
+          var targetYv = Math.sin(bearing) * radius;
+        }
+        const targetX = targetXv;
+        const targetY = targetYv;
+        // Calculate the angle to the target
+        const targetAngle = Math.atan2(targetY - missileY, targetX - missileX);
+
+        // If the contact is friendly, create it like so
+        if (contactType === &quot;FRIENDLY&quot;) {
+          // Create a friendly missile
+          super(
+            bearing, distance, 3, // bearing, starting distance, size
+            movementSpeed, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection (direction of the target)
+            true, 1.0, true, 1, // visible, opacity, immense radiation emission &quot;due to really powerful engine&quot; or something like that
+            true, 1.0, true, 1.0, // fully radar and thermal detectable
+            true, &quot;HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFRIENDLY FIRE&quot;, [255, 0, 255], // IFF broadcasting
+            contactType // Contact type
+          );
+        } else {
+          // Create a hostile missile
+          super(
+            bearing, distance, 3, // bearing, starting distance, size
+            movementSpeed, 0, targetAngle, // movementSpeed (fast enough to catch just about anything else), directionChangeFrequency (none as it should go only in one direction), movementDirection 
+            false, 0, true, 1, // visible, opacity, immense radiation emission &quot;due to really powerful engine&quot; or something like that
+            true, 1.0, true, 1.0, // fully radar and thermal detectable
+            false, &quot;&quot;, [255, 0, 0], // IFF broadcasting
+            contactType // Contact type
+          );
+        }
+        
+        this.isMissile = true;
+        this.targetContact = targetContact;
+        this.thermalScanRadius = missileScanRadius;
+        this.hasTarget = false;
+        
+        // Add fuel time property (in seconds)
+        this.fuelTime = fuelTime; // Keeps track of original fuel time
+        this.fuelRemaining = fuelTime;
+        
+        // Missile scan properties
+        this.scanWidth = missileScanWidth; // Use the same width as the main scanner
+        this.scanAngle = 0; // Current scan offset angle
+        this.scanReversed = false; // Direction of scan
+        this.scanCenter = 0; // Scan is centered forward of the missile
+
+        // Arming time - Missile will not trigger collision check/explosion until armed
+        this.armingTime = armingTime;
+
+        // // debug
+        // this.positionHistoryString = &quot;Time = 0: &quot; + centerX + &quot;, &quot; + centerY + &quot;\n&quot;;
+        // this.positionHistory = [{x: centerX, y: centerY, time: 0}];
+      }
+      
+      updatePosition(deltaTime) {
+        // debug
+        // // get previous time
+        // const prevTime = this.positionHistory[this.positionHistory.length - 1].time;
+        // this.positionHistoryString += &quot;Time = &quot; + deltaTime + prevTime + &quot;: &quot; + this.realDistance * Math.cos(this.realBearing) + centerX + &quot;, &quot; + this.realDistance * Math.sin(this.realBearing) + centerY + &quot;\n&quot;;
+        // this.positionHistory.push({x: this.realDistance * Math.cos(this.realBearing) + centerX, y: this.realDistance * Math.sin(this.realBearing) + centerY, time: deltaTime + prevTime});
+
+        // If not armed, count down arming time
+        if (this.armingTime &gt; 0) {
+          this.armingTime -= deltaTime;
+        }
+
+        // Update fuel remaining
+        this.fuelRemaining -= deltaTime;
+        
+        // Self-destruct if out of fuel
+        if (this.fuelRemaining &lt;= 0) {
+          // Create explosion effect
+          createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
+                         centerY + this.realDistance * Math.sin(this.realBearing));
+          
+          // Remove from contacts array
+          const index = contacts.indexOf(this);
+          if (index &gt; -1) {
+            contacts.splice(index, 1);
+          }
+          return;
+        }
+        
+        // Update scan angle
+        if (this.scanReversed) {
+          this.scanAngle -= (Math.PI * missileScanSpeed / 180) * deltaTime;
+          if (this.scanAngle &lt;= -this.scanWidth/2) {
+            this.scanAngle = -this.scanWidth/2;
+            this.scanReversed = false;
+          }
+        } else {
+          this.scanAngle += (Math.PI * missileScanSpeed / 180) * deltaTime;
+          if (this.scanAngle &gt;= this.scanWidth/2) {
+            this.scanAngle = this.scanWidth/2;
+            this.scanReversed = true;
+          }
+        }
+        
+        // Scan for thermal contacts if no target yet and armed 
+        if (!this.hasTarget &amp;&amp; this.armingTime &lt;= 0) {
+          // Use the missile&#39;s movement direction as its orientation.
+          const missileOrientation = this.movementDirection;
+          const absoluteScanAngle = missileOrientation + this.scanAngle;
+          
+          // Look for contacts in thermal scan range
+          for (let contact of contacts) {
+            if (contact === this) continue; // Skip self
+            
+            // Determine missile and contact positions in cartesian coordinates
+            const missileX = centerX + this.realDistance * Math.cos(this.realBearing);
+            const missileY = centerY + this.realDistance * Math.sin(this.realBearing);
+            const contactX = centerX + contact.realDistance * Math.cos(contact.realBearing);
+            const contactY = centerY + contact.realDistance * Math.sin(contact.realBearing);
+            
+            // Calculate position difference and distance
+            const dx = contactX - missileX;
+            const dy = contactY - missileY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Calculate angle to contact relative to the missile&#39;s orientation
+            const angleToContact = Math.atan2(dy, dx);
+            const angleDiff = normalizeAngle(angleToContact - missileOrientation);
+            
+            // Check if contact is within scan arc and radius
+            if (distance &lt; this.thermalScanRadius &amp;&amp;
+                Math.abs(angleDiff - this.scanAngle) &lt; 0.1 &amp;&amp;
+                contact.thermalDetectable) {
+              this.targetContact = contact;
+              this.hasTarget = true;
+              break;
+            }
+          }
+        }
+        
+        // Update missile direction if it has a target
+        if (this.hasTarget &amp;&amp; this.targetContact &amp;&amp; !this.targetContact.destroyed) {
+          // Calculate direction to target
+          const targetX = Math.cos(this.targetContact.realBearing) * this.targetContact.realDistance;
+          const targetY = Math.sin(this.targetContact.realBearing) * this.targetContact.realDistance;
+          const missileX = Math.cos(this.realBearing) * this.realDistance;
+          const missileY = Math.sin(this.realBearing) * this.realDistance;
+          
+          // Set movement direction toward target
+          this.movementDirection = Math.atan2(targetY - missileY, targetX - missileX);
+        }
+        
+        // Call parent updatePosition
+        super.updatePosition(deltaTime);
+        
+        // Check for collisions with contacts, but only if it has a target
+        if (this.hasTarget) {
+          this.checkCollisions();
+        }
+      }
+      
+      checkCollisions() {
+        // Only check for collisions if armed
+        if (this.armingTime &gt; 0) return;
+      
+        for (let i = 0; i &lt; contacts.length; i++) {
+          const contact = contacts[i];
+          if (contact === this) continue;
+          
+          // Calculate distance between missile and contact
+          const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
+          const dy = Math.sin(contact.realBearing) * contact.realDistance - Math.sin(this.realBearing) * this.realDistance;
+          const distance = Math.sqrt(dx*dx + dy*dy);
+          
+          // If collision detected with a thermal detectable contact, destroy both
+          if (distance &lt; (this.size + contact.size) &amp;&amp; contact.thermalDetectable) {
+            // Mark both as destroyed
+            this.destroyed = true;
+            contact.destroyed = true;
+            
+            // Create explosion effect
+            createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
+                           centerY + this.realDistance * Math.sin(this.realBearing));
+            
+            // Check tutorial progress for missile destruction
+            if ((this.isMissile &amp;&amp; this.contactType === &quot;FRIENDLY&quot; &amp;&amp; contact.isMissile &amp;&amp; contact.contactType === &quot;HOSTILE&quot;) ||
+                (this.isMissile &amp;&amp; this.contactType === &quot;HOSTILE&quot; &amp;&amp; contact.isMissile &amp;&amp; contact.contactType === &quot;FRIENDLY&quot;)) {
+                
+              if (tutorialStage === 4 &amp;&amp; !tutorialActions.shotDownMissile) {
+                tutorialActions.shotDownMissile = true;
+                shotDownFirstMissile = true;
+              }
+            }
+            
+            // Check for final target destruction
+            if (tutorialStage === 5 &amp;&amp; contact.contactType === &quot;HOSTILE&quot; &amp;&amp; !contact.isMissile) {
+              tutorialActions.destroyedFinalTarget = true;
+            }
+          
+            // Remove both from contacts array
+            contacts.splice(contacts.indexOf(this), 1);
+            contacts.splice(contacts.indexOf(contact), 1);
+            return;
+          }
+        }
+      }
+      
+      draw(deltaTime) {
+        // Draw the thermal scan cone if visible and friendly
+        // Friendly contacts are &quot;sending missile telemetry&quot; to the player
+        // Doesn&#39;t make sense for hostile or neutral contacts to do this
+        if (this.visible &amp;&amp; this.contactType === &quot;FRIENDLY&quot;) {
+          this.drawScanCone();
+        }
+        
+        // Call parent draw method
+        super.draw(deltaTime);
+        
+        // Draw fuel indicator if visible and friendly (see earlier comment about telemetry)
+        if (this.visible &amp;&amp; this.contactType === &quot;FRIENDLY&quot;) {
+          const contactX = centerX + this.distance * Math.cos(this.bearing);
+          const contactY = centerY + this.distance * Math.sin(this.bearing);
+          
+          // Draw fuel bar
+          const barWidth = 20;
+          const barHeight = 4;
+          const fuelPercentage = this.fuelRemaining / this.fuelTime;
+          
+          // Draw fuel background
+          ctx.fillStyle = &quot;rgba(100, 100, 100, 0.7)&quot;;
+          ctx.fillRect(contactX - barWidth/2, contactY + 8, barWidth, barHeight);
+          
+          // Draw remaining fuel - color changes as fuel depletes
+          let fuelColor;
+          if (fuelPercentage &gt; 0.6) {
+            fuelColor = &quot;rgba(0, 255, 0, 0.7)&quot;; // Green
+          } else if (fuelPercentage &gt; 0.3) {
+            fuelColor = &quot;rgba(255, 255, 0, 0.7)&quot;; // Yellow
+          } else {
+            fuelColor = &quot;rgba(255, 0, 0, 0.7)&quot;; // Red
+          }
+          
+          ctx.fillStyle = fuelColor;
+          ctx.fillRect(contactX - barWidth/2, contactY + 8, barWidth * fuelPercentage, barHeight);
+          
+          // Update IFF string with fuel information
+          const fuelSeconds = Math.round(this.fuelRemaining);
+          this.iffString = `HEAT SEEKING MISSILE\nACTIVE GUIDANCE\nFUEL: ${fuelSeconds}s REMAINING`;
+        }
+      }
+      
+      drawScanCone() {
+        // Calculate position on screen
+        const missileX = centerX + this.realDistance * Math.cos(this.realBearing);
+        const missileY = centerY + this.realDistance * Math.sin(this.realBearing);
+        
+        // Calculate orientation of missile (direction of movement)
+        const missileOrientation = this.movementDirection;
+        
+        // Calculate start and end angles for the scan cone
+        const absoluteScanAngle = missileOrientation + this.scanAngle;
+        const startAngle = missileOrientation + this.scanCenter - this.scanWidth/2;
+        const endAngle = missileOrientation + this.scanCenter + this.scanWidth/2;
+        
+        // Draw the thermal scan area
+        ctx.beginPath();
+        ctx.moveTo(missileX, missileY);
+        ctx.arc(missileX, missileY, this.thermalScanRadius, startAngle, endAngle);
+        ctx.lineTo(missileX, missileY);
+        ctx.fillStyle = &quot;rgba(0, 0, 255, 0.2)&quot;; // Thermal blue for missile scan
+        ctx.fill();
+        
+        // Draw the thermal scan boundary lines
+        ctx.beginPath();
+        ctx.moveTo(missileX, missileY);
+        ctx.lineTo(
+          missileX + this.thermalScanRadius * Math.cos(startAngle), 
+          missileY + this.thermalScanRadius * Math.sin(startAngle)
+        );
+        ctx.moveTo(missileX, missileY);
+        ctx.lineTo(
+          missileX + this.thermalScanRadius * Math.cos(endAngle), 
+          missileY + this.thermalScanRadius * Math.sin(endAngle)
+        );
+        ctx.strokeStyle = &quot;#0000FF&quot;; // Blue outline
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        // Draw the active scan line
+        ctx.beginPath();
+        ctx.moveTo(missileX, missileY);
+        ctx.lineTo(
+          missileX + this.thermalScanRadius * Math.cos(absoluteScanAngle), 
+          missileY + this.thermalScanRadius * Math.sin(absoluteScanAngle)
+        );
+        ctx.strokeStyle = &quot;#0000FF&quot;; // Blue
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    function drawBackground(deltaTime) {
+      // Draw fading overlay - fade rate now per second
+      ctx.fillStyle = `rgba(0, 0, 0, ${fadeRate * deltaTime})`;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Draw radar circle
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = &quot;#00AA00&quot;;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw grid lines
+      drawGrid();
+    }
+    
+    function drawGrid() {
+      // Draw crosshairs
+      ctx.beginPath();
+      ctx.moveTo(centerX - radius, centerY);
+      ctx.lineTo(centerX + radius, centerY);
+      ctx.moveTo(centerX, centerY - radius);
+      ctx.lineTo(centerX, centerY + radius);
+      ctx.strokeStyle = &quot;#004400&quot;;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Draw concentric circles with range readouts
+      const rangeLabels = [&quot;0.25ls&quot;, &quot;0.5ls&quot;, &quot;0.75ls&quot;, &quot;1ls&quot;];
+      
+      for (let i = 1; i &lt;= 4; i++) {
+        const circleRadius = radius * i/4;
+        // Draw the circle
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, circleRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = &quot;#004400&quot;;
+        ctx.stroke();
+        
+        // Draw the range readout at the top of each circle
+        ctx.fillStyle = &quot;#00FF00&quot;;
+        ctx.font = &quot;12px monospace&quot;;
+        ctx.textAlign = &quot;center&quot;;
+        ctx.fillText(rangeLabels[i-1], centerX, centerY - circleRadius);
+      }
+    }
+    
+    function drawRadarLine() {
+      // Calculate the endpoint of the rotating line
+      const endX = centerX + radius * Math.cos(angle);
+      const endY = centerY + radius * Math.sin(angle);
+
+      // Draw the rotating line
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = &quot;#00FF00&quot;;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      
+      // Draw radar sweep (the glow effect)
+      const gradient = ctx.createRadialGradient(
+        centerX, centerY, 0, 
+        centerX, centerY, radius
+      );
+      gradient.addColorStop(0, &quot;rgba(0, 255, 0, 0.2)&quot;);
+      gradient.addColorStop(1, &quot;rgba(0, 255, 0, 0)&quot;);
+      
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, radius, angle - 0.2, angle, false);
+      ctx.lineTo(centerX, centerY);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+    }
+    
+    function drawThermalScan() {
+      // Draw the thermal scan zone
+      const startAngle = thermalScanCenter - thermalScanWidth/2;
+      const endAngle = thermalScanCenter + thermalScanWidth/2;
+      
+      // Draw the thermal scan area
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.arc(centerX, centerY, thermalScanRadius, startAngle, endAngle);
+      ctx.lineTo(centerX, centerY);
+      ctx.fillStyle = &quot;rgba(0, 0, 255, 0.2)&quot;;
+      ctx.fill();
+      
+      // Draw the thermal scan boundary lines
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + thermalScanRadius * Math.cos(startAngle), 
+                 centerY + thermalScanRadius * Math.sin(startAngle));
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + thermalScanRadius * Math.cos(endAngle), 
+                 centerY + thermalScanRadius * Math.sin(endAngle));
+      ctx.strokeStyle = &quot;#0000FF&quot;;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw a line sweeping across the thermal scan area
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX + thermalScanRadius * Math.cos(thermalScanAngle + thermalScanCenter), 
+                 centerY + thermalScanRadius * Math.sin(thermalScanAngle + thermalScanCenter));
+      ctx.strokeStyle = &quot;#0000FF&quot;;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // For drawing how many missiles are left in stock on the player ship
+    // Draws in the top left corner of the screen
+    function drawCurrentMissiles() {
+      const playerContact = contacts[0]; // Assuming the player ship is the first contact
+
+      if (playerContact &amp;&amp; playerContact.visible &amp;&amp; playerContact.numMissiles !== undefined) {
+        ctx.fillStyle = &quot;rgba(0, 0, 0, 0.7)&quot;;
+        ctx.fillRect(10, 10, 150, 50);
+        
+        ctx.fillStyle = &quot;#00FF00&quot;;
+        ctx.font = &quot;20px monospace&quot;;
+        ctx.textAlign = &quot;left&quot;;
+        ctx.textBaseline = &quot;top&quot;;
+        ctx.fillText(`MISSILES: ${playerContact.numMissiles}`, 20, 20);
+      }
+
+    }
+
+    // Function to add a new dialogue message
+    function addDialogue(text, color, duration = defaultDialogueTime, imageFilePath) {
+      // Add the message to the array with current time + duration as expiry time
+      dialogueMessages.push({
+      text: text,
+      color: color,
+      expiryTime: Date.now() + (duration * 1000), // Multiply by 1000 to convert to milliseconds
+      image: imageFilePath
+      });
+    }
+
+    // Function to draw dialogue messages in the top right corner
+    function drawDialogue() {
+      const currentTime = Date.now();
+      
+      // If no messages or all messages expired, don&#39;t draw anything
+      if (dialogueMessages.length === 0 || dialogueMessages[dialogueMessages.length - 1].expiryTime &lt; currentTime) {
+        return;
+      }
+      
+      const maxWidth = 375;
+      const padding = 15;
+      const lineHeight = 20;
+      let currentY = 10; // Start at the top
+      
+      // Image dimensions
+      const imageWidth = 80;
+      const imageHeight = 120;
+      
+      // Draw messages from newest to oldest
+      for (let i = dialogueMessages.length - 1; i &gt;= 0; i--) {
+        const message = dialogueMessages[i];
+        
+        // Skip expired messages
+        if (message.expiryTime &lt; currentTime) {
+          continue;
+        }
+        
+        // Split text into lines for wrapping
+        const words = message.text.split(&#39; &#39;);
+        let lines = [];
+        let currentLine = words.length &gt; 0 ? words[0] : &#39;&#39;;
+        
+        ctx.font = &quot;16px Arial&quot;;
+        
+        // Create wrapped lines
+        for (let j = 1; j &lt; words.length; j++) {
+          const testLine = currentLine + &#39; &#39; + words[j];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width &gt; maxWidth) {
+            lines.push(currentLine);
+            currentLine = words[j];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        lines.push(currentLine);
+        
+        // Calculate box dimensions based on whether there&#39;s an image
+        // Has image is true if the image property is defined.
+        const hasImage = message.image !== undefined &amp;&amp; message.image !== null &amp;&amp; message.image !== &quot;&quot; ;
+        const boxWidth = maxWidth + (padding * 2) + (hasImage ? imageWidth + padding : 0);
+        const boxHeight = Math.max((lines.length * lineHeight) + (padding * 2), hasImage ? imageHeight + (padding * 2) : 0);
+        
+        // Check if we&#39;re going off-screen and need to stop drawing
+        if (currentY + boxHeight &gt; height) {
+          break;
+        }
+        
+        const boxX = width - boxWidth - 10;
+        const boxY = currentY;
+        
+        // Draw the background box
+        ctx.fillStyle = &quot;rgba(0, 0, 0, 0.7)&quot;;
+        ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+        ctx.strokeStyle = &quot;rgba(255, 255, 255, 0.5)&quot;;
+        ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+        
+        // Draw the image if specified
+        if (hasImage) {
+          // If image hasn&#39;t been loaded yet, create and cache it
+          if (!message.imageObject) {
+            message.imageObject = new Image();
+            message.imageObject.src = message.image;
+          }
+          
+          // Position image inside the box with some padding
+          const imgX = boxX + padding;
+          const imgY = boxY + (boxHeight - imageHeight) / 2; // Center vertically
+          
+          // Only draw if the image is loaded
+          if (message.imageObject.complete &amp;&amp; message.imageObject.naturalWidth &gt; 0) {
+            ctx.drawImage(message.imageObject, imgX, imgY, imageWidth, imageHeight);
+          }
+        }
+        
+        // Draw the text - right aligned if no image, left aligned if there is an image
+        ctx.fillStyle = message.color;
+        ctx.textAlign = hasImage ? &quot;left&quot; : &quot;right&quot;;
+        ctx.textBaseline = &quot;top&quot;;
+        
+        // Calculate text position
+        const textX = hasImage 
+          ? boxX + imageWidth + (padding * 2) // If image, position text after image
+          : boxX + boxWidth - padding; // If no image, position from right edge
+        
+        const textY = boxY + (hasImage 
+          ? (boxHeight - (lines.length * lineHeight)) / 2 // Center text vertically if there&#39;s an image
+          : padding); // Default padding if no image
+        
+        lines.forEach((line, index) =&gt; {
+          ctx.fillText(line, textX, textY + (index * lineHeight));
+        });
+        
+        // Update Y position for next message
+        currentY += boxHeight + 5; // 5px gap between boxes
+      }
+    }
+
+    // Variables for message history
+    let isViewingMessageHistory = false;
+    let messageHistoryScrollPosition = 0;
+    
+    // Function to draw message history window
+    function drawMessageHistory() {
+      // Clear the screen with a dark background
+      ctx.fillStyle = &quot;rgba(0, 0, 0, 0.9)&quot;;
+      ctx.fillRect(0, 0, width, height);
+      
+      // Calculate window dimensions
+      const margin = 50;
+      const windowWidth = width - (margin * 2);
+      const windowHeight = height - (margin * 2);
+      
+      // Draw window background
+      ctx.fillStyle = &quot;rgba(20, 20, 30, 0.8)&quot;;
+      ctx.fillRect(margin, margin, windowWidth, windowHeight);
+      ctx.strokeStyle = &quot;rgba(0, 255, 255, 0.7)&quot;;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(margin, margin, windowWidth, windowHeight);
+      
+      // Draw title
+      ctx.font = &quot;bold 24px Arial&quot;;
+      ctx.fillStyle = &quot;#FFFFFF&quot;;
+      ctx.textAlign = &quot;center&quot;;
+      ctx.textBaseline = &quot;top&quot;;
+      ctx.fillText(&quot;MESSAGE HISTORY&quot;, centerX, margin + 20);
+      
+      // Draw navigation instructions
+      ctx.font = &quot;16px Arial&quot;;
+      ctx.fillStyle = &quot;#AAAAAA&quot;;
+      ctx.fillText(&quot;Use UP/DOWN arrows to scroll, press H to return&quot;, centerX, margin + 50);
+      
+      // Draw divider line
+      ctx.beginPath();
+      ctx.moveTo(margin + 20, margin + 80);
+      ctx.lineTo(margin + windowWidth - 20, margin + 80);
+      ctx.strokeStyle = &quot;rgba(255, 255, 255, 0.3)&quot;;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // Set up scrollable area
+      const contentAreaTop = margin + 100;
+      const contentAreaHeight = windowHeight - 120;
+      const contentAreaBottom = contentAreaTop + contentAreaHeight;
+      
+      // Clip to content area
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(margin + 20, contentAreaTop, windowWidth - 40, contentAreaHeight);
+      ctx.clip();
+      
+      // Display messages
+      const lineHeight = 24;
+      const visibleMessages = [...dialogueMessages].reverse(); // Show newest messages first
+      let y = contentAreaTop - messageHistoryScrollPosition;
+      
+      ctx.textAlign = &quot;left&quot;;
+      ctx.font = &quot;16px Arial&quot;;
+      
+      visibleMessages.forEach(message =&gt; {
+        // Format timestamp
+        const timestamp = new Date(message.expiryTime - (defaultDialogueTime * 1000));
+        const timeString = timestamp.toTimeString().split(&#39; &#39;)[0];
+        
+        // Draw timestamp
+        ctx.fillStyle = &quot;#888888&quot;;
+        ctx.fillText(timeString, margin + 40, y);
+        
+        // Calculate text dimensions and position
+        const textMaxWidth = windowWidth - 250;
+        
+        // Split text into lines for wrapping
+        const words = message.text.split(&#39; &#39;);
+        let lines = [];
+        let currentLine = words.length &gt; 0 ? words[0] : &#39;&#39;;
+        
+        // Create wrapped lines
+        for (let i = 1; i &lt; words.length; i++) {
+          const testLine = currentLine + &#39; &#39; + words[i];
+          const metrics = ctx.measureText(testLine);
+          if (metrics.width &gt; textMaxWidth) {
+            lines.push(currentLine);
+            currentLine = words[i];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        lines.push(currentLine);
+        
+        // Draw message text
+        ctx.fillStyle = message.color;
+        lines.forEach((line, index) =&gt; {
+          ctx.fillText(line, margin + 150, y + (index * lineHeight));
+        });
+        
+        // Move Y position for next message
+        y += (lines.length * lineHeight) + 15;
+      });
+      
+      // Restore clipping
+      ctx.restore();
+      
+      // Draw scroll indicators if needed
+      if (messageHistoryScrollPosition &gt; 0) {
+        // Draw up arrow
+        ctx.fillStyle = &quot;#FFFFFF&quot;;
+        ctx.beginPath();
+        ctx.moveTo(width - margin - 30, contentAreaTop + 20);
+        ctx.lineTo(width - margin - 15, contentAreaTop + 5);
+        ctx.lineTo(width - margin - 45, contentAreaTop + 5);
+        ctx.closePath();
+        ctx.fill();
+      }
+      
+      // Check if we need to show down arrow (if more content exists below)
+      const totalContentHeight = visibleMessages.reduce((total, msg) =&gt; {
+        const lines = Math.ceil(ctx.measureText(msg.text).width / (windowWidth - 150));
+        return total + (lines * lineHeight) + 15;
+      }, 0);
+      
+      if (messageHistoryScrollPosition &lt; totalContentHeight - contentAreaHeight &amp;&amp; totalContentHeight &gt; contentAreaHeight) {
+        // Draw down arrow
+        ctx.fillStyle = &quot;#FFFFFF&quot;;
+        ctx.beginPath();
+        ctx.moveTo(width - margin - 30, contentAreaBottom - 20);
+        ctx.lineTo(width - margin - 15, contentAreaBottom - 5);
+        ctx.lineTo(width - margin - 45, contentAreaBottom - 5);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+
+    // Draws the game over message in the center of the screen
+    function drawGameOver() {
+      ctx.fillStyle = &quot;rgba(0, 0, 0, 0.7)&quot;;
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.font = &quot;bold 48px Arial&quot;;
+      ctx.fillStyle = gameOverColor;
+      ctx.textAlign = &quot;center&quot;;
+      ctx.textBaseline = &quot;middle&quot;;
+      ctx.fillText(gameOverMessage, centerX, centerY);
+    }
+
+    // Draws the pause menu in the center of the screen
+    // Says &quot;PAUSED&quot; in big centered letters, then below it &quot;Press P to unpause&quot;
+    function drawPauseMenu() {
+      ctx.fillStyle = &quot;rgba(0, 0, 0, 0.7)&quot;;
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.font = &quot;bold 48px Arial&quot;;
+      ctx.fillStyle = &quot;#FFFFFF&quot;;
+      ctx.textAlign = &quot;center&quot;;
+      ctx.textBaseline = &quot;middle&quot;;
+      ctx.fillText(&quot;PAUSED&quot;, centerX, centerY - 20);
+      ctx.font = &quot;24px Arial&quot;;
+      ctx.fillText(&quot;Press P to unpause&quot;, centerX, centerY + 20);
+      ctx.fillText(&quot;Press H for message history&quot;, centerX, centerY + 60);
+    }
+    
+    function normalizeAngle(a) {
+      // Normalize angle to be between -pi and pi
+      return a - Math.PI * 2 * Math.floor((a + Math.PI) / (Math.PI * 2));
+    }
+      
+    // Function to create custom timeouts that respect pause state
+    function createTimeout(callback, delay) {
+      window.customTimeouts.push({
+        callback: callback,
+        delay: delay,
+        elapsed: 0
+      });
+    }
+
+    // Function to create custom intervals that respect pause state
+    function createInterval(callback, delay) {
+      const intervalId = Date.now() + Math.random(); // Generate a unique ID
+      
+      if (!window.customIntervals) {
+        window.customIntervals = [];
+      }
+      
+      window.customIntervals.push({
+        callback: callback,
+        delay: delay,
+        elapsed: 0,
+        id: intervalId
+      });
+      
+      return intervalId; // Return ID so it can be cleared later
+    }
+
+    // Function to clear a custom interval
+    function uncreateInterval(intervalId) {
+      if (!window.customIntervals) return;
+      
+      const index = window.customIntervals.findIndex(interval =&gt; interval.id === intervalId);
+      if (index !== -1) {
+        window.customIntervals.splice(index, 1);
+      }
+    }
+    
+    function animate(currentTime) {
+
+      // Somehow, even when navigating away from the page, the script can keep running
+      // To fix this there is now a twine variable that is set to true when this operation should be allowed to run
+      // and false when it should not. This is set to false when the player leaves the page, and true when they return.
+      // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
+      // This is set to true when the player returns to the page.
+      // It&#39;s possible for this to be null or undefined, but that shall be treated as false.
+      if (typeof $tutorialOperationAllowed === &quot;undefined&quot; || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
+        // Cancel the animation frame if the operation is not allowed to run
+        return;
+      }
+    
+      // Game over check
+      if (gameOver) {
+        // If viewing message history, draw that instead of game over menu
+        if (isViewingMessageHistory) {
+          drawMessageHistory();
+        } else {
+          // Draw game over message
+          drawGameOver();
+        }
+
+        // Keep animating, but only up to here
+        requestAnimationFrame(animate)
+        return;
+      }
+      
+      // Check if game should end now
+      // Check if all player ships are gone
+      if (areAllContactsGone(&quot;PLAYER&quot;)) {
+        gameOver = true;
+        $playerWonO1 = false;
+        gameOverMessage = &quot;DEFEAT!&quot;;
+        gameOverColor = &quot;red&quot;;
+        // Play defeat sound
+        const audio = new Audio(&quot;../assets/defeat.mp3&quot;);
+        audio.play();
+      }
+      
+      // Calculate time since last frame
+      const deltaTime = ((currentTime - lastFrameTime) / 1000) * deltaTimeMultiplier; // Convert to seconds, then scale by deltaTimeMultiplier
+      // Helps with keeping track of unpaused time
+      let trueDeltaTimeMillis = currentTime - lastFrameTime;
+      lastFrameTime = currentTime;
+
+      // Pause check is placed here to ensure deltaTime will not jump when unpausing
+      if (gamePaused) {
+        // If viewing message history, draw that instead of pause menu
+        if (isViewingMessageHistory) {
+          drawMessageHistory();
+        } else {
+          // Pause menu is drawn in the event listener
+        }
+
+        // Keep animating, but only up to here
+        requestAnimationFrame(animate)
+        return;
+      }
+
+      // Keep track of how much time has been spent outside of pause
+      unpausedElapsedTimeMillis += trueDeltaTimeMillis;
+      
+      // Custom timeout handling system
+      if (!window.customTimeouts) {
+        window.customTimeouts = [];
+      }
+      
+      // Process any active timeouts
+      for (let i = window.customTimeouts.length - 1; i &gt;= 0; i--) {
+        const timeout = window.customTimeouts[i];
+        timeout.elapsed += trueDeltaTimeMillis;
+        
+        if (timeout.elapsed &gt;= timeout.delay) {
+          // Execute the callback and remove from array
+          timeout.callback();
+          window.customTimeouts.splice(i, 1);
+        }
+      }
+
+    // Custom interval handling system
+    if (!window.customIntervals) {
+      window.customIntervals = [];
+    }
+
+    // Process any active intervals
+    for (let i = window.customIntervals.length - 1; i &gt;= 0; i--) {
+      // Check if the interval still exists (may have been removed by another callback)
+      if (i &lt; window.customIntervals.length) {
+        const interval = window.customIntervals[i];
+
+        // Make sure interval is defined before trying to use it
+        // Shouldn&#39;t be necessary, yet if this check is not here, the tutorial mission breaks after the missiles collide
+        if (interval) {
+          // Only increment elapsed time when game is not paused
+          interval.elapsed += trueDeltaTimeMillis;
+
+          if (interval.elapsed &gt;= interval.delay) {
+            try {
+              // Execute the callback but don&#39;t remove from array
+              interval.callback();
+              // Reset elapsed time for next interval
+              interval.elapsed = 0;
+            } catch (error) {
+              console.error(&quot;Error in interval callback:&quot;, error);
+              // Remove problematic interval
+              window.customIntervals.splice(i, 1);
+            }
+          }
+        } else {
+          // Remove undefined interval if it somehow exists
+          window.customIntervals.splice(i, 1);
+        }
+      }
+    }
+
+    // Tutorial mission logic
+    if (tutorialStage === 0) {
+      // Initial instructions
+      tutorialStage = 1;
+      addDialogue(&quot;SIM_AI: This simulator will familiarize you with your role as the Sensor Engineer aboard Central Republic warships.&quot;, aiColor);
+      
+      createTimeout(() =&gt; {
+        addDialogue(&quot;SIM_AI: To begin, we will first introduce you to the active Radar. Radar provides a means for you to identify targets at ranges up to one light-second away. For reference, that&#39;s 300,000 kilometers.&quot;, aiColor);
+        
+        createTimeout(() =&gt; {
+          addDialogue(&quot;SIM_AI: The radar will now be powered on.&quot;, aiColor);
+          
+          createTimeout(() =&gt; {
+            // Enable radar
+            disableRadar = false;
+            
+            // Spawn a radar-detectable contact
+            tutorialContactId = Date.now();
+            contacts.push(new Contact(
+              Math.PI/4, radius * 0.5, 5,
+              0, 0, 0,
+              false, 0, false, 0,
+              true, 1, false, 0,
+              false, &quot;&quot;, [255, 0, 0],
+              &quot;NEUTRAL&quot;, 0
+            ));
+            
+            createTimeout(() =&gt; {
+              addDialogue(&quot;SIM_AI: Observe the contact report that is now appearing. When objects are detected by radar, this generates a contact report.&quot;, aiColor);
+              
+              createTimeout(() =&gt; {
+                addDialogue(&quot;SIM_AI: You may notice that the report has various controls. Clicking on a report will report it to the captain.&quot;, aiColor);
+                
+                createTimeout(() =&gt; {
+                  addDialogue(&quot;SIM_AI: Alternatively, you can either press X or wait out the report to dismiss it.&quot;, aiColor);
+                  
+                  createTimeout(() =&gt; {
+                    addDialogue(&quot;SIM_AI: When in a combat scenario, you may press Q to recommend that a lot of missiles be fired at the contact.&quot;, aiColor);
+                    
+                    createTimeout(() =&gt; {
+                      addDialogue(&quot;SIM_AI: For now, you are not in a combat scenario, so clicking on a report will only report it to the captain. To advance the tutorial, click the contact report as soon as you can.&quot;, aiColor);
+                      
+                      // Set up an interval to check if the player has reported the first contact
+                      let checkReported = createInterval(() =&gt; {
+                        if (tutorialActions.reportedFirstRadarContact) {
+                          uncreateInterval(checkReported);
+                          tutorialStage = 2;
+                          
+                          // Remove the original contact
+                          contacts = contacts.filter(c =&gt; c.contactType === &quot;PLAYER&quot;);
+                          // And all contact reports
+                          contactReports = [];
+                          
+                          addDialogue(&quot;SIM_AI: The next thing that must be learned about a radar is that it can be faulty. Sensor ghosts can sometimes appear on the radar.&quot;, aiColor);
+                          
+                          createTimeout(() =&gt; {
+                            // Add several radar ghosts
+                            for (let i = 0; i &lt; 12; i++) {
+                              contacts.push(new Contact(
+                                Math.random() * Math.PI * 2, Math.random() * radius, 5,
+                                120, 2, Math.random() * Math.PI * 2,
+                                false, 0, false, 0,
+                                true, 0.7, false, 0,
+                                false, &quot;&quot;, [255, 0, 0],
+                                &quot;GHOST&quot;, 0
+                              ));
+                            }
+                            
+                            // Add one real contact
+                            const realContact = new Contact(
+                              Math.PI * 1.25, radius * 0.75, 5,
+                              0, 0, 0,
+                              false, 0, false, 0,
+                              true, 1, true, 1,
+                              false, &quot;&quot;, [255, 0, 0],
+                              &quot;NEUTRAL&quot;, 0
+                            );
+                            contacts.push(realContact);
+                            
+                            addDialogue(&quot;SIM_AI: Now lots of ghosts and one real contact has been added. You must report it to advance the scenario. Hint: Sensor ghosts aren&#39;t consistently located in one spot, but real contacts are.&quot;, aiColor);
+                            
+                            // Check when player reports the real contact using the flag
+                            let checkRealReported = createInterval(() =&gt; {
+                              if (tutorialActions.reportedRealRadarContact) {
+                                uncreateInterval(checkRealReported);
+                                tutorialStage = 3;
+                                
+                                // Remove all non-player contacts
+                                contacts = contacts.filter(c =&gt; c.contactType === &quot;PLAYER&quot;);
+                                // And all contact reports
+                                contactReports = [];
+                                
+                                addDialogue(&quot;SIM_AI: Good job. If you wish to review any of the previous messages, you can do so by pressing H.&quot;, aiColor);
+                                
+                                createTimeout(() =&gt; {
+                                  addDialogue(&quot;SIM_AI: The next tool in your sensor kit is a passive electromagnetic radiation detector. This will detect objects emitting radiation.&quot;, aiColor);
+                                  
+                                  createTimeout(() =&gt; {
+                                    addDialogue(&quot;SIM_AI: These will only highlight the direction the emission was detected in, and will not tell you the distance.&quot;, aiColor);
+                                    
+                                    createTimeout(() =&gt; {
+                                      // Add an ELINT detectable contact
+                                      contacts.push(new Contact(
+                                        Math.PI/2, radius * 0.5, 5,
+                                        0, 0, 0,
+                                        false, 0, true, 0.8,
+                                        false, 0, false, 0,
+                                        false, &quot;&quot;, [255, 0, 0],
+                                        &quot;NEUTRAL&quot;, 0
+                                      ));
+                                      
+                                      addDialogue(&quot;SIM_AI: A contact emitting radiation has now been added. Observe how the radiation detector picks up on this.&quot;, aiColor);
+                                      
+                                      createTimeout(() =&gt; {
+                                        addDialogue(&quot;SIM_AI: But as you might have guessed, this detector is prone to picking up random noise. Space is full of things that emit radiation.&quot;, aiColor);
+                                        
+                                        createTimeout(() =&gt; {
+                                          addDialogue(&quot;SIM_AI: Environments like this.&quot;, aiColor);
+                                          
+                                          // Remove previous contact and add ELINT ghosts
+                                          contacts = contacts.filter(c =&gt; c.contactType === &quot;PLAYER&quot;);
+                                          // And all contact reports
+                                          contactReports = [];
+                                          
+                                          // Add many ELINT ghosts
+                                          for (let i = 0; i &lt; 24; i++) {
+                                            contacts.push(new Contact(
+                                              Math.random() * Math.PI * 2, Math.random() * radius, 5,
+                                              120, 2, Math.random() * Math.PI * 2,
+                                              false, 0, true, 0.05,
+                                              false, 0, false, 0,
+                                              false, &quot;&quot;, [255, 0, 0],
+                                              &quot;GHOST&quot;, 0
+                                            ));
+                                          }
+                                          
+                                          createTimeout(() =&gt; {
+                                            addDialogue(&quot;SIM_AI: The final tool in the sensor kit is the thermal scanner. It can be rotated with the A/D keys.&quot;, aiColor);
+                                            
+                                            createTimeout(() =&gt; {
+                                              addDialogue(&quot;SIM_AI: Thermal scanners are virtually foolproof - there aren&#39;t false detections, and nothing can hide from it.&quot;, aiColor);
+                                              
+                                              createTimeout(() =&gt; {
+                                                // Add a stealth contact with high ELINT
+                                                contacts.push(new Contact(
+                                                  Math.PI * 1.75, radius * 0.15, 5,
+                                                  0, 0, 0,
+                                                  false, 0, true, 0.9,
+                                                  false, 0, true, 1,
+                                                  false, &quot;&quot;, [255, 0, 0],
+                                                  &quot;NEUTRAL&quot;, 0
+                                                ));
+                                                
+                                                addDialogue(&quot;SIM_AI: A contact with full radar stealth has been added. It is emitting radiation. See if you can pick it up.&quot;, aiColor);
+                                                
+                                                createTimeout(() =&gt; {
+                                                  addDialogue(&quot;SIM_AI: Now the thermal scanner will be powered on. Rotate the scanner to detect the contact, then report it.&quot;, aiColor);
+                                                  
+                                                  // Enable thermal scanner
+                                                  disableThermal = false;
+                                                  
+                                                  // Check when player reports the stealth contact using the flag
+                                                  let checkStealthReported = createInterval(() =&gt; {
+                                                    if (tutorialActions.reportedStealthContact) {
+                                                      uncreateInterval(checkStealthReported);
+                                                      tutorialStage = 4;
+                                                      
+                                                      // Remove all non-player contacts
+                                                      contacts = contacts.filter(c =&gt; c.contactType === &quot;PLAYER&quot;);
+                                                      // And all contact reports
+                                                      contactReports = [];
+                                                      
+                                                      addDialogue(&quot;SIM_AI: Good job. For the final part of this tutorial, you must learn to fire weapons.&quot;, aiColor);
+                                                      
+                                                      createTimeout(() =&gt; {
+                                                        addDialogue(&quot;SIM_AI: Currently, you are not networked into the fire control computer. Any request for fire must be routed through the captain. In some situations you may start off with permission to fire. But in others, you will not. To receive permission to fire, you must indicate some clear and present danger to the ship.&quot;, aiColor);
+                                                        
+                                                        createTimeout(() =&gt; {
+                                                          // Set up missile attack interval
+                                                          tutorialMissileInterval = createInterval(() =&gt; {
+                                                            // Only spawn if the missile has not been shot yet
+                                                            if (!tutorialActions.shotDownMissile) {
+                                                              // Spawn a missile targeted at the player
+                                                              const missileContact = new MissileContact(
+                                                                Math.random() * Math.PI * 2, radius * 0.92,
+                                                                contacts[0], 30, &quot;HOSTILE&quot;, 0.5, 10
+                                                              );
+                                                              contacts.push(missileContact);
+                                                            }
+                                                          }, 8000);
+                                                          
+                                                          addDialogue(&quot;SIM_AI: Like the missile that&#39;s going to be spawned in to hit you. Don&#39;t worry, it doesn&#39;t have enough fuel to reach all the way to the ship.&quot;, aiColor);
+                                                          
+                                                          createTimeout(() =&gt; {
+                                                            addDialogue(&quot;SIM_AI: To advance the scenario, report the missile.&quot;, aiColor);
+                                                            
+                                                            // Check when player reports a missile using the flag
+                                                            let checkMissileReported = createInterval(() =&gt; {
+                                                              if (tutorialActions.reportedMissile) {
+                                                                uncreateInterval(checkMissileReported);
+                                                                
+                                                                addDialogue(&quot;Engineer: Incoming!&quot;, engineerColor);
+                                                                
+                                                                createTimeout(() =&gt; {
+                                                                  addDialogue(&quot;Captain: I&#39;m networking you into the fire control computer.&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
+                                                                  
+                                                                  // Enable firing
+                                                                  allowedToFire = true;
+                                                                  
+                                                                  addDialogue(&quot;SIM_AI: Now you have the ability to fire at the missile. Click the contact report again.&quot;, aiColor);
+                                                                  
+                                                                  // Set up check for missile destroyed using the flag
+                                                                  let checkMissileDestroyed = createInterval(() =&gt; {
+                                                                    if (tutorialActions.shotDownMissile) {
+                                                                      uncreateInterval(checkMissileDestroyed);
+                                                                      uncreateInterval(tutorialMissileInterval);
+                                                                      tutorialStage = 5;
+                                                                      
+                                                                      // Remove all non-player contacts
+                                                                      contacts = contacts.filter(c =&gt; c.contactType === &quot;PLAYER&quot;);
+                                                                      // And all contact reports
+                                                                      contactReports = [];
+                                                                      
+                                                                      addDialogue(&quot;SIM_AI: Notice that the missile counter was decremented. It is important to conserve your missiles. Another note about missiles: They have an arming time, during which they cannot lock on to targets or blow up. &quot;, aiColor);
+                                                                      
+                                                                      createTimeout(() =&gt; {
+                                                                        addDialogue(&quot;SIM_AI: But for the sake of this simulation, the counter will be reset to full.&quot;, aiColor);
+                                                                        
+                                                                        // Enable infinite missiles
+                                                                        infiniteMissiles = true;
+                                                                        
+                                                                        createTimeout(() =&gt; {
+                                                                          addDialogue(&quot;SIM_AI: It may sometimes be necessary to fire at a point that you suspect a contact is located at.&quot;, aiColor);
+                                                                          
+                                                                          createTimeout(() =&gt; {
+                                                                            addDialogue(&quot;SIM_AI: To do so, you must click on a spot in the radar screen.&quot;, aiColor);
+                                                                            
+                                                                            // Enable point firing
+                                                                            allowedToFireAtSpot = true;
+                                                                            
+                                                                            createTimeout(() =&gt; {
+                                                                              // Add a stealth contact for final target
+                                                                              const finalContact = new Contact(
+                                                                                Math.random() * Math.PI * 2, radius * 0.3, 5,
+                                                                                0.12, 0.1, Math.random() * Math.PI * 2,
+                                                                                false, 0, true, 0.9,
+                                                                                false, 0, true, 1,
+                                                                                false, &quot;&quot;, [255, 0, 0],
+                                                                                &quot;HOSTILE&quot;, 0
+                                                                              );
+                                                                              contacts.push(finalContact);
+                                                                              
+                                                                              addDialogue(&quot;SIM_AI: A contact with full radar stealth has been added. Using the radiation detections as a hint, fire in that direction to win.&quot;, aiColor);
+                                                                              
+                                                                              // Check if the final target is destroyed using the flag
+                                                                              let checkMissionComplete = createInterval(() =&gt; {
+                                                                                if (tutorialActions.destroyedFinalTarget || areAllContactsGone(&quot;HOSTILE&quot;)) {
+                                                                                  uncreateInterval(checkMissionComplete);
+                                                                                  
+                                                                                  // Trigger mission victory
+                                                                                  gameOver = true;
+                                                                                  $playerWonO2 = true;
+                                                                                  gameOverMessage = &quot;TUTORIAL COMPLETE!&quot;;
+                                                                                  gameOverColor = &quot;green&quot;;
+                                                                                  
+                                                                                  const audio = new Audio(&quot;../assets/victory.mp3&quot;);
+                                                                                  audio.play();
+                                                                                }
+                                                                              }, 1000);
+                                                                            }, 6000);
+                                                                          }, 6000);
+                                                                        }, 6000);
+                                                                      }, 6000);
+                                                                    }
+                                                                  }, 1000);
+                                                                }, 6000);
+                                                              }
+                                                            }, 1000);
+                                                          }, 6000);
+                                                        }, 10000);
+                                                      }, 6000);
+                                                    }
+                                                  }, 1000);
+                                                }, 10000);
+                                              }, 10000);
+                                            }, 10000);
+                                          }, 10000);
+                                        }, 10000);
+                                      }, 12000);
+                                    }, 10000);
+                                  }, 10000);
+                                }, 10000);
+                              }
+                            }, 2000);
+                          }, 10000);
+                        }
+                      }, 2000);
+                    }, 10000);
+                  }, 10000);
+                }, 10000);
+              }, 10000);
+            }, 10000);
+          }, 9000);
+        }, 10000);
+      }, 6000);
+    }
+
+    // Handle disabling radar/thermal drawing if needed
+    if (disableRadar) {
+      // Skip radar line drawing
+    } else {
+      drawRadarLine();
+    }
+
+    if (disableThermal) {
+      // Skip thermal scan drawing
+    } else {
+      drawThermalScan();
+    }
+
+    // Handle infinite missiles if enabled
+    if (infiniteMissiles &amp;&amp; contacts.length &gt; 0 &amp;&amp; contacts[0]) {
+      contacts[0].numMissiles = 100;
+    }  
+
+      //
+      // Plan for this mission
+      //
+
+      // tutorial mission:
+
+      // -- No sensors / scan lines should be drawn to screen at this point. The code responsible for drawing the radar and thermal scan should be disabled. Elint can still be drawn --
+
+      // This simulator will familiarize you with your role as the Sensor Engineer aboard Central Republic warships.
+
+      // To begin, we will first introduce you to the active Radar. Radar provides a means for you to identify targets at ranges up to one light-second away. For reference, that&#39;s 300,000 kilometers.
+
+      // The radar will now be powered on.
+
+      // -- The code for drawing the radar now becomes active --
+
+      // -- A contact is spawned in which is detectable by the radar, but not by ELINT. It is located 0.5 radii from the center --
+
+      // Observe the contact report that is now appearing. When objects are detected by radar, this generates a contact report.
+
+      // You may notice that the report has various controls. Clicking on a report will report it to the captain, who can then make an informed decision about what to do.
+
+      // Alternatively, you can either press X or wait out the report to dismiss it.
+
+      // When in a combat scenario, you may press Q to recommend that a lot of missiles be fired at the contact, spread out over a large area to increase the chances of hitting it.
+
+      // Also when in a combat scenario, if you have been networked into the fire control computer, you may click on the report to fire a missile at it. Sometimes, the radar can pick up enough information to determine a contact&#39;s velocity. This will make the missile fired at a contact report try to fire at when it is going, so that the missile can intercept moving contacts. If the contact is moving too fast for an intercept, the missile will default to shooting at it&#39;s last known position.
+
+      // For now, you are not in a combat scenario, so clicking on a report will only report it to the captain, and pressing Q will do nothing. To advance the tutorial, click the contact report as soon as you can.
+
+      // The next thing that must be learned about a radar is that it can be faulty. Sensor ghosts can sometimes appear on the radar, and these can be nearly indistinguishable from real contacts.
+
+      // A number of sensor ghosts will now be spawned in, and the previous contact will be removed.
+
+      // -- The contact previously added is removed --
+
+      // -- Twelve radar ghosts are now spawned in, followed by one real contact located at 0.75 radii from the center --
+
+      // Now one real contact has been added. You must report it to advance the scenario. Hint: Sensor ghosts aren&#39;t consistently located in one spot, but real contacts are.
+
+      // -- A check is now activated inside the event listener that checks to see when the player clicks the one real contact --
+
+      // -- After clicking, all contacts other than the player ship are removed --
+
+      // Good job. If you wish to review any of the previous messages, you can do so at any time by pressing H. You can return by pressing P twice. Scrolling in the message history menu can be done with the up and down arrow keys.
+
+      // The next tool in your sensor kit is a passive electromagnetic radiation detector. This will detect objects emitting radiation, whether it be radio waves from another ship&#39;s radar, or the immense energy put out by a missile engine running at full burn.
+
+      // These will only highlight the direction the emission was detected in, and will not tell you the distance to that emission, unlike radar.
+
+      // -- A contact that has a high ELINT detection chance is now added 0.5 radii from the center --
+
+      // A contact emitting radiation has now been added. Observe how the radiation detector picks up on this.
+
+      // But as you might have guessed, this detector is prone to picking up random noise. Space is full lots of things that emit radiation, and the detector can pick up on these as well. In particularly hostile environments, the detector may be constantly going off.
+
+      // Environments like this.
+
+      // -- Twenty four ELINT ghosts are now added. The previous object is removed --
+
+      // But even so, particularly emissive objects can still be differentiated from mere ghosts.
+
+      // Some objects may be able to hide from Radar, but not from the radiation detector, and that leads into the final tool in the sensor kit: The thermal scanner.
+
+      // The thermal scanner scans a particular sub-region of the radar screen. It can be rotated with the A/D keys.
+
+      // Thermal scanners are virtually foolproof - that is to say there aren&#39;t false detections on it, and nothing can hide from it. It&#39;s only limitation is it&#39;s short range and limited cone of detection.
+
+      // A contact with full radar stealth has been added, although it is emitting quite a bit of radiation. See if you can pick it up through all the radiation noise.
+
+      // -- A single real contact is added at 0.15 radii from the center. It has an extremely high ELINT detection chance --
+
+      // Now the thermal scanner will be powered on. To advance the scenario, rotate the scanner to detect the contact, then report the associated thermal contact report. It is within thermal detection range.
+
+      // -- The code for drawing the thermal scanner and rotating it with a and d becomes active --
+
+      // -- Another check is now activated inside the event listener that checks to see when the player clicks the one real contact --
+
+      // -- After clicking, all contacts other than the player ship are removed --
+
+      // Good job. For the final part of this tutorial, you must learn to fire weapons.
+
+      // Currently, you are not networked into the fire control computer. Any request for fire must be routed through the captain. In some situations you may start off with permission to fire. But in others, you will not. To receive permission to fire, you must indicate some clear and present danger to the ship.
+
+      // -- Using the custom createInterval function, a missile should be spawned in at 0.92 radii and sent directly towards the player ship at an interval, with insufficient fuel time to reach the player ship --
+
+      // Like the missile just spawned in to hit you. Don&#39;t worry, it doesn&#39;t actually have enough fuel to reach all the way to the ship. To advance the scenario, report the missile. It will respawn until reported.
+
+      // -- On reporting the missile, the following dialogue should play --
+
+      // Engineer: Incoming!
+      // Captain: I&#39;m networking you into the fire control computer.
+
+      // -- The player should now be allowed to fire at a contact report, but not at a point --
+
+      // Now you have the ability to fire at the missile. Click the contact report again to have the ship launch a missile of its own to shoot down the incoming missile. Do so to advance.
+
+      // -- There will now be a check to see if the hostile missile ever collides with a friendly missile. If so, the interval responsible for spawning the missile is deleted and it stops being spawned in. Any contacts other than the player ship are removed at this point --
+
+      // Notice that the missile counter in the top left was decremented. It is important to conserve your missiles in combat scenarios so you have enough to shoot down any salvo fired by the enemy.
+
+      // But for the sake of this simulation, the counter will be reset to full.
+
+      // -- Code responsible for resetting the player ship&#39;s missile count to 100 every frame now becomes active --
+
+      // It may sometimes be necessary to fire at a point that you suspect a contact is located at.
+
+      // To do so, you must click on a spot in the radar screen. This will launch a missile directly at the clicked location.
+
+      // Don&#39;t worry about the missiles not being able to see the contact. As you may have noticed, they have a built in thermal scanner, albeit one with much less range.
+
+      // So long as the missile&#39;s target is within it&#39;s thermal scan cone, the missile will home in on it.
+
+      // But this is a double edged sword, as the missile doesn&#39;t care who&#39;s friendly. It will home in on ANY heat source.
+
+      // A contact with full radar stealth has been added outside of thermal detection range. But don&#39;t worry, it is emitting radiation. Using the bearing given by the constant radiation detections as a hint, fire in the general direction of the contact to blow it up. Do so to win the scenario.
+
+      // -- The player is now allowed to fire at a point. When this contact is destroyed, trigger the mission victory --
+
+      
+      // Cap deltaTime to prevent huge jumps if tab was inactive
+      const cappedDeltaTime = Math.min(deltaTime, 0.5);
+      
+      drawBackground(cappedDeltaTime);
+      
+      // Calculate thermal scan absolute angle
+      const thermalScanAbsoluteAngle = thermalScanAngle + thermalScanCenter;
+
+      // Sort contacts into friendly and hostile arrays
+      // Do not include missiles in these arrays
+      const friendlyContacts = contacts.filter(contact =&gt; contact.contactType === &quot;FRIENDLY&quot; || contact.contactType === &quot;PLAYER&quot; &amp;&amp; !contact.isMissile);
+      const hostileContacts = contacts.filter(contact =&gt; contact.contactType === &quot;HOSTILE&quot; &amp;&amp; !contact.isMissile);
+      
+      // Update and draw contacts
+      for (let contact of contacts) {
+        contact.updatePosition(cappedDeltaTime);
+        contact.checkDetection(angle, thermalScanAbsoluteAngle, thermalScanRadius, cappedDeltaTime);
+        contact.draw(cappedDeltaTime);
+      }
+
+      // Draw the text telling the player in the top left how many missiles are left
+      drawCurrentMissiles();
+      // Draw the dialogue messages in the top right corner
+      drawDialogue();
+      
+      // Update and draw contact reports
+      for (let i = contactReports.length - 1; i &gt;= 0; i--) {
+        if (!contactReports[i].update(cappedDeltaTime)) {
+          contactReports.splice(i, 1);
+        } else {
+          contactReports[i].draw();
+        }
+      }
+      
+      // Update the radar scan angle (rotate by specified degrees per second)
+      angle += (Math.PI * radarSpeed / 180) * cappedDeltaTime;
+      if (angle &gt;= Math.PI * 2) angle = 0;
+
+      // Update the thermal scan angle
+      if (thermalScanReversed) {
+        thermalScanAngle -= (Math.PI * thermalScanSpeed / 180) * cappedDeltaTime;
+        if (thermalScanAngle &lt;= -thermalScanWidth/2) {
+          thermalScanAngle = -thermalScanWidth/2;
+          thermalScanReversed = false;
+        }
+      } else {
+        thermalScanAngle += (Math.PI * thermalScanSpeed / 180) * cappedDeltaTime;
+        if (thermalScanAngle &gt;= thermalScanWidth/2) {
+          thermalScanAngle = thermalScanWidth/2;
+          thermalScanReversed = true;
+        }
+      }
+      
+      requestAnimationFrame(animate);
+    }
+
+    // Track mouse position
+    let mouseX, mouseY;
+    canvas.addEventListener(&#39;mousemove&#39;, function(event) {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = event.clientX - rect.left;
+      mouseY = event.clientY - rect.top;
+    });
+
+    // Add click event listener for contact reports
+    canvas.addEventListener(&#39;click&#39;, function(event) {
+      // Somehow, even when navigating away from the page, the script can keep running
+      // To fix this there is now a twine variable that is set to true when this operation should be allowed to run
+      // and false when it should not. This is set to false when the player leaves the page, and true when they return.
+      // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
+      // This is set to true when the player returns to the page.
+      // It&#39;s possible for this to be null or undefined, but that shall be treated as false.
+      if (typeof $tutorialOperationAllowed === &quot;undefined&quot; || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
+        return;
+      }
+    
+      // If paused, do nothing
+      if (gamePaused) return;
+    
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = event.clientX - rect.left;
+      const mouseY = event.clientY - rect.top;
+    
+      // Check if click is on a contact report
+      let wasOnContactReport = false;
+      for (let i = 0; i &lt; contactReports.length; i++) {
+        if (contactReports[i].contains(mouseX, mouseY)) {
+          wasOnContactReport = true;
+
+          // Check tutorial stage-specific actions
+          if (tutorialStage === 1 &amp;&amp; contactReports[i].contact.contactType === &quot;NEUTRAL&quot; &amp;&amp; !tutorialActions.reportedFirstRadarContact) {
+            tutorialActions.reportedFirstRadarContact = true;
+          }
+          else if (tutorialStage === 2 &amp;&amp; contactReports[i].contact.contactType === &quot;NEUTRAL&quot; &amp;&amp; !tutorialActions.reportedRealRadarContact) {
+            tutorialActions.reportedRealRadarContact = true;
+          }
+          else if (tutorialStage === 3 &amp;&amp; contactReports[i].contact.contactType === &quot;NEUTRAL&quot; &amp;&amp; !tutorialActions.reportedStealthContact) {
+            tutorialActions.reportedStealthContact = true;
+          }
+          else if (tutorialStage === 4 &amp;&amp; contactReports[i].contact.isMissile &amp;&amp; !tutorialActions.reportedMissile) {
+            tutorialActions.reportedMissile = true;
+          }
+        
+          // Missile firing logic - only if allowed
+          if (allowedToFire) {
+            contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
+          }
+        
+          // Remove the report after clicking
+          contactReports.splice(i, 1);
+          break;
+        }
+      }
+
+      // If not on a contact report, check if click is on radar screen for missile firing
+      if (!wasOnContactReport &amp;&amp; allowedToFireAtSpot &amp;&amp; allowedToFire) {
+        const dx = mouseX - centerX;
+        const dy = mouseY - centerY;
+        contacts[0].launchMissileAtPoint(dx, dy, 30, 0.9, 10);
+      }
+    });
+
+    // Key event listeners for thermal scan control
+    document.addEventListener(&#39;keydown&#39;, function(event) {
+      // Somehow, even when navigating away from the page, the script can keep running
+      // To fix this there is now a twine variable that is set to true when this operation should be allowed to run
+      // and false when it should not. This is set to false when the player leaves the page, and true when they return.
+      // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
+      // This is set to true when the player returns to the page.
+      // It&#39;s possible for this to be null or undefined, but that shall be treated as false.
+      if (typeof $tutorialOperationAllowed === &quot;undefined&quot; || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
+        // Cancel the event if the operation is not allowed to be running
+        return;
+      }
+      if (event.key === &#39;a&#39; || event.key === &#39;A&#39;) {
+        // Rotate thermal scan left
+        // If paused, do nothing
+        if (!gamePaused) {
+          thermalScanCenter -= 0.1;
+          if (thermalScanCenter &lt; 0) thermalScanCenter += Math.PI * 2;
+        }
+      } else if (event.key === &#39;d&#39; || event.key === &#39;D&#39;) {
+        // Rotate thermal scan right
+        // If paused, do nothing
+        if (!gamePaused) {
+          thermalScanCenter += 0.1;
+          if (thermalScanCenter &gt;= Math.PI * 2) thermalScanCenter -= Math.PI * 2;
+        }
+      } else if (event.key === &#39;x&#39; || event.key === &#39;X&#39;) {
+        // Check if the mouse is over a contact report
+        // If paused, do nothing
+        if (!gamePaused) {
+          for (let i = 0; i &lt; contactReports.length; i++) {
+            if (contactReports[i].contains(mouseX, mouseY)) {
+              // Dismiss the contact report
+              console.log(`Contact report at ${contactReports[i].timestamp} dismissed`);
+              contactReports.splice(i, 1);
+              break;
+            }
+          }
+        }
+      } else if (event.key === &#39;q&#39; || event.key === &#39;q&#39;) {
+        // If not allowed to fire, do nothing
+        if (!allowedToFire) return;
+
+        // Check if the mouse is over a contact report
+        // If paused, do nothing
+        if (!gamePaused) {
+          for (let i = 0; i &lt; contactReports.length; i++) {
+            if (contactReports[i].contains(mouseX, mouseY)) {
+              // Fire a spread at the contact in the contact report
+              
+              // Fire at the contact report&#39;s associated contact
+              // contacts[0] is the player ship, so we will use it to launch the missile
+              // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed, isSpreadAttack)
+              contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, true);
+
+              console.log(`Spread fired at Contact report at ${contactReports[i].timestamp}`);
+              contactReports.splice(i, 1);
+              break;
+            }
+          }
+        }
+      } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
+        // Toggle pause state if not in game over state
+        if (!gameOver) {
+          // If viewing message history, just exit that view but remain paused
+          if (isViewingMessageHistory) {
+            isViewingMessageHistory = false;
+            drawPauseMenu();
+          } else {
+            gamePaused = !gamePaused;
+            if (gamePaused) {
+              console.log(&quot;Game paused&quot;);
+              // Draw it here to ensure it&#39;s only drawn once when paused
+              drawPauseMenu();
+            } else {
+              console.log(&quot;Game unpaused&quot;);
+            }
+          }
+        }
+      } else if (event.key === &#39;h&#39; || event.key === &#39;H&#39;) {
+        // Toggle message history view
+        if (isViewingMessageHistory) {
+          // Exit message history view but stay paused
+          isViewingMessageHistory = false;
+          drawPauseMenu();
+        } else {
+          // If game is not already paused, pause it
+          if (!gamePaused) {
+            gamePaused = true;
+          }
+          // Switch to message history view
+          isViewingMessageHistory = true;
+          // Reset scroll position when first opening
+          messageHistoryScrollPosition = 0;
+        }
+      } else if (event.key === &#39;ArrowUp&#39;) {
+        // Scroll message history up
+        if (isViewingMessageHistory) {
+          messageHistoryScrollPosition = Math.max(0, messageHistoryScrollPosition - 40);
+        }
+      } else if (event.key === &#39;ArrowDown&#39;) {
+        // Scroll message history down
+        if (isViewingMessageHistory) {
+          messageHistoryScrollPosition += 40;
+          // Upper limit will be checked in draw function
+        }
+      }
+    });
+
+    // Create contacts array with initial contacts
+    // Parameters: bearing, distance, size, 
+    //             movementSpeed, directionChangeFrequency, movementDirection, 
+    //             visible, opacity, emittingRadiation, emissionDetectionChance,
+    //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
+    //             iffBroadcasting, iffString, contactColor, contactType,
+    //             numMissilesLoaded
+    let contacts = [
+      // The player&#39;s ship. Always visible and at the center of the radar
+      // Has 100 missiles loaded
+      new Contact(0, 0, 5, 
+                  0, 0, 0, 
+                  true, 1, true, 0, 
+                  true, 0, true, 0,
+                  true, &quot;PLAYER SHIP, Heavy Cruiser\nCRS Bounty\nCairn Class&quot;, [255, 255, 255],
+                  &quot;PLAYER&quot;, 100),
+    ];
+
+    // Fill the canvas with black initially
+    ctx.fillStyle = &quot;black&quot;;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Start the animation with the timestamp
+    lastFrameTime = performance.now();
+
+    requestAnimationFrame(animate);
+  })();
+&lt;/script&gt;
+
+[[Back-&gt;Intro 3]]</tw-passagedata><tw-passagedata pid="5" name="Operation 1" tags="" position="1200,200" size="100,100">Operation 1: Across the Point
 
 Tips:
 Use your thermal scanner, especially when missiles are flying at you.
@@ -2467,16 +5015,18 @@ tw-story {
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
+(set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 [[See Operation Results-&gt;Operation Result 1]]
-[[Back-&gt;Intro 3]]</tw-passagedata><tw-passagedata pid="5" name="Operation Result 1" tags="" position="1200,400" size="100,100">[[Click to go Back-&gt;Operation 1]]
+[[Back-&gt;Intro 3]]</tw-passagedata><tw-passagedata pid="6" name="Operation Result 1" tags="" position="1200,400" size="100,100">[[Click to go Back-&gt;Operation 1]]
 (if: $playerWonO1 is true)[[[Victory! Click to continue-&gt;Operation 2]]]
 (set: $operation1Allowed to false)
 (set: $operation2Allowed to false)
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
-(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="6" name="Operation 2" tags="" position="1400,200" size="100,100">Operation 2: The Tartarus
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="7" name="Operation 2" tags="" position="1400,200" size="100,100">Operation 2: The Tartarus
 
 Tips:
 Use your thermal scanner, especially when missiles are flying at you.
@@ -4301,309 +6851,45 @@ tw-story {
         }
       }
 
-    // Custom interval handling system
-    if (!window.customIntervals) {
-      window.customIntervals = [];
-    }
-
-    // Process any active intervals
-    for (let i = window.customIntervals.length - 1; i &gt;= 0; i--) {
-      const interval = window.customIntervals[i];
-      
-      // Only increment elapsed time when game is not paused
-      interval.elapsed += trueDeltaTimeMillis;
-      
-      if (interval.elapsed &gt;= interval.delay) {
-        // Execute the callback but don&#39;t remove from array
-        interval.callback();
-        // Reset elapsed time for next interval
-        interval.elapsed = 0;
+      // Custom interval handling system
+      if (!window.customIntervals) {
+        window.customIntervals = [];
       }
-    }
+    
+      // Process any active intervals
+      for (let i = window.customIntervals.length - 1; i &gt;= 0; i--) {
+        // Check if the interval still exists (may have been removed by another callback)
+        if (i &lt; window.customIntervals.length) {
+          const interval = window.customIntervals[i];
 
-      //
-      // Old mission code, shows how to do dialogue and game world events
-      //
-      
-      // // Dialogue check - figure out what stage of the operation we&#39;re in and what to say next
-      // if (!response1 &amp;&amp; !response10 &amp;&amp; !isFirstContact) {
-      //   addDialogue(&quot;Captain: Unidentified contact, please identify yourself!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
-      //   response10 = true;
-      //   createTimeout(() =&gt; {
-      //     addDialogue(&quot;???: Please help! We are heavily damaged and need assistance.&quot;, unidentifiedColor);
-      //     response1 = true;
-      //   }, 5000); // 5 seconds delay for the unidentified contact&#39;s response
-      // }
+          // Make sure interval is defined before trying to use it
+          // Shouldn&#39;t be necessary, yet if this check is not here, the tutorial mission breaks after the missiles collide
+          if (interval) {
+            // Only increment elapsed time when game is not paused
+            interval.elapsed += trueDeltaTimeMillis;
 
-      // if (response1 &amp;&amp; !response2 &amp;&amp; !response2a) {
-      //   response2a = true; // prevents this from being called again
-      //   createTimeout(() =&gt; {
-      //     addDialogue(&quot;Engineer: Captain, I don&#39;t like this. Their signature doesn&#39;t match any civilian vessels.&quot;, engineerColor);
-      //     response2 = true;
-      //   }, 3000);
-      // }
-
-      // if (response2 &amp;&amp; !response3 &amp;&amp; !response3a) {
-      //   response3a = true; // prevents this from being called again
-      //   createTimeout(() =&gt; {
-      //     addDialogue(&quot;Captain: Unidentified vessel, transmit proper identification codes immediately.&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
-      //     createTimeout(() =&gt; {
-      //   addDialogue(&quot;???: We are... *static*... merchant vessel... *static*... systems failing...&quot;, unidentifiedColor);
-      //   response3 = true;
-      //     }, 4000);
-      //   }, 2000);
-      // }
-
-      // if (response3 &amp;&amp; !response4 &amp;&amp; !response4a) {
-      //   response4a = true; // prevents this from being called again
-      //   createTimeout(() =&gt; {
-      //     addDialogue(&quot;Engineer: Blueshift! Long range optics indicate blueshift! I think they&#39;re moving toward us!&quot;, engineerColor);
-      //     // Set the pirate ship to move toward the player
-      //     const pirateShip = contacts[1];
-      //     // Calculate direction toward player (which is at center, 0,0)
-      //     pirateShip.movementDirection = Math.atan2(
-      //   -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
-      //   -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
-      //     );
-      //     // Increase speed
-      //     pirateShip.movementSpeed = 1.2;
-      //     pirateShip.directionChangeFrequency = 0; // Stop changing direction randomly
-          
-      //     createTimeout(() =&gt; {
-      //       addDialogue(&quot;Captain: Unidentified vessel, power down engines now!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
-      //       createTimeout(() =&gt; {
-      //         addDialogue(&quot;???: *static*... we are... *static*... merchant vessel... *static*...&quot;, unidentifiedColor);
-      //         createTimeout(() =&gt; {
-      //           addDialogue(&quot;Captain: Sensors, we can&#39;t shoot unless fired upon first. I need you to report the instant you pick up any incoming missiles so I can authorize return fire.&quot;, captainColor, 12, captainPortraitFilePath);
-      //         }, 5000);
-      //       }, 5000); // 5 seconds delay for the unidentified contact&#39;s response
-      //       response4 = true;
-      //     }, 3000);
-      //   }, 5000);
-      // }
-
-      // // Check distance of pirate ship to player and trigger missile attack when close enough
-      // const pirateShip = contacts[1];
-      // if (response4 &amp;&amp; !response5 &amp;&amp; pirateShip.realDistance &lt; radius * 0.5 &amp;&amp; !response5a) {
-      //   response5a = true; // prevents this from being called again
-      //   addDialogue(&quot;Engineer: Massive EM spike! Bearing same as unidentified contact!&quot;, engineerColor);
-        
-      //   createTimeout(() =&gt; {
-      //     addDialogue(&quot;Captain: Keep me updated!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
-
-      //     let battleStartTimeMillis = unpausedElapsedTimeMillis;
-          
-      //     // Launch three missiles from the pirate ship
-      //     // First missile - direct at player
-      //     pirateShip.launchMissileAtContact(contacts[0], 20, 1.0, 12, false);
-          
-      //     // Create two special trajectory missiles at 45/-45 degrees
-      //     // These will initially go at angles, then redirect
-      //     const playerBearing = Math.atan2(
-      //       -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
-      //       -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
-      //     );
-          
-      //     // Launch missile at +45 degrees
-      //     pirateShip.launchMissileAlongAngle(playerBearing + Math.PI/4, 20, 1.0, 12);
-          
-      //     // Launch missile at -45 degrees
-      //     pirateShip.launchMissileAlongAngle(playerBearing - Math.PI/4, 20, 1.0, 12);
-          
-      //     // Set a timer to redirect the angled missiles after a few seconds
-      //     createTimeout(() =&gt; {
-      //       // Find the two angled missiles (they should be the most recent hostile missiles)
-      //       const missiles = contacts.filter(c =&gt; c.isMissile &amp;&amp; c.contactType === &quot;HOSTILE&quot;);
-      //       if (missiles.length &gt;= 2) {
-      //         // Get the last two created missiles (angled ones)
-      //         const missile1 = missiles[missiles.length-1];
-      //         const missile2 = missiles[missiles.length-2];
-              
-      //         // Make them redirect toward the player
-      //         missile1.targetContact = contacts[0];
-      //         missile1.hasTarget = true;
-              
-      //         missile2.targetContact = contacts[0];
-      //         missile2.hasTarget = true;
-      //       }
-      //       addDialogue(&quot;Pirate: It was nice knowing you, Captain.&quot;, pirateColor);
-      //     }, 3000); // Redirect after 3 seconds
-          
-      //     response5 = true;
-      //   }, 2000);
-      // }
-
-      // // Check if all missiles were destroyed to reset attack
-      // if (response5 &amp;&amp; !response6 &amp;&amp; !response6a) {
-      //   // Count how many hostile missiles are active
-      //   const activeMissiles = contacts.filter(c =&gt; c.isMissile &amp;&amp; c.contactType === &quot;HOSTILE&quot;).length;
-        
-      //   if (activeMissiles === 0) {
-      //     response6a = true; // prevents this from being called again
-      //     // All missiles were destroyed, pirate will attack again
-      //     createTimeout(() =&gt; {
-      //       addDialogue(&quot;Captain: Good work shooting down those missiles!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
-      //         createTimeout(() =&gt; {
-      //         addDialogue(&quot;Engineer: Captain, they&#39;re preparing to fire again!&quot;, engineerColor);
-              
-      //         // Launch three more missiles
-      //         // First missile - direct at player
-      //         pirateShip.launchMissileAtContact(contacts[0], 20, 1.0, 12, false);
-              
-      //         // Create two special trajectory missiles at 45/-45 degrees again
-      //         const playerBearing = Math.atan2(
-      //           -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
-      //           -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
-      //         );
-              
-      //         // Launch missile at +45 degrees
-      //         pirateShip.launchMissileAlongAngle(playerBearing + Math.PI/4, 20, 1.0, 12);
-              
-      //         // Launch missile at -45 degrees
-      //         pirateShip.launchMissileAlongAngle(playerBearing - Math.PI/4, 20, 1.0, 12);
-              
-      //         // Set a timer to redirect the angled missiles after a few seconds
-      //         createTimeout(() =&gt; {
-      //           // Find the two angled missiles
-      //           const missiles = contacts.filter(c =&gt; c.isMissile &amp;&amp; c.contactType === &quot;HOSTILE&quot;);
-      //           if (missiles.length &gt;= 2) {
-      //           // Get the last two created missiles (angled ones)
-      //           const missile1 = missiles[missiles.length-1];
-      //           const missile2 = missiles[missiles.length-2];
-                
-      //           // Make them redirect toward the player
-      //           missile1.targetContact = contacts[0];
-      //           missile1.hasTarget = true;
-                
-      //           missile2.targetContact = contacts[0];
-      //           missile2.hasTarget = true;
-                
-      //           addDialogue(&quot;Engineer: Same attack pattern! The side missiles are curving back!&quot;, engineerColor);
-      //           }
-      //         }, 3000); // Redirect after 3 seconds
-              
-      //         response6 = true;
-      //       }, 4000);
-      //     }, 3000);
-      //   }
-      // }
-
-      // // Check if second wave of missiles was destroyed
-      // if (response6 &amp;&amp; !response7 &amp;&amp; !response7a) {
-      //   response7a = true; // prevents this from being called again
-      //   // Count how many hostile missiles are active
-      //   const activeMissiles = contacts.filter(c =&gt; c.isMissile &amp;&amp; c.contactType === &quot;HOSTILE&quot;).length;
-        
-      //   if (activeMissiles === 0) {
-      //     createTimeout(() =&gt; {
-      //       addDialogue(&quot;Captain: Their attack failed again. Sensors, get me a firing solution. I want those scum wiped out.&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
-      //       createTimeout(() =&gt; {
-      //         addDialogue(&quot;Engineer: Working on it Captain!&quot;, engineerColor);
-      //         response7 = true;
-      //       }, 3000);
-      //     }, 2000);
-      //   }
-      // }
-
-      // // If pirate ship gets within the 0.1ls range, add a dialogue message warning of the imminent ram
-      // if (!response9a &amp;&amp; pirateShip.realDistance &lt; radius * 0.1) {
-      //   response9a = true; // prevents this from being called again
-      //   addDialogue(&quot;Captain: They&#39;re insane! They&#39;re going to ram us! Blow them up NOW!&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
-      // }
-
-      // // Check for collision between pirate ship and player
-      // if (pirateShip &amp;&amp; !gameOver) {
-      //   // Calculate distance between pirate ship and player
-      //   const playerShip = contacts[0];
-      //   const dx = Math.cos(pirateShip.realBearing) * pirateShip.realDistance - Math.cos(playerShip.realBearing) * playerShip.realDistance;
-      //   const dy = Math.sin(pirateShip.realBearing) * pirateShip.realDistance - Math.sin(playerShip.realBearing) * playerShip.realDistance;
-      //   const distanceBetweenShips = Math.sqrt(dx*dx + dy*dy);
-        
-      //   // If ships are too close, trigger collision and game over
-      //   if (distanceBetweenShips &lt; (pirateShip.size + playerShip.size)) {
-      //     // Create explosion effect at collision point
-      //     const collisionX = centerX + playerShip.distance * Math.cos(playerShip.bearing);
-      //     const collisionY = centerY + playerShip.distance * Math.sin(playerShip.bearing);
-      //     createExplosion(collisionX, collisionY);
-          
-      //     // Set game over state
-      //     gameOver = true;
-      //     $playerWonO1 = false;
-      //     gameOverMessage = &quot;DEFEAT!&quot;;
-      //     gameOverColor = &quot;red&quot;;
-          
-      //     // Play collision/explosion sound
-      //     const audio = new Audio(&quot;../assets/defeat.mp3&quot;);
-      //     audio.play();
-          
-      //     // Add final dialogue
-      //     addDialogue(&quot;Engineer: Visual contact! Brace for impact!&quot;, engineerColor);
-      //   }
-      // }
-
-      //
-      // Plan for this mission
-      //
-
-      // Engineer: Radar&#39;s been acting up. I think I&#39;m seeing ghosts, although we have a faint but consistent contact somewhere between 110 and 80 degrees.
-
-      // Captain: I don&#39;t like the sound of that last contact. Keep me informed if anything changes. That distress call could have attracted unwanted attention.
-
-      // Engineer: We have an incoming broadcast, bearing 90 degrees!
-
-      // Captain: Put it through.
-
-      // ???: Hello prey. You would do well to cut engines and power down your weapons. 
-
-      // Captain: I will do no such thing. Who do you think you are to order around a Central Republic warship?
-
-      // Corsair: Nobody other than the man commanding the pirates and the battlecruiser chasing you. Onboard, I have over one thousand extended range missiles loaded and ready to fire.
-
-      // Corsair: Now I will repeat my dema-
-
-      // Captain: Over my dead body. I don&#39;t care what you have. Nobody pushes the Republic around! Least of all a rag tag band of vermin!
-
-      // Corsair: Funny phrasing you have. I do plan to collect your dead body. However, if you surrender now, the rest of your crew will get to live! If you flee, I will just have to kill all of you. And if anyone on board that ship kills the pig speaking to me, I can offer boundless riches as a token of my appreciation.
-
-      // Captain: Your cynicism appalls me! I have five hundred officers and ratings willing to die for the republic! The terror of your captivity will never be suffered by any member of my crew! We see through your lies!
-
-      // Captain: Shut off that transmission. Helm, engage full thrust and get us away from that battlecruiser. I don&#39;t like our prospects in a straight up fight. General quarters, all hands man your battlestations!
-
-      // Captain: Sensors, I&#39;m networking you into the fire control computer. Help gunnery control shoot down any incoming missiles.
-
-      // Engineer: Affirmative captain.
-
-      // First attack: Four missiles fired directly at the player ship in quick succession, but not quite at the same time so they don&#39;t blow each other up.
-
-      // On shooting down last missile:
-      // Captain: That was too easy. That scum is probing us. I don&#39;t like it. Be on the lookout for tricks.
-
-      // Second attack - Two Zig-zag missiles that alter course every second until getting within 0.1ls of the player ship, that then home in on the player ship. Alternatively, they home in when they get a target.
-
-      // On shooting down last missile:
-      // Captain: Damn that pirate! How are they able to update their targeting solution so quickly?
-      // Engineer: Sir, that ship seems like it&#39;s sporting a lot of state of the art equipment. Their sensors and targeting systems are way out of the league of what a pirate ship should have.
-      // Captain: How would rabble like that get their hands on such advanced technology?
-
-      // Third attack - Four missiles launched just like the first attack, and four more launched as zig-zag missiles that home in on the player ship.
-      
-      // On shooting down last missile:
-      // Captain: Helm, what&#39;s the status of our engines?
-      // Helmsman: We&#39;re almost ready to give it full power sir.
-      // Captain: Almost isn&#39;t good enough. We can&#39;t afford to let that battlecruiser get any closer. 
-      // Helmsman: Yes sir, we&#39;re working on it.
-
-      // Fourth and final attack: A spread of missiles is launched, which after about 10 second all alter course to home in on the player ship from many different angles.
-
-      // On shooting down last missile:
-      // Helmsman: Captain, we&#39;re ready to go to full power! 
-      // Captain: Good. Get us out of here!
-      // Helmsman: Yes sir!
-      // Victory is triggered after a 2 second delay.
+            if (interval.elapsed &gt;= interval.delay) {
+              try {
+                // Execute the callback but don&#39;t remove from array
+                interval.callback();
+                // Reset elapsed time for next interval
+                interval.elapsed = 0;
+              } catch (error) {
+                console.error(&quot;Error in interval callback:&quot;, error);
+                // Remove problematic interval
+                window.customIntervals.splice(i, 1);
+              }
+            }
+          } else {
+            // Remove undefined interval if it somehow exists
+            window.customIntervals.splice(i, 1);
+          }
+        }
+      }
 
 
-  // Initial dialogue
-  if (!response1 &amp;&amp; !response1a) {
+      // Initial dialogue
+      if (!response1 &amp;&amp; !response1a) {
         response1a = true;
         addDialogue(&quot;Engineer: Radar&#39;s been acting up. I think I&#39;m seeing ghosts, although we have a faint but consistent contact somewhere between 110 and 80 degrees.&quot;, engineerColor);
         
@@ -4631,7 +6917,7 @@ tw-story {
       if (response3 &amp;&amp; !response4 &amp;&amp; !response4a) {
         response4a = true;
         createTimeout(() =&gt; {
-          addDialogue(&quot;Captain: Put it through.&quot;, captainColor, defaultDialogueTime, captainPortraitFilePath);
+          addDialogue(&quot;Captain: Put it through.&quot;, captainColor, 4, captainPortraitFilePath);
           
           createTimeout(() =&gt; {
             addDialogue(&quot;???: Hello prey. You would do well to cut engines and power down your weapons.&quot;, unidentifiedColor);
@@ -5345,23 +7631,26 @@ tw-story {
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
-(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="7" name="Operation Result 2" tags="" position="1400,400" size="100,100">[[Click to go Back-&gt;Operation 2]]
-(if: $playerWonO2 is true)[[[Victory! Click to continue-&gt;Operation 3]]]</tw-passagedata><tw-passagedata pid="8" name="Operation 3" tags="" position="1600,200" size="100,100">[[See Operation Results-&gt;Operation Result 3]]
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="8" name="Operation Result 2" tags="" position="1400,400" size="100,100">[[Click to go Back-&gt;Operation 2]]
+(if: $playerWonO2 is true)[[[Victory! Click to continue-&gt;Operation 3]]]</tw-passagedata><tw-passagedata pid="9" name="Operation 3" tags="" position="1600,200" size="100,100">[[See Operation Results-&gt;Operation Result 3]]
 [[Back-&gt;Operation 2]]
 
 (set: $operation1Allowed to false)
 (set: $operation2Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
-(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="9" name="Operation Result 3" tags="" position="1600,400" size="100,100">[[Click to go Back-&gt;Operation 3]]
-(if: $playerWonO3 is true)[[[Victory! Click to continue-&gt;Operation 4]]]</tw-passagedata><tw-passagedata pid="10" name="Operation 4" tags="" position="1800,200" size="100,100">[[See Operation Results-&gt;Operation Result 4]]
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="10" name="Operation Result 3" tags="" position="1600,400" size="100,100">[[Click to go Back-&gt;Operation 3]]
+(if: $playerWonO3 is true)[[[Victory! Click to continue-&gt;Operation 4]]]</tw-passagedata><tw-passagedata pid="11" name="Operation 4" tags="" position="1800,200" size="100,100">[[See Operation Results-&gt;Operation Result 4]]
 [[Back-&gt;Operation 3]]
 
 (set: $operation1Allowed to false)
 (set: $operation2Allowed to false)
 (set: $operation3Allowed to false)
 (set: $operation5Allowed to false)
-(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="11" name="Operation Result 4" tags="" position="1800,400" size="100,100">[[Click to go Back-&gt;Operation 4]]
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="12" name="Operation Result 4" tags="" position="1800,400" size="100,100">[[Click to go Back-&gt;Operation 4]]
 (if: $playerWonO4 is true)[[[Victory! Click to continue-&gt;Operation 5]]]
 
 
@@ -5370,7 +7659,8 @@ tw-story {
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
-(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="12" name="Operation 5" tags="" position="2000,200" size="100,100">[[See Operation Results-&gt;Operation Result 5]]
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="13" name="Operation 5" tags="" position="2000,200" size="100,100">[[See Operation Results-&gt;Operation Result 5]]
 [[Back-&gt;Operation 4]]
 
 
@@ -5378,14 +7668,16 @@ tw-story {
 (set: $operation2Allowed to false)
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
-(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="13" name="Operation Result 5" tags="" position="2000,400" size="100,100">(set: $operation1Allowed to false)
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)</tw-passagedata><tw-passagedata pid="14" name="Operation Result 5" tags="" position="2000,400" size="100,100">(set: $operation1Allowed to false)
 (set: $operation2Allowed to false)
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
+(set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 
-[[Click to go Back-&gt;Operation 5]]</tw-passagedata><tw-passagedata pid="14" name="Debug Operation" tags="" position="1000,600" size="100,100">Debug Operation.
+[[Click to go Back-&gt;Operation 5]]</tw-passagedata><tw-passagedata pid="15" name="Debug Operation" tags="" position="1000,600" size="100,100">Debug Operation.
 
 TRIVIA:
 LS: Light Second = 299,792,458 Meters
