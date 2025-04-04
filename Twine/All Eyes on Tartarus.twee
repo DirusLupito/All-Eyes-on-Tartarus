@@ -2617,6 +2617,7 @@ tw-story {
     // Dialogue message colors for certain characters
     const engineerColor = "#00FF00";
     const captainColor = "#34eb7a";
+    const helmsmanColor = "#9ceb34";
     const friendlyColor = "#FF00FF"
     const unidentifiedColor = "#FFFFFF"
     const pirateColor = "#FF0000"
@@ -4609,34 +4610,34 @@ tw-story {
       if (response3 && !response4 && !response4a) {
         response4a = true;
         createTimeout(() => {
-          addDialogue("Captain: Put it through.", captainColor, defaultDialogueTime, captainPortraitFilePath);
+          addDialogue("Captain: Put it through.", captainColor, 4, captainPortraitFilePath);
           
           createTimeout(() => {
-            addDialogue("Corsair: Hello prey. You would do well to cut engines and power down your weapons.", pirateColor);
+            addDialogue("???: Hello prey. You would do well to cut engines and power down your weapons.", unidentifiedColor);
             response4 = true;
-          }, 8000);
-        }, 8000);
+          }, 6000);
+        }, 3000);
       }
 
       if (response4 && !response5 && !response5a) {
         response5a = true;
         createTimeout(() => {
-          addDialogue("Captain: I will do no such thing. Who do you think you are to order around a Central Republic warship?", captainColor, defaultDialogueTime, captainPortraitFilePath);
+          addDialogue("Captain: I will do no such thing. Who do you think you are, ordering around a Central Republic warship?", captainColor, defaultDialogueTime, captainPortraitFilePath);
           
           createTimeout(() => {
-            addDialogue("Corsair: Nobody other than the man commanding the pirates and the battlecruiser chasing you. Onboard, I have over one thousand extended range missiles loaded and ready to fire.", pirateColor);
+            addDialogue("Corsair: The man commanding the pirates and the battlecruiser chasing you. Onboard, I have over one thousand extended range missiles loaded and ready to fire.", pirateColor);
             
             createTimeout(() => {
-              addDialogue("Corsair: Now I will repeat my dema-", pirateColor);
+              addDialogue("Corsair: Now I will repeat my dema-", pirateColor, 3);
               
               createTimeout(() => {
                 addDialogue("Captain: Over my dead body. I don't care what you have. Nobody pushes the Republic around! Least of all a rag tag band of vermin!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                 
                 createTimeout(() => {
-                  addDialogue("Corsair: What a relevant phrase! I plan to collect your dead body. However, if you surrender now, the rest of your crew will get to live! If you flee, I will just have to kill all of you.", pirateColor);
+                  addDialogue("Corsair: I plan on it being over your dead body. But, if you surrender now, the rest of your crew will get to live! If you flee, I will just have to kill all of you. And to the crew of the ship I see before me, I offer boundless riches to the individual brave enough to bring me the head of the pig I am speaking with.", pirateColor, 12);
                   
                   createTimeout(() => {
-                    addDialogue("Captain: Your cynicism appalls me! I have five hundred officers and ratings willing to die for the republic! The terror of your captivity will never be suffered by any member of my crew!", captainColor, defaultDialogueTime, captainPortraitFilePath);
+                    addDialogue("Captain: Your cynicism appalls me! I have five hundred officers and ratings willing to die for the republic! Your lies fall on deaf ears, scum!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                     
                     createTimeout(() => {
                       addDialogue("Captain: Shut off that transmission. Helm, engage full thrust and get us away from that battlecruiser. General quarters, all hands man your battlestations!", captainColor, defaultDialogueTime, captainPortraitFilePath);
@@ -4656,9 +4657,9 @@ tw-story {
                         }, 3000);
                       }, 8000);
                     }, 8000);
-                  }, 8000);
+                  }, 12000);
                 }, 8000);
-              }, 8000);
+              }, 2500);
             }, 8000);
           }, 8000);
         }, 8000);
@@ -4707,59 +4708,92 @@ tw-story {
       if (response6 && !response7 && !response7a) {
         response7a = true;
         createTimeout(() => {
-          addDialogue("Captain: That was too easy. That scum is probing us. I don't like it. Be on the lookout for tricks.", captainColor, defaultDialogueTime, captainPortraitFilePath);
+          addDialogue("Captain: That was too easy. They're only probing us. I don't like it. Be on the lookout for tricks.", captainColor, defaultDialogueTime, captainPortraitFilePath);
           
           // Prepare for second attack with zig-zag missiles
           createTimeout(() => {
             const pirateShip = contacts[1]; // The hostile battlecruiser
-            
+
             addDialogue("Engineer: More missile launches detected!", engineerColor);
-            
+
             // Launch two zig-zag missiles
-            // First zig-zag missile
             const playerBearing = Math.atan2(
               -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
               -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
             );
-            
+
             // Create off-angled missiles that will change course
             pirateShip.launchMissileAlongAngle(playerBearing + Math.PI/6, tartarusMissileFuelTime, tartarusMissileArmingTime, tartarusMissileSpeed);
-            
+
             createTimeout(() => {
               pirateShip.launchMissileAlongAngle(playerBearing - Math.PI/6, tartarusMissileFuelTime, tartarusMissileArmingTime, tartarusMissileSpeed);
-              
-              // Set a timer to make the missiles change course randomly, then home in
+
+              // Get reference to the missiles we just launched
               const missiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE");
-              
+
               if (missiles.length >= 2) {
+                // Store the time each missile was created to identify them reliably
+                const missile1Id = Date.now();
+                const missile2Id = Date.now() + 1;
+
+                // Add zigzag properties to the missiles
+                missiles[missiles.length-1].zigzagState = true;  // Last created missile
+                missiles[missiles.length-1].missileId = missile2Id;
+                missiles[missiles.length-2].zigzagState = false; // Second-to-last created missile
+                missiles[missiles.length-2].missileId = missile1Id;
+
                 // Setup course changes for both missiles
                 const zigzagInterval = createInterval(() => {
-                  const activeMissiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE");
-                  
+                  const activeMissiles = contacts.filter(c => 
+                    c.isMissile && 
+                    c.contactType === "HOSTILE" && 
+                    (c.missileId === missile1Id || c.missileId === missile2Id)
+                  );
+                
                   if (activeMissiles.length === 0) {
                     uncreateInterval(zigzagInterval);
                     response7 = true;
                     return;
                   }
-                  
-                  // Make each active missile change direction randomly
+                
+                  // Make each active missile change direction in zigzag pattern
                   for (let missile of activeMissiles) {
-                    // Random course change until close to player
+                    // Check distance to player
                     const distToPlayer = Math.sqrt(
                       Math.pow(Math.cos(missile.realBearing) * missile.realDistance, 2) + 
                       Math.pow(Math.sin(missile.realBearing) * missile.realDistance, 2)
                     );
-                    
+                  
                     if (distToPlayer < radius * 0.25) {
                       // Close to player, home in
                       missile.targetContact = contacts[0];
                       missile.hasTarget = true;
                     } else {
-                      // Random course change
-                      missile.movementDirection += (Math.random() - 0.5) * Math.PI / 2;
+                      // Apply zig or zag based on current state
+                      if (missile.zigzagState) {
+                        missile.movementDirection += Math.PI / 3;  // Zig right
+                      } else {
+                        missile.movementDirection -= Math.PI / 3;  // Zag left
+                      }
+                    
+                      // Toggle the state for next time
+                      missile.zigzagState = !missile.zigzagState;
+                    
+                      // After changing direction, make sure it's still generally heading toward player
+                      const toPlayerBearing = Math.atan2(
+                        -Math.sin(missile.realBearing) * missile.realDistance,
+                        -Math.cos(missile.realBearing) * missile.realDistance
+                      );
+                    
+                      // Limit how far the missile can turn away from player
+                      const angleDiff = normalizeAngle(missile.movementDirection - toPlayerBearing);
+                      if (Math.abs(angleDiff) > Math.PI/2) {
+                        // If missile is heading more than 90° away from player, correct course
+                        missile.movementDirection = toPlayerBearing + (angleDiff > 0 ? Math.PI/3 : -Math.PI/3);
+                      }
                     }
                   }
-                }, 1000); // Change course every second
+                }, 800); // Change course every 800 milliseconds
               }
             }, 2000);
           }, 8000);
@@ -4774,74 +4808,98 @@ tw-story {
           
           createTimeout(() => {
             addDialogue("Engineer: Sir, that ship seems like it's sporting a lot of state of the art equipment. Their sensors and targeting systems are way out of the league of what a pirate ship should have.", engineerColor);
-            
+
             createTimeout(() => {
               addDialogue("Captain: How would rabble like that get their hands on such advanced technology?", captainColor, defaultDialogueTime, captainPortraitFilePath);
-              
+
               // Prepare for third attack - combination of direct and zigzag missiles
               createTimeout(() => {
                 const pirateShip = contacts[1]; // The hostile battlecruiser
-                
+
                 addDialogue("Engineer: Massive missile launch detected! They're firing a lot!", engineerColor);
-                
+
                 // Launch four direct missiles
                 for (let i = 0; i < 4; i++) {
                   createTimeout(() => {
                     pirateShip.launchMissileAtContact(contacts[0], tartarusMissileFuelTime, tartarusMissileArmingTime, tartarusMissileSpeed, false);
                   }, i * 1500);
                 }
-                
+
                 // Launch four zigzag missiles
                 createTimeout(() => {
                   const playerBearing = Math.atan2(
                     -Math.sin(pirateShip.realBearing) * pirateShip.realDistance,
                     -Math.cos(pirateShip.realBearing) * pirateShip.realDistance
                   );
-                  
+                    
                   // Create four zigzag missiles at different angles
                   const angles = [-Math.PI/4, -Math.PI/8, Math.PI/8, Math.PI/4];
-                  
+                    
                   for (let i = 0; i < 4; i++) {
                     createTimeout(() => {
+                      // Create unique ID for this missile to track it
+                      const missileId = Date.now() + i;
+
+                      // Launch missile
                       pirateShip.launchMissileAlongAngle(playerBearing + angles[i], tartarusMissileFuelTime, tartarusMissileArmingTime, tartarusMissileSpeed);
-                      
-                      // Make each missile zigzag until close
+
+                      // Set up zigzag behavior
                       createTimeout(() => {
                         const missiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE");
                         if (missiles.length > 0) {
                           const missile = missiles[missiles.length - 1];
-                          
+
+                          // Add zigzag properties directly to the missile
+                          missile.zigzagState = true;
+                          missile.missileId = missileId;
+                          missile.zigzagAngle = angles[i];
+
                           const zigzagInterval = createInterval(() => {
                             if (!missile || missile.destroyed) {
                               uncreateInterval(zigzagInterval);
                               return;
                             }
-                            
+
                             // Check distance to player
                             const distToPlayer = Math.sqrt(
                               Math.pow(Math.cos(missile.realBearing) * missile.realDistance, 2) + 
                               Math.pow(Math.sin(missile.realBearing) * missile.realDistance, 2)
                             );
-                            
-                            if (distToPlayer < radius * 0.15) {
-                              // Home in on player
+
+                            if (distToPlayer < radius * 0.25) {
+                              // Close to player, home in
                               missile.targetContact = contacts[0];
                               missile.hasTarget = true;
                               uncreateInterval(zigzagInterval);
                             } else {
-                              // Random course change
-                              missile.movementDirection += (Math.random() - 0.5) * Math.PI / 3;
+                              // Calculate direction toward player
+                              const toPlayerBearing = Math.atan2(
+                                -Math.sin(missile.realBearing) * missile.realDistance,
+                                -Math.cos(missile.realBearing) * missile.realDistance
+                              );
+                                
+                              // Update movement direction based on zigzag state
+                              if (missile.zigzagState) {
+                                // Zig - adjust direction to one side
+                                missile.movementDirection = toPlayerBearing + Math.abs(missile.zigzagAngle);
+                              } else {
+                                // Zag - adjust direction to other side
+                                missile.movementDirection = toPlayerBearing - Math.abs(missile.zigzagAngle);
+                              }
+
+                              // Toggle state for next time
+                              missile.zigzagState = !missile.zigzagState;
                             }
                           }, 800);
                         }
                       }, 500);
                     }, i * 2000);
                   }
-                  
+    
                   // Set a check to see when all missiles are destroyed
                   const checkAllMissiles = createInterval(() => {
                     const activeMissiles = contacts.filter(c => c.isMissile && c.contactType === "HOSTILE").length;
-                    
+    
                     if (activeMissiles === 0) {
                       uncreateInterval(checkAllMissiles);
                       response8 = true;
@@ -4849,9 +4907,9 @@ tw-story {
                   }, 1000);
                 }, 8000);
               }, 10000);
-            }, 3000);
-          }, 3000);
-        }, 3000);
+            }, 6000);
+          }, 6000);
+        }, 6000);
       }
 
       // After third wave is destroyed
@@ -4861,13 +4919,13 @@ tw-story {
           addDialogue("Captain: Helm, what's the status of our engines?", captainColor, defaultDialogueTime, captainPortraitFilePath);
           
           createTimeout(() => {
-            addDialogue("Helmsman: We're almost ready to give it full power sir.", friendlyColor);
+            addDialogue("Helmsman: We're almost ready to give it full power sir.", helmsmanColor);
             
             createTimeout(() => {
               addDialogue("Captain: Almost isn't good enough. We can't afford to let that battlecruiser get any closer.", captainColor, defaultDialogueTime, captainPortraitFilePath);
               
               createTimeout(() => {
-                addDialogue("Helmsman: Yes sir, we're working on it.", friendlyColor);
+                addDialogue("Helmsman: Yes sir, we're working on it.", helmsmanColor);
                 
                 // Final attack - spread of missiles that all home in after delay
                 createTimeout(() => {
@@ -4927,13 +4985,13 @@ tw-story {
       if (response9 && !response10 && !response10a) {
         response10a = true;
         createTimeout(() => {
-          addDialogue("Helmsman: Captain, we're ready to go to full power!", friendlyColor);
+          addDialogue("Helmsman: Captain, we're ready to go to full power!", helmsmanColor);
           
           createTimeout(() => {
             addDialogue("Captain: Good. Get us out of here!", captainColor, defaultDialogueTime, captainPortraitFilePath);
             
             createTimeout(() => {
-              addDialogue("Helmsman: Yes sir!", friendlyColor);
+              addDialogue("Helmsman: Yes sir!", helmsmanColor);
               
               // Trigger victory after a short delay
               createTimeout(() => {
