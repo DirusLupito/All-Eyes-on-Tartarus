@@ -5033,7 +5033,6 @@ tw-story {
 :: Operation Result 1 {"position":"1200,400","size":"100,100"}
 
 [[Click to go Back->Operation 1]]
-NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
 (if: $playerWonO1 is true)[[[Victory! Click to continue->Operation 2]]]
 (set: $operation1Allowed to false)
 (set: $operation2Allowed to false)
@@ -5044,6 +5043,7 @@ NOTE: If it seems like the mission is running a bit fast or extremely out of pla
 (set: $operationDebugAllowed to false)
 
 :: Operation 2 {"position":"1400,200","size":"100,100"}
+NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
 (set: $operation1Allowed to false)
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
