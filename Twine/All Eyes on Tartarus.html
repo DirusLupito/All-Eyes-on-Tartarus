@@ -10738,7 +10738,7 @@ tw-story {
         this.realBearing = Math.atan2(contactY, contactX);
         
         // Keep contact within radar bounds
-        if (this.realDistance &gt; radius * 0.95) {
+        if (this.realDistance &gt; radius * 0.99) {
           // If near edge, bounce back, unless a missile, in which case it should self-destruct
           if (this.isMissile) {
             // Create explosion effect
@@ -10753,7 +10753,7 @@ tw-story {
             return;
           }
           this.movementDirection = Math.atan2(-contactY, -contactX);
-          this.realDistance = radius * 0.95;
+          this.realDistance = radius * 0.99;
         } else if (this.realDistance &lt; 0) {
           // If somehow at a negative distance, reset to 0
           this.realDistance = 0;
@@ -12116,7 +12116,7 @@ tw-story {
     function spawnShips() {
       // Warspite - legitimate navy ship at pi/6 bearing (upper right)
       navyShip = new Contact(
-        Math.PI/2, radius * 0.8, 8, // bearing, distance, size
+        -3 * Math.PI/4, radius * 0.7, 8, // bearing, distance, size
         0, 0, 0, // Initially stationary
         true, 1.0, true, 0.7, // Visible, emitting radiation
         true, 1.0, true, 1.0, // Radar and thermal detectable
@@ -12402,10 +12402,10 @@ tw-story {
           const dy = Math.sin(pirateShip.realBearing) * pirateShip.realDistance - 
               Math.sin(navyShip.realBearing) * navyShip.realDistance;
 
-          navyShip.movementDirection = -Math.atan2(dy, dx);
+          navyShip.movementDirection = Math.atan2(dy, dx);
 
-          // Launch attack at pirate every 15 seconds
-          if (Math.random() &lt; 0.2) { // 20% chance each 5 seconds = ~1 attack per 15-20 seconds avg
+          // Launch attack at pirate every so often
+          if (Math.random() &lt; 0.5) {
             const attackType = Math.floor(Math.random() * 3);
 
             switch (attackType) {
@@ -12563,7 +12563,7 @@ tw-story {
         }
 
         // Launch attacks at random intervals
-        if (Math.random() &lt; 0.15) { // 15% chance every 5 seconds
+        if (Math.random() &lt; 0.45) { 
           // Choose a target - alternate between player and navy ship
           const target = Math.random() &lt; 0.6 ? contacts[0] : navyShip;
 
@@ -12673,14 +12673,26 @@ tw-story {
     // Set up combat dialogue
     function setupCombatDialogue() {
       createTimeout(() =&gt; {
+        // Only run this if the warspite or tamarisk are still alive
+        if (!pirateShip || pirateShip.destroyed || !navyShip || navyShip.destroyed) {
+          return;
+        }
         addDialogue(&quot;Captain: The enemy vessel has significant missile capabilities. Stay alert!&quot;, captainColor, 8, captainPortraitFilePath);
       }, 10000);
 
       createTimeout(() =&gt; {
+        // Only run this if the warspite or tamarisk are still alive
+        if (!pirateShip || pirateShip.destroyed || !navyShip || navyShip.destroyed) {
+          return;
+        }
         addDialogue(&quot;TDS Warspite: Bounty, focus on staying alive. We&#39;ll try do our best to obliterate these scum.&quot;, friendlyColor, 8);
       }, 20000);
 
       createTimeout(() =&gt; {
+        // Only run this if the warspite or tamarisk are still alive
+        if (!pirateShip || pirateShip.destroyed || !navyShip || navyShip.destroyed) {
+          return;
+        }
         addDialogue(&quot;Engineer: Their missiles have unusual heat signatures. Might have to do with their extraordinary capabilities.&quot;, engineerColor, 8, engineerPortraitFilePath);
       }, 30000);
 
@@ -12698,6 +12710,10 @@ tw-story {
         }
 
         if (navyShip.numMissiles &lt; 100) {
+          // Only run this if the warspite or tamarisk are still alive
+          if (!pirateShip || pirateShip.destroyed || !navyShip || navyShip.destroyed) {
+            return;
+          }
           addDialogue(&quot;Admiral: The Warspite is conserving ammunition. We need to pick up the slack.&quot;, admiralColor, 8, admiralPortraitFilePath);
         }
 
@@ -12719,6 +12735,10 @@ tw-story {
           addDialogue(&quot;TDS Warspite: We&#39;re burning through our missile stock! Give us a hand Bounty!.&quot;, friendlyColor, 10);
 
           createTimeout(() =&gt; {
+            // Only run this if the warspite or tamarisk are still alive
+            if (!pirateShip || pirateShip.destroyed || !navyShip || navyShip.destroyed) {
+              return;
+            }
             addDialogue(&quot;Admiral: We can&#39;t let the Warspite fall. It would create a diplomatic crisis.&quot;, admiralColor, 10, admiralPortraitFilePath);
           }, 5000);
 
@@ -12741,7 +12761,7 @@ tw-story {
           createTimeout(() =&gt; {
             addDialogue(&quot;Admiral: This will strengthen our alliance with the Directorate. A good day&#39;s work.&quot;, admiralColor, 10, admiralPortraitFilePath);
             gameOver = true;
-            $playerWonO3 = true;
+            $playerWonO4 = true;
             gameOverMessage = &quot;VICTORY!&quot;;
             gameOverColor = &quot;green&quot;;
             // Play victory sound
@@ -12760,7 +12780,7 @@ tw-story {
           createTimeout(() =&gt; {
             addDialogue(&quot;Admiral: The Directorate will hold us responsible for this. Mission failure.&quot;, admiralColor, 10, admiralPortraitFilePath);
             gameOver = true;
-            $playerWonO3 = false;
+            $playerWonO4 = false;
             gameOverMessage = &quot;DEFEAT!&quot;;
             gameOverColor = &quot;red&quot;;
             // Play defeat sound
@@ -12816,7 +12836,7 @@ tw-story {
       // Check if all player ships are gone
       if (areAllContactsGone(&quot;PLAYER&quot;) &amp;&amp; checkForVictory) {
         gameOver = true;
-        $playerWonO3 = false;
+        $playerWonO4 = false;
         gameOverMessage = &quot;DEFEAT!&quot;;
         gameOverColor = &quot;red&quot;;
         // Play defeat sound
@@ -12827,7 +12847,7 @@ tw-story {
       // Check if all hostile contacts are gone
       if (areAllContactsGone(&quot;HOSTILE&quot;) &amp;&amp; checkForVictory) {
         gameOver = true;
-        $playerWonO3 = true;
+        $playerWonO4 = true;
         gameOverMessage = &quot;VICTORY!&quot;;
         gameOverColor = &quot;green&quot;;
         // Play victory sound
@@ -15204,7 +15224,7 @@ tw-story {
       }, 15000);
       
       createTimeout(() =&gt; {
-        addDialogue(&quot;TDS Warspite: Bounty, we&#39;ll coordinate our attack. Focus fire on the missile pod while we go after the Tartarus!&quot;, friendlyColor, 8);
+        addDialogue(&quot;TDS Warspite: Bounty, we&#39;ll coordinate our attack. Focus fire on that second contact while we go after the Tartarus!&quot;, friendlyColor, 8);
       }, 20000);
       
       createTimeout(() =&gt; {
@@ -15384,7 +15404,7 @@ tw-story {
         missilesDestroyed++;
         }
       }
-      }, 1000); // Smaller values make the tartarus more effective at destroying missiles
+      }, 850); // Smaller values make the tartarus more effective at destroying missiles
       
       // Main tactical routine for Tartarus
       const tartarusInterval = createInterval(() =&gt; {
@@ -15476,6 +15496,7 @@ tw-story {
       // Add dialogue if this is first time seeing this attack
       if (!seenTartarusSpreadAttack) {
       createTimeout(() =&gt; {
+        seenTartarusSpreadAttack = true;
         addDialogue(&quot;Captain: The Tartarus is launching a missile barrage! Those missiles are going to reorient!&quot;, captainColor, 8, captainPortraitFilePath);
       }, 1000);
       }
@@ -15540,10 +15561,10 @@ tw-story {
       
       // Add dialogue if this is first time seeing this attack
       if (!seenThreeProngedAttack) {
-      createTimeout(() =&gt; {
-        addDialogue(&quot;Captain: Three-pronged attack! Those outer missiles will adjust course!&quot;, captainColor, 8, captainPortraitFilePath);
         seenThreeProngedAttack = true;
-      }, 1000);
+        createTimeout(() =&gt; {
+          addDialogue(&quot;Captain: Three-pronged attack! Those outer missiles will adjust course!&quot;, captainColor, 8, captainPortraitFilePath);
+        }, 1000);
       }
     }
 
@@ -15647,13 +15668,13 @@ tw-story {
             // Add dialogue when stealth ship attacks
             addDialogue(&quot;Engineer: Ambush! Launch detected at close range!&quot;, engineerColor, 8, engineerPortraitFilePath);
             
-            // Fire 10 missiles over 3 seconds
+            // Fire 10 missiles over 5 seconds
             for (let i = 0; i &lt; 10; i++) {
               createTimeout(() =&gt; {
                 if (stealthShip &amp;&amp; !stealthShip.destroyed &amp;&amp; contacts[0] &amp;&amp; !contacts[0].destroyed) {
-                  stealthShip.launchMissileAtContact(contacts[0], enemyMissileFuelTime, enemyMissileArmingTime, enemyMissileSpeed, false);
+                  stealthShip.launchMissileAtContact(contacts[0], enemyMissileFuelTime, enemyMissileArmingTime, enemyMissileSpeed * 2, false);
                 }
-              }, i * 300); // One missile every 300ms
+              }, i * 500); // One missile every 500ms
             }
             
             // After firing at player, switch to targeting Warspite
@@ -15838,7 +15859,7 @@ tw-story {
       
       // Check if game should end now
       // Check if all player ships are gone
-      if (areAllContactsGone(&quot;PLAYER&quot;) &amp;&amp; checkForVictory) {
+      if (areAllContactsGone(&quot;PLAYER&quot;)) {
         gameOver = true;
         $playerWonO3 = false;
         gameOverMessage = &quot;DEFEAT!&quot;;
