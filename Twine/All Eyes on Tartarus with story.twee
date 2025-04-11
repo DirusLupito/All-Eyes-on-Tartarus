@@ -1,5 +1,5 @@
 :: StoryTitle
-All Eyes on Tartarus
+All Eyes on Tartarus with story
 
 
 :: StoryData
@@ -12,142 +12,184 @@ All Eyes on Tartarus
 }
 
 
-:: Intro 1 {"position":"600,200","size":"100,100"}
-All Eyes on Tartarus
-To mute audio, right click the tab in the browser and select "Mute Tab".
-(set: $playerWon to false)
-(set: $playerWonO1 to false)
-(set: $playerWonO2 to false)
-(set: $playerWonO3 to false)
-(set: $playerWonO4 to false)
-(set: $playerWonO5 to false)
-(set: $tutorialOperationAllowed to false)
-(set: $operation1Allowed to false)
-(set: $operation2Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $operationDebugAllowed to false)
-<!-- Allow audio button  (unmute all audio) -->
-<button id="playAudioButton">Allow Audio</button>
-<script>
-  // So far we only need to umute:
-  // id="submarine-song"
-  document.getElementById("playAudioButton").addEventListener("click", function() {
-    audioMuted = false;
-  }); 
-</script>
+:: Analyze a strange thermal signal {"position":"1400,800","size":"100,100"}
+Waiting for the necessary repairs to be made on the ship, the crew enjoyed some much needed leisure time while repair units mend the battle scarred CRS Bounty.
 
-[[Continue->Intro 2]]
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Why does Custer always have pocket aces? If I find out you're cheating, I'm ejecting you with the rest of the garbage."</p>
+  </div>
 
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Hey hey hey... If it means that much I'll just sit out the next couple rounds sir." </p>
+  </div>
 
-:: Intro 2 {"position":"800,200","size":"100,100"}
-The Silent Service
-<!-- Take Her Down! (The Submarine Song) -->
-<script>
-  // If audio is already defined, we should stop it before starting a new one
-  if (typeof audio !== 'undefined') {
-    audio.pause();
-    // And probably remove it from the memory
-    delete audio;
-  }
-  audioSource = "../assets/take-her-down-submariners.mp3";
-  audio = new Audio(audioSource);
-  audio.loop = true;
-  // audio.muted = audioMuted;
-  // If audioMuted is not defined, this will break the script
-  // So we need to check and prevent this from happening
-  if (typeof audioMuted !== 'undefined') {
-    audio.muted = audioMuted;
-  }
-  audio.play();
-</script>
-[[Continue->Intro 3]]
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I don't want to ruin your game, but it appears as if we may have something more important than poker on our hands."</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"It's probably just one of the asteroids we're surrounded by, relax."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Not another word Custer, I trust that sensor technician's judgement more than you, based on your past couple of hands."</p>
+  </div>
+  
+[[Investigate these strange signals->Operation 3]]
 
 
-:: Intro 3 {"position":"1000,200","size":"100,100"}
-Construimus, Batuimus
-<!-- The Seabees Song -->
+:: Back in the CGF {"position":"2400,800","size":"100,100"}
+News of Admiral Nelson's crew spread throughout the CGF. Hailed as heros, a commemorative ceremony took place, with Charlemagne personally handing out awards to the crew. To Admiral Nelson, a small gold trophy was gifted. The rest of the crew recieved celebratory bronze coins with Charlemagne's Face imprinted upon them.
+
+The Warspite was granted the ability to work with the CRS Bounty on furthering the investigation into the GNF's possible collusion with the DRP.  Not knowing if they could trust their command due to their willingness to let the Tamarisk go unchecked in their jurisdiction, the Warspite and her crew felt they had to join with the Bounty. 
+
+The DRP and GNF denied any involvement with the Corsair. Relations between the DRP and CGF remained cold. With the possiblity of supermassive nuclear war hanging like the Sword of Damocles, there is much work left to do to mend the political relations between the two regimes.
+
+With things stabilized, trade between systems returned to normal.
+
+
+:: Board the CRS Bounty {"position":"725,825","size":"100,100"}
+<div class="dialogue-container">
+  <!-- Character 1 speaks -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 1">
+    <p class="dialogue-text">"WAKE UP MAGGOT"</p>
+  </div>
+You wake from your cot to see Admiral Nelson hovering over you, his breath bounding his whispy grey mustache to and from his face.
+  <!-- Character 2 speaks -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Aye Aye Admiral, you wont catch me sleeping in ever-"</p>
+  </div>
+  
+<div class="dialogue-container">
+  <!-- Character 1 speaks -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 1">
+    <p class="dialogue-text">"I dont want to hear it. Ever since you've arrived you've been nothing but a lazy freeloader. Man your station flunky!"</p>
+  </div>
+
+  <!-- Character 2 speaks -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Respectfully sir, we havent seen anything out of the ordinary. When the time comes, I'll show you what I'm worth."</p>
+  </div>
+
+
+<div class="dialogue-container">
+  <!-- Character 1 speaks -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 1">
+    <p class="dialogue-text">"Ergggg, you better be worth the cost we're paying for your talent Engineer, Man your station, we're approaching the jump point."</p>
+  </div>
+
+
+[[Onward]]
+
+
+:: Captain Martins agreement {"position":"1800,600","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We've seen their flag ship. It looks nothing like the Tamarisk, its an old massive warship with immense weapon systems. We narrowly made it out alive after a skirmish with it."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"The leader of the Tartarus, the Corsair, appears to be unaffiliated with any nation. We are unsure what drives his motivations but one thing's for certain: He's a very vile leader to be preying on innocent merchants."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Seems that this band of pirates has been a plague to your system aswell."</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"It was only when we made our way into the Omega system that we found the culprits for the recent merchant attacks in our system. We were sent here to root out the source and expunge them before the DRP escalated conflicts in the Penumbral system.</p>
+  </div>
+  
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"So the DRP thinks your Federation is up to all of this?"</p>
+  </div>
+  
+   <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"That is the case... They're using these pirate attacks as grounds to threaten supermassive nuclear war."</p>
+  </div>
+  
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"This is troubling news... Since you helped us take out the Tamarisk, I think its only fair we help you take out the Tartarus. We owe you one.</p>
+  </div>
+  
+   <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We greatly appreciate your pledge, we could not defeat them on our own, but with your help we might have a shot."</p>
+  </div>
+
+[[Onward->next]]
+
+
+:: Debug Operation {"position":"1000,0","size":"100,100"}
+Debug Operation.
+NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
+
+TRIVIA:
+LS: Light Second = 299,792,458 Meters
+
+TIPS:
+Left clicking on a contact report will fire a missile at it. 
+
+Left clicking elsewhere on the screen will fire a missile at the clicked location.
+
+Mousing over a contact report and pressing "X" will dismiss it. 
+
+Mousing over a friendly contact will display miscellaneous information about it, such as the name of a friendly ship, or the remaining fuel time of a friendly missile.
+
+Radar and radiation detectors can be faulty, displaying false detections occasionally and randomly. Real contacts will be far more consisently located in one place.
+
+Missiles, both friendly and hostile, give off an immense amount of electromagnetic radiation, making them show up near continuously on the radiation detectors.
+
+Radar can be fooled by stealthy contacts, but thermal sensors never lie. 
+
+In combat, missiles can be flying at your ship so fast that you might not detect them on the radar until they are right on top of you. 
+Orient the thermal scanner to the direction of the enemy ship to get the most live data on any incoming missiles.
+
+Incoming missiles can be shot down by other missiles.
+
+Missiles are equipped with very short range thermal scanners that let them see what's in front of them. 
+
+Missiles do not care if you're friendly or hostile or neutral. If they see something, they will home in on it until they run out of fuel or until they strike true.
+
+That means your own missiles, if somehow redirected towards yourself or a friendly ship, will blow you up.
+
+Conserve your missiles. Once you're out, you have no way of defending yourself from incoming fire.
+
+Fire missiles in a spread of all possible positions you think they enemy could be in so they can't get away in time regardless of how they dodge.
+
+When firing a spread, make sure to also spread the missiles out in time so they don't get launched so quickly that they lock onto each other and either blow themselves up or alter course and mess up the spread.
+
+Controls:
+Thermal Scan - Use A/D to rotate
+Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
+Pause - P to toggle pause
+Message history - H to pause and view message history
 <script>
   // Stops the previous audio
   if (typeof audio !== 'undefined') {
     audio.pause();
     delete audio;
   }
-  audioSource = "../assets/song-of-the-seabees.mp3";
-  audio = new Audio(audioSource);
-  audio.loop = true;
-  if (typeof audioMuted !== 'undefined') {
-    audio.muted = audioMuted;
-  }
-  audio.play();
 </script>
-<!-- Dialogue with alternating character portraits -->
-<div class="dialogue-container">
-  <!-- Character 1 speaks -->
-  <div class="dialogue left-dialogue">
-    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 1">
-    <p class="dialogue-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod velit nec libero rutrum, non venenatis dolor fringilla. Phasellus id metus at lectus cursus tincidunt.</p>
-  </div>
-  
-  <!-- Character 2 speaks -->
-  <div class="dialogue right-dialogue">
-    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
-    <p class="dialogue-text">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.</p>
-  </div>
-  
-  <!-- Character 1 speaks again -->
-  <div class="dialogue left-dialogue">
-    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 1">
-    <p class="dialogue-text">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
-  </div>
-  
-  <!-- Character 2 speaks again -->
-  <div class="dialogue right-dialogue">
-    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
-    <p class="dialogue-text">At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.</p>
-  </div>
-</div>
-(set: $operation1Allowed to false)
-(set: $operation2Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $tutorialOperationAllowed to false)
-(set: $operationDebugAllowed to false)
-
-[[Tutorial->Tutorial Operation]]
-[[Continue->Operation 1]]
-[[Debug Operation->Debug Operation]]
-
-:: Tutorial Operation {"position":"1000,400","size":"100,100"}
-NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
-(set: $operation1Allowed to false)
-(set: $operation2Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $operationDebugAllowed to false)
-Tutorial.
-
-Controls:
-F11 for fullscreen
-Thermal Scan - Use A/D to rotate
-Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
-Pause - P to toggle pause
-Message history - H to pause and view message history
 
 <!-- Removal of padding allows for much more game room on small monitors -->
 <style>
-tw-story {
-  padding: 0% 0%;
-  padding-top: 0%;
-  padding-right: 0%;
-  padding-bottom: 0%;
-  padding-left: 0%;
-}
-
-@media (min-width: 576px) {
   tw-story {
     padding: 0% 0%;
     padding-top: 0%;
@@ -155,28 +197,34 @@ tw-story {
     padding-bottom: 0%;
     padding-left: 0%;
   }
-}
-</style>
-
-<canvas id="tutorialOperation" width="1350" height="750"></canvas>
-<script>
-    // Mark the tutorial operation as being usable
-    $tutorialOperationAllowed = true;
-    // Turn all other operations off
-    $operation1Allowed = false;
-    $operation2Allowed = false;
-    $operation3Allowed = false;
-    $operation4Allowed = false;
-    $operation5Allowed = false;
-    $operationDebugAllowed = false;
-    // Stops the previous audio
-    if (typeof audio !== 'undefined') {
-      audio.pause();
-      // And probably remove it from the memory
-      delete audio;
+  
+  @media (min-width: 576px) {
+    tw-story {
+      padding: 0% 0%;
+      padding-top: 0%;
+      padding-right: 0%;
+      padding-bottom: 0%;
+      padding-left: 0%;
     }
+  }
+  </style>
+  
+
+<!-- Debug Operation -->
+<canvas id="debugOperation" width="1350" height="720"></canvas>
+<script>
+  // Mark the debug operation as being usable
+  $operationDebugAllowed = true; // Set to true to allow the operation to run
+  // Turn all other operations off
+  $operation1Allowed = false;
+  $operation2Allowed = false;
+  $operation3Allowed = false;
+  $operation4Allowed = false;
+  $operation5Allowed = false;
+  $tutorialOperationAllowed = false;
+  $playerWon = false;
   (function() {
-    const canvas = document.getElementById("tutorialOperation");
+    const canvas = document.getElementById("debugOperation");
     const ctx = canvas.getContext("2d");
     const width = canvas.width;
     const height = canvas.height;
@@ -238,50 +286,33 @@ tw-story {
     const missileScanSpeed = 60; // degrees per second
 
     // Random missile launch parameters
-    const baseMissileLaunchChance = 0;
+    const baseMissileLaunchChance = 0.0001;
     let missileLaunchChance = baseMissileLaunchChance;
-    let missileLaunchIncrease = 0;
+    let missileLaunchIncrease = 0.00001;
     // Missile attack type parameters
-    const chanceOfSpreadAttack = 0.0;
+    const chanceOfSpreadAttack = 0.5;
     const spreadAttackMissilePerRadiusAmount = 0.05; // Add 1 more missile for every radius amount of distance to target
     let allowedToFireAtSpot = false; // If true, the player can fire at any point on the screen, not just contacts. If false, they can't.
-    let allowedToFire = false; // If true, the player can cause a missile to be launched. If false, all controls related to firing are disabled. 
-    // Tartarus missile parameters
-    const tartarusMissileFuelTime = 120; // Lifetime of Tartarus missiles in seconds. Default 120
-    const tartarusMissileArmingTime = 1.0; // Time it takes for Tartarus missiles to arm in seconds. Default 1.0
-    const tartarusMissileSpeed = 12; // Speed of Tartarus missiles in ls/s. Default 12
+    let allowedToFire = true; // If true, the player can cause a missile to be launched. If false, all controls related to firing are disabled. 
 
     // Contact report parameters
-    let contactReports = [];
+    const contactReports = [];
     const reportLifetime = 10; // lifetime in seconds
 
     // IFF Parameters
     const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
     const acceptedTypes = ["FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST", "PLAYER"]; // Accepted contact types
 
-    // Tutorial mission variables
-    let tutorialStage = 0;
-    let disableRadar = true;
-    let disableThermal = true;
-    let tutorialContactId = null;
-    let tutorialMissileInterval = null;
-    let infiniteMissiles = false;
-    const tutorialActions = {
-      reportedFirstRadarContact: false,
-      reportedRealRadarContact: false,  
-      reportedStealthContact: false,
-      reportedMissile: false,
-      shotDownMissile: false,
-      destroyedFinalTarget: false
-    };
-
     // Dialogue message parameters
     const dialogueMessages = []; // Array to store dialogue messages with text, color, and time they should disappear
-    const defaultDialogueTime = 12; // Default time for dialogue messages to disappear
+    const defaultDialogueTime = 5; // Default time for dialogue messages to disappear
     // Dialogue flags
     let isFirstContact = true;
     let isFirstMissile = true;
-    let shotDownFirstMissile = false;
+    let madeFirstKill = false;
+    let madeSecondKill = false;
+    let friendlyTookAShot = false;
+    let madeFirstClick = false;
     let firedFirstSpread = false;
     let firedSpreadAtMissile = false;
     let firedSpreadAtInvalidTarget = false;
@@ -289,17 +320,13 @@ tw-story {
     const engineerColor = "#00FF00";
     const captainColor = "#34eb7a";
     const admiralColor = "#37ab56"
-    const helmsmanColor = "#9ceb34";
     const friendlyColor = "#FF00FF"
-    const aiColor = "#c0ffbd"
-    const unidentifiedColor = "#FFFFFF"
-    const pirateColor = "#FF0000"
     // Dialogue portrait paths
     const captainPortraitFilePath = "../assets/characters/Captain.png";
     const engineerPortraitFilePath = "../assets/characters/Engineer.png";
     const corsairPortraitFilePath = "../assets/characters/Pirate.png";
     const admiralPortraitFilePath = "../assets/characters/Admiral.png";
-
+  
     // Function to create explosion effect
     function createExplosion(x, y) {
       // Play explosion sound (Unused for now)
@@ -761,6 +788,7 @@ tw-story {
               // and if firedFirstSpread is false
               // If so, write dialogue 
               if(this.contactType === "PLAYER" && !firedFirstSpread) {
+                addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                 firedFirstSpread = true;
               }
 
@@ -863,6 +891,7 @@ tw-story {
                 // and if firedFirstSpread is false
                 // If so, write dialogue 
                 if(this.contactType === "PLAYER" && !firedFirstSpread) {
+                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                   firedFirstSpread = true;
                 }
 
@@ -1276,10 +1305,10 @@ tw-story {
       checkCollisions() {
         // Only check for collisions if armed
         if (this.armingTime > 0) return;
-      
+
         for (let i = 0; i < contacts.length; i++) {
           const contact = contacts[i];
-          if (contact === this) continue;
+          if (contact === this) continue; // Skip self and other missiles
           
           // Calculate distance between missile and contact
           const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
@@ -1296,22 +1325,22 @@ tw-story {
             createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
                            centerY + this.realDistance * Math.sin(this.realBearing));
             
-            // Check tutorial progress for missile destruction
-            if ((this.isMissile && this.contactType === "FRIENDLY" && contact.isMissile && contact.contactType === "HOSTILE") ||
-                (this.isMissile && this.contactType === "HOSTILE" && contact.isMissile && contact.contactType === "FRIENDLY")) {
-                
-              if (tutorialStage === 4 && !tutorialActions.shotDownMissile) {
-                tutorialActions.shotDownMissile = true;
-                shotDownFirstMissile = true;
+            // Remove both from contacts array
+            console.log("Missile collided with contact:", contact);
+            console.log("Missile destroyed:", this);
+
+            // Check if it was a friendly missile that collided with a hostile contact
+            if (this.contactType === "FRIENDLY" && contact.contactType === "HOSTILE") {
+              // If the player hasn't made their first kill
+              if (!madeFirstKill) {
+                addDialogue("Engineer: Telemetry indicates one less hostile!", engineerColor, defaultDialogueTime, engineerPortraitFilePath);
+                madeFirstKill = true;
+              } else if (!madeSecondKill) {
+                addDialogue("Captain: Good hit. Let's finish the last of these scum!", captainColor, defaultDialogueTime, captainPortraitFilePath);
+                madeSecondKill = true;
               }
             }
-            
-            // Check for final target destruction
-            if (tutorialStage === 5 && contact.contactType === "HOSTILE" && !contact.isMissile) {
-              tutorialActions.destroyedFinalTarget = true;
-            }
-          
-            // Remove both from contacts array
+
             contacts.splice(contacts.indexOf(this), 1);
             contacts.splice(contacts.indexOf(contact), 1);
             return;
@@ -1463,7 +1492,7 @@ tw-story {
       // Calculate the endpoint of the rotating line
       const endX = centerX + radius * Math.cos(angle);
       const endY = centerY + radius * Math.sin(angle);
-
+  
       // Draw the rotating line
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
@@ -1835,34 +1864,6 @@ tw-story {
         elapsed: 0
       });
     }
-
-    // Function to create custom intervals that respect pause state
-    function createInterval(callback, delay) {
-      const intervalId = Date.now() + Math.random(); // Generate a unique ID
-      
-      if (!window.customIntervals) {
-        window.customIntervals = [];
-      }
-      
-      window.customIntervals.push({
-        callback: callback,
-        delay: delay,
-        elapsed: 0,
-        id: intervalId
-      });
-      
-      return intervalId; // Return ID so it can be cleared later
-    }
-
-    // Function to clear a custom interval
-    function uncreateInterval(intervalId) {
-      if (!window.customIntervals) return;
-      
-      const index = window.customIntervals.findIndex(interval => interval.id === intervalId);
-      if (index !== -1) {
-        window.customIntervals.splice(index, 1);
-      }
-    }
     
     function animate(currentTime) {
 
@@ -1872,7 +1873,7 @@ tw-story {
       // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
       // This is set to true when the player returns to the page.
       // It's possible for this to be null or undefined, but that shall be treated as false.
-      if (typeof $tutorialOperationAllowed === "undefined" || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
+      if (typeof $operationDebugAllowed === "undefined" || $operationDebugAllowed === null || !$operationDebugAllowed) {
         // Cancel the animation frame if the operation is not allowed to run
         return;
       }
@@ -1891,7 +1892,7 @@ tw-story {
         requestAnimationFrame(animate)
         return;
       }
-      
+
       // Check if game should end now
       // Check if all player ships are gone
       if (areAllContactsGone("PLAYER")) {
@@ -1900,6 +1901,17 @@ tw-story {
         gameOverColor = "red";
         // Play defeat sound
         const audio = new Audio("../assets/defeat.mp3");
+        audio.play();
+      }
+
+      // Check if all hostile contacts are gone
+      if (areAllContactsGone("HOSTILE")) {
+        gameOver = true;
+        $playerWon = true;
+        gameOverMessage = "VICTORY!";
+        gameOverColor = "green";
+        // Play victory sound
+        const audio = new Audio("../assets/victory.mp3");
         audio.play();
       }
       
@@ -1942,487 +1954,6 @@ tw-story {
           window.customTimeouts.splice(i, 1);
         }
       }
-
-    // Custom interval handling system
-    if (!window.customIntervals) {
-      window.customIntervals = [];
-    }
-
-    // Process any active intervals
-    for (let i = window.customIntervals.length - 1; i >= 0; i--) {
-      // Check if the interval still exists (may have been removed by another callback)
-      if (i < window.customIntervals.length) {
-        const interval = window.customIntervals[i];
-
-        // Make sure interval is defined before trying to use it
-        // Shouldn't be necessary, yet if this check is not here, the tutorial mission breaks after the missiles collide
-        if (interval) {
-          // Only increment elapsed time when game is not paused
-          interval.elapsed += trueDeltaTimeMillis;
-
-          if (interval.elapsed >= interval.delay) {
-            try {
-              // Execute the callback but don't remove from array
-              interval.callback();
-              // Reset elapsed time for next interval
-              interval.elapsed = 0;
-            } catch (error) {
-              console.error("Error in interval callback:", error);
-              // Remove problematic interval
-              window.customIntervals.splice(i, 1);
-            }
-          }
-        } else {
-          // Remove undefined interval if it somehow exists
-          window.customIntervals.splice(i, 1);
-        }
-      }
-    }
-
-    // Tutorial mission logic
-    if (tutorialStage === 0) {
-      // Initial instructions
-      tutorialStage = 1;
-      addDialogue("SIM_AI: This simulator will familiarize you with your role as the Sensor Engineer aboard Central Republic warships.", aiColor);
-      
-      createTimeout(() => {
-        addDialogue("SIM_AI: To begin, we will first introduce you to the active Radar. Radar provides a means for you to identify targets at ranges up to one light-second away. For reference, that's 300,000 kilometers.", aiColor);
-        
-        createTimeout(() => {
-          addDialogue("SIM_AI: The radar will now be powered on.", aiColor);
-          
-          createTimeout(() => {
-            // Enable radar
-            disableRadar = false;
-            
-            // Spawn a radar-detectable contact
-            tutorialContactId = Date.now();
-            contacts.push(new Contact(
-              Math.PI/4, radius * 0.5, 5,
-              0, 0, 0,
-              false, 0, false, 0,
-              true, 1, false, 0,
-              false, "", [255, 0, 0],
-              "NEUTRAL", 0
-            ));
-            
-            createTimeout(() => {
-              addDialogue("SIM_AI: Observe the contact report that is now appearing. When objects are detected by radar, this generates a contact report.", aiColor);
-              
-              createTimeout(() => {
-                addDialogue("SIM_AI: You may notice that the report has various controls. Clicking on a report will report it to the captain.", aiColor);
-                
-                createTimeout(() => {
-                  addDialogue("SIM_AI: Alternatively, you can either press X or wait out the report to dismiss it.", aiColor);
-                  
-                  createTimeout(() => {
-                    addDialogue("SIM_AI: When in a combat scenario, you may press Q to recommend that a lot of missiles be fired at the contact.", aiColor);
-                    
-                    createTimeout(() => {
-                      addDialogue("SIM_AI: For now, you are not in a combat scenario, so clicking on a report will only report it to the captain. To advance the tutorial, click the contact report as soon as you can.", aiColor);
-                      
-                      // Set up an interval to check if the player has reported the first contact
-                      let checkReported = createInterval(() => {
-                        if (tutorialActions.reportedFirstRadarContact) {
-                          uncreateInterval(checkReported);
-                          tutorialStage = 2;
-                          
-                          // Remove the original contact
-                          contacts = contacts.filter(c => c.contactType === "PLAYER");
-                          // And all contact reports
-                          contactReports = [];
-                          
-                          addDialogue("SIM_AI: The next thing that must be learned about a radar is that it can be faulty. Sensor ghosts can sometimes appear on the radar.", aiColor);
-                          
-                          createTimeout(() => {
-                            // Add several radar ghosts
-                            for (let i = 0; i < 12; i++) {
-                              contacts.push(new Contact(
-                                Math.random() * Math.PI * 2, Math.random() * radius, 5,
-                                120, 2, Math.random() * Math.PI * 2,
-                                false, 0, false, 0,
-                                true, 0.7, false, 0,
-                                false, "", [255, 0, 0],
-                                "GHOST", 0
-                              ));
-                            }
-                            
-                            // Add one real contact
-                            const realContact = new Contact(
-                              Math.PI * 1.25, radius * 0.75, 5,
-                              0, 0, 0,
-                              false, 0, false, 0,
-                              true, 1, true, 1,
-                              false, "", [255, 0, 0],
-                              "NEUTRAL", 0
-                            );
-                            contacts.push(realContact);
-                            
-                            addDialogue("SIM_AI: Now lots of ghosts and one real contact has been added. You must report it to advance the scenario. Hint: Sensor ghosts aren't consistently located in one spot, but real contacts are.", aiColor);
-                            
-                            // Check when player reports the real contact using the flag
-                            let checkRealReported = createInterval(() => {
-                              if (tutorialActions.reportedRealRadarContact) {
-                                uncreateInterval(checkRealReported);
-                                tutorialStage = 3;
-                                
-                                // Remove all non-player contacts
-                                contacts = contacts.filter(c => c.contactType === "PLAYER");
-                                // And all contact reports
-                                contactReports = [];
-                                
-                                addDialogue("SIM_AI: Good job. If you wish to review any of the previous messages, you can do so by pressing H.", aiColor);
-                                
-                                createTimeout(() => {
-                                  addDialogue("SIM_AI: The next tool in your sensor kit is a passive electromagnetic radiation detector. This will detect objects emitting radiation.", aiColor);
-                                  
-                                  createTimeout(() => {
-                                    addDialogue("SIM_AI: These will only highlight the direction the emission was detected in, and will not tell you the distance.", aiColor);
-                                    
-                                    createTimeout(() => {
-                                      // Add an ELINT detectable contact
-                                      contacts.push(new Contact(
-                                        Math.PI/2, radius * 0.5, 5,
-                                        0, 0, 0,
-                                        false, 0, true, 0.8,
-                                        false, 0, false, 0,
-                                        false, "", [255, 0, 0],
-                                        "NEUTRAL", 0
-                                      ));
-                                      
-                                      addDialogue("SIM_AI: A contact emitting radiation has now been added. Observe how the radiation detector picks up on this.", aiColor);
-                                      
-                                      createTimeout(() => {
-                                        addDialogue("SIM_AI: But as you might have guessed, this detector is prone to picking up random noise. Space is full of things that emit radiation.", aiColor);
-                                        
-                                        createTimeout(() => {
-                                          addDialogue("SIM_AI: Environments like this.", aiColor);
-                                          
-                                          // Remove previous contact and add ELINT ghosts
-                                          contacts = contacts.filter(c => c.contactType === "PLAYER");
-                                          // And all contact reports
-                                          contactReports = [];
-                                          
-                                          // Add many ELINT ghosts
-                                          for (let i = 0; i < 24; i++) {
-                                            contacts.push(new Contact(
-                                              Math.random() * Math.PI * 2, Math.random() * radius, 5,
-                                              120, 2, Math.random() * Math.PI * 2,
-                                              false, 0, true, 0.05,
-                                              false, 0, false, 0,
-                                              false, "", [255, 0, 0],
-                                              "GHOST", 0
-                                            ));
-                                          }
-                                          
-                                          createTimeout(() => {
-                                            addDialogue("SIM_AI: The final tool in the sensor kit is the thermal scanner. It can be rotated with the A/D keys.", aiColor);
-                                            
-                                            createTimeout(() => {
-                                              addDialogue("SIM_AI: Thermal scanners are virtually foolproof - there aren't false detections, and nothing can hide from it.", aiColor);
-                                              
-                                              createTimeout(() => {
-                                                // Add a stealth contact with high ELINT
-                                                contacts.push(new Contact(
-                                                  Math.PI * 1.75, radius * 0.15, 5,
-                                                  0, 0, 0,
-                                                  false, 0, true, 0.9,
-                                                  false, 0, true, 1,
-                                                  false, "", [255, 0, 0],
-                                                  "NEUTRAL", 0
-                                                ));
-                                                
-                                                addDialogue("SIM_AI: A contact with full radar stealth has been added. It is emitting radiation. See if you can pick it up.", aiColor);
-                                                
-                                                createTimeout(() => {
-                                                  addDialogue("SIM_AI: Now the thermal scanner will be powered on. Rotate the scanner to detect the contact, then report it.", aiColor);
-                                                  
-                                                  // Enable thermal scanner
-                                                  disableThermal = false;
-                                                  
-                                                  // Check when player reports the stealth contact using the flag
-                                                  let checkStealthReported = createInterval(() => {
-                                                    if (tutorialActions.reportedStealthContact) {
-                                                      uncreateInterval(checkStealthReported);
-                                                      tutorialStage = 4;
-                                                      
-                                                      // Remove all non-player contacts
-                                                      contacts = contacts.filter(c => c.contactType === "PLAYER");
-                                                      // And all contact reports
-                                                      contactReports = [];
-                                                      
-                                                      addDialogue("SIM_AI: Good job. For the final part of this tutorial, you must learn to fire weapons.", aiColor);
-                                                      
-                                                      createTimeout(() => {
-                                                        addDialogue("SIM_AI: Currently, you are not networked into the fire control computer. Any request for fire must be routed through the captain. In some situations you may start off with permission to fire. But in others, you will not. To receive permission to fire, you must indicate some clear and present danger to the ship.", aiColor);
-                                                        
-                                                        createTimeout(() => {
-                                                          // Set up missile attack interval
-                                                          tutorialMissileInterval = createInterval(() => {
-                                                            // Only spawn if the missile has not been shot yet
-                                                            if (!tutorialActions.shotDownMissile) {
-                                                              // Spawn a missile targeted at the player
-                                                              const missileContact = new MissileContact(
-                                                                Math.random() * Math.PI * 2, radius * 0.92,
-                                                                contacts[0], 30, "HOSTILE", 0.5, 10
-                                                              );
-                                                              contacts.push(missileContact);
-                                                            }
-                                                          }, 8000);
-                                                          
-                                                          addDialogue("SIM_AI: Like the missile that's going to be spawned in to hit you. Don't worry, it doesn't have enough fuel to reach all the way to the ship.", aiColor);
-                                                          
-                                                          createTimeout(() => {
-                                                            addDialogue("SIM_AI: To advance the scenario, report the missile.", aiColor);
-                                                            
-                                                            // Check when player reports a missile using the flag
-                                                            let checkMissileReported = createInterval(() => {
-                                                              if (tutorialActions.reportedMissile) {
-                                                                uncreateInterval(checkMissileReported);
-                                                                
-                                                                addDialogue("Engineer: Incoming!", engineerColor, defaultDialogueTime, engineerPortraitFilePath);
-                                                                
-                                                                createTimeout(() => {
-                                                                  addDialogue("Captain: I'm networking you into the fire control computer.", captainColor, defaultDialogueTime, captainPortraitFilePath);
-                                                                  
-                                                                  // Enable firing
-                                                                  allowedToFire = true;
-                                                                  
-                                                                  addDialogue("SIM_AI: Now you have the ability to fire at the missile. Click the contact report again.", aiColor);
-                                                                  
-                                                                  // Set up check for missile destroyed using the flag
-                                                                  let checkMissileDestroyed = createInterval(() => {
-                                                                    if (tutorialActions.shotDownMissile) {
-                                                                      uncreateInterval(checkMissileDestroyed);
-                                                                      uncreateInterval(tutorialMissileInterval);
-                                                                      tutorialStage = 5;
-                                                                      
-                                                                      // Remove all non-player contacts
-                                                                      contacts = contacts.filter(c => c.contactType === "PLAYER");
-                                                                      // And all contact reports
-                                                                      contactReports = [];
-                                                                      
-                                                                      addDialogue("SIM_AI: Notice that the missile counter was decremented. It is important to conserve your missiles. Another note about missiles: They have an arming time, during which they cannot lock on to targets or blow up. ", aiColor);
-                                                                      
-                                                                      createTimeout(() => {
-                                                                        addDialogue("SIM_AI: But for the sake of this simulation, the counter will be reset to full.", aiColor);
-                                                                        
-                                                                        // Enable infinite missiles
-                                                                        infiniteMissiles = true;
-                                                                        
-                                                                        createTimeout(() => {
-                                                                          addDialogue("SIM_AI: It may sometimes be necessary to fire at a point that you suspect a contact is located at.", aiColor);
-                                                                          
-                                                                          createTimeout(() => {
-                                                                            addDialogue("SIM_AI: To do so, you must click on a spot in the radar screen.", aiColor);
-                                                                            
-                                                                            // Enable point firing
-                                                                            allowedToFireAtSpot = true;
-                                                                            
-                                                                            createTimeout(() => {
-                                                                              // Add a stealth contact for final target
-                                                                              const finalContact = new Contact(
-                                                                                Math.random() * Math.PI * 2, radius * 0.3, 5,
-                                                                                0.12, 0.1, Math.random() * Math.PI * 2,
-                                                                                false, 0, true, 0.9,
-                                                                                false, 0, true, 1,
-                                                                                false, "", [255, 0, 0],
-                                                                                "HOSTILE", 0
-                                                                              );
-                                                                              contacts.push(finalContact);
-                                                                              
-                                                                              addDialogue("SIM_AI: A contact with full radar stealth has been added. Using the radiation detections as a hint, fire in that direction to win.", aiColor);
-                                                                              
-                                                                              // Check if the final target is destroyed using the flag
-                                                                              let checkMissionComplete = createInterval(() => {
-                                                                                if (tutorialActions.destroyedFinalTarget || areAllContactsGone("HOSTILE")) {
-                                                                                  uncreateInterval(checkMissionComplete);
-                                                                                  
-                                                                                  // Trigger mission victory
-                                                                                  gameOver = true;
-                                                                                  $playerWonO2 = true;
-                                                                                  gameOverMessage = "TUTORIAL COMPLETE!";
-                                                                                  gameOverColor = "green";
-                                                                                  
-                                                                                  const audio = new Audio("../assets/victory.mp3");
-                                                                                  audio.play();
-                                                                                }
-                                                                              }, 1000);
-                                                                            }, 6000);
-                                                                          }, 6000);
-                                                                        }, 6000);
-                                                                      }, 6000);
-                                                                    }
-                                                                  }, 1000);
-                                                                }, 6000);
-                                                              }
-                                                            }, 1000);
-                                                          }, 6000);
-                                                        }, 10000);
-                                                      }, 6000);
-                                                    }
-                                                  }, 1000);
-                                                }, 10000);
-                                              }, 10000);
-                                            }, 10000);
-                                          }, 10000);
-                                        }, 10000);
-                                      }, 12000);
-                                    }, 10000);
-                                  }, 10000);
-                                }, 10000);
-                              }
-                            }, 2000);
-                          }, 10000);
-                        }
-                      }, 2000);
-                    }, 10000);
-                  }, 10000);
-                }, 10000);
-              }, 10000);
-            }, 10000);
-          }, 9000);
-        }, 10000);
-      }, 6000);
-    }
-
-    // Handle disabling radar/thermal drawing if needed
-    if (disableRadar) {
-      // Skip radar line drawing
-    } else {
-      drawRadarLine();
-    }
-
-    if (disableThermal) {
-      // Skip thermal scan drawing
-    } else {
-      drawThermalScan();
-    }
-
-    // Handle infinite missiles if enabled
-    if (infiniteMissiles && contacts.length > 0 && contacts[0]) {
-      contacts[0].numMissiles = 100;
-    }  
-
-      //
-      // Plan for this mission
-      //
-
-      // tutorial mission:
-
-      // -- No sensors / scan lines should be drawn to screen at this point. The code responsible for drawing the radar and thermal scan should be disabled. Elint can still be drawn --
-
-      // This simulator will familiarize you with your role as the Sensor Engineer aboard Central Republic warships.
-
-      // To begin, we will first introduce you to the active Radar. Radar provides a means for you to identify targets at ranges up to one light-second away. For reference, that's 300,000 kilometers.
-
-      // The radar will now be powered on.
-
-      // -- The code for drawing the radar now becomes active --
-
-      // -- A contact is spawned in which is detectable by the radar, but not by ELINT. It is located 0.5 radii from the center --
-
-      // Observe the contact report that is now appearing. When objects are detected by radar, this generates a contact report.
-
-      // You may notice that the report has various controls. Clicking on a report will report it to the captain, who can then make an informed decision about what to do.
-
-      // Alternatively, you can either press X or wait out the report to dismiss it.
-
-      // When in a combat scenario, you may press Q to recommend that a lot of missiles be fired at the contact, spread out over a large area to increase the chances of hitting it.
-
-      // Also when in a combat scenario, if you have been networked into the fire control computer, you may click on the report to fire a missile at it. Sometimes, the radar can pick up enough information to determine a contact's velocity. This will make the missile fired at a contact report try to fire at when it is going, so that the missile can intercept moving contacts. If the contact is moving too fast for an intercept, the missile will default to shooting at it's last known position.
-
-      // For now, you are not in a combat scenario, so clicking on a report will only report it to the captain, and pressing Q will do nothing. To advance the tutorial, click the contact report as soon as you can.
-
-      // The next thing that must be learned about a radar is that it can be faulty. Sensor ghosts can sometimes appear on the radar, and these can be nearly indistinguishable from real contacts.
-
-      // A number of sensor ghosts will now be spawned in, and the previous contact will be removed.
-
-      // -- The contact previously added is removed --
-
-      // -- Twelve radar ghosts are now spawned in, followed by one real contact located at 0.75 radii from the center --
-
-      // Now one real contact has been added. You must report it to advance the scenario. Hint: Sensor ghosts aren't consistently located in one spot, but real contacts are.
-
-      // -- A check is now activated inside the event listener that checks to see when the player clicks the one real contact --
-
-      // -- After clicking, all contacts other than the player ship are removed --
-
-      // Good job. If you wish to review any of the previous messages, you can do so at any time by pressing H. You can return by pressing P twice. Scrolling in the message history menu can be done with the up and down arrow keys.
-
-      // The next tool in your sensor kit is a passive electromagnetic radiation detector. This will detect objects emitting radiation, whether it be radio waves from another ship's radar, or the immense energy put out by a missile engine running at full burn.
-
-      // These will only highlight the direction the emission was detected in, and will not tell you the distance to that emission, unlike radar.
-
-      // -- A contact that has a high ELINT detection chance is now added 0.5 radii from the center --
-
-      // A contact emitting radiation has now been added. Observe how the radiation detector picks up on this.
-
-      // But as you might have guessed, this detector is prone to picking up random noise. Space is full lots of things that emit radiation, and the detector can pick up on these as well. In particularly hostile environments, the detector may be constantly going off.
-
-      // Environments like this.
-
-      // -- Twenty four ELINT ghosts are now added. The previous object is removed --
-
-      // But even so, particularly emissive objects can still be differentiated from mere ghosts.
-
-      // Some objects may be able to hide from Radar, but not from the radiation detector, and that leads into the final tool in the sensor kit: The thermal scanner.
-
-      // The thermal scanner scans a particular sub-region of the radar screen. It can be rotated with the A/D keys.
-
-      // Thermal scanners are virtually foolproof - that is to say there aren't false detections on it, and nothing can hide from it. It's only limitation is it's short range and limited cone of detection.
-
-      // A contact with full radar stealth has been added, although it is emitting quite a bit of radiation. See if you can pick it up through all the radiation noise.
-
-      // -- A single real contact is added at 0.15 radii from the center. It has an extremely high ELINT detection chance --
-
-      // Now the thermal scanner will be powered on. To advance the scenario, rotate the scanner to detect the contact, then report the associated thermal contact report. It is within thermal detection range.
-
-      // -- The code for drawing the thermal scanner and rotating it with a and d becomes active --
-
-      // -- Another check is now activated inside the event listener that checks to see when the player clicks the one real contact --
-
-      // -- After clicking, all contacts other than the player ship are removed --
-
-      // Good job. For the final part of this tutorial, you must learn to fire weapons.
-
-      // Currently, you are not networked into the fire control computer. Any request for fire must be routed through the captain. In some situations you may start off with permission to fire. But in others, you will not. To receive permission to fire, you must indicate some clear and present danger to the ship.
-
-      // -- Using the custom createInterval function, a missile should be spawned in at 0.92 radii and sent directly towards the player ship at an interval, with insufficient fuel time to reach the player ship --
-
-      // Like the missile just spawned in to hit you. Don't worry, it doesn't actually have enough fuel to reach all the way to the ship. To advance the scenario, report the missile. It will respawn until reported.
-
-      // -- On reporting the missile, the following dialogue should play --
-
-      // Engineer: Incoming!
-      // Captain: I'm networking you into the fire control computer.
-
-      // -- The player should now be allowed to fire at a contact report, but not at a point --
-
-      // Now you have the ability to fire at the missile. Click the contact report again to have the ship launch a missile of its own to shoot down the incoming missile. Do so to advance.
-
-      // -- There will now be a check to see if the hostile missile ever collides with a friendly missile. If so, the interval responsible for spawning the missile is deleted and it stops being spawned in. Any contacts other than the player ship are removed at this point --
-
-      // Notice that the missile counter in the top left was decremented. It is important to conserve your missiles in combat scenarios so you have enough to shoot down any salvo fired by the enemy.
-
-      // But for the sake of this simulation, the counter will be reset to full.
-
-      // -- Code responsible for resetting the player ship's missile count to 100 every frame now becomes active --
-
-      // It may sometimes be necessary to fire at a point that you suspect a contact is located at.
-
-      // To do so, you must click on a spot in the radar screen. This will launch a missile directly at the clicked location.
-
-      // Don't worry about the missiles not being able to see the contact. As you may have noticed, they have a built in thermal scanner, albeit one with much less range.
-
-      // So long as the missile's target is within it's thermal scan cone, the missile will home in on it.
-
-      // But this is a double edged sword, as the missile doesn't care who's friendly. It will home in on ANY heat source.
-
-      // A contact with full radar stealth has been added outside of thermal detection range. But don't worry, it is emitting radiation. Using the bearing given by the constant radiation detections as a hint, fire in the general direction of the contact to blow it up. Do so to win the scenario.
-
-      // -- The player is now allowed to fire at a point. When this contact is destroyed, trigger the mission victory --
-
       
       // Cap deltaTime to prevent huge jumps if tab was inactive
       const cappedDeltaTime = Math.min(deltaTime, 0.5);
@@ -2436,6 +1967,59 @@ tw-story {
       // Do not include missiles in these arrays
       const friendlyContacts = contacts.filter(contact => contact.contactType === "FRIENDLY" || contact.contactType === "PLAYER" && !contact.isMissile);
       const hostileContacts = contacts.filter(contact => contact.contactType === "HOSTILE" && !contact.isMissile);
+
+      // Keep track of launch chance for both sides
+      const hostileLaunchChance = missileLaunchChance;
+      const friendlyLaunchChance = missileLaunchChance;
+
+      missileLaunched = false;
+
+      // Randomly make hostile contacts fire missiles at player or friendly contacts
+      for (let contact of hostileContacts) {
+        // Skip missiles
+        if (contact.isMissile) continue;
+
+        if (Math.random() < missileLaunchChance && typeof friendlyContacts !== 'undefined' && friendlyContacts.length > 0) {
+          // Randomly select a target from friendly contacts
+          const target = friendlyContacts[Math.floor(Math.random() * friendlyContacts.length)];
+          if (typeof target !== 'undefined') {
+            // Actually fire the missile
+            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
+          }
+        }
+      }
+      
+      // Randomly make friendly contacts fire missiles at hostile contacts
+      for (let contact of friendlyContacts) {
+        // Skip the player contact
+        if (contact.contactType === "PLAYER") continue;
+        // Skip missiles
+        if (contact.isMissile) continue;
+        
+        if (Math.random() < missileLaunchChance && typeof hostileContacts !== 'undefined' && hostileContacts.length > 0) {
+          // Randomly select a target from hostile contacts
+          const target = hostileContacts[Math.floor(Math.random() * hostileContacts.length)];
+          if (typeof target !== 'undefined') {
+            // Actually fire the missile
+
+            // Add dialogue if this is the first missile launch
+            if (!friendlyTookAShot) {
+              addDialogue("Warspite: Unidentified contacts presumed hostile! Fire at will!", friendlyColor);
+              friendlyTookAShot = true;
+            }
+            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
+          }
+        }
+      }
+
+      // If a missile was launched, reset the missileLaunchChance to base value
+      if (missileLaunched) {
+        missileLaunchChance = baseMissileLaunchChance;
+      } else {
+        // Otherwise increase the missile launch chance
+        missileLaunchChance += missileLaunchIncrease * cappedDeltaTime;
+        if (missileLaunchChance > 1.0) missileLaunchChance = 1.0;
+      }
       
       // Update and draw contacts
       for (let contact of contacts) {
@@ -2443,7 +2027,10 @@ tw-story {
         contact.checkDetection(angle, thermalScanAbsoluteAngle, thermalScanRadius, cappedDeltaTime);
         contact.draw(cappedDeltaTime);
       }
-
+      
+      // Draw the radar line and thermal scan
+      drawRadarLine();
+      drawThermalScan();
       // Draw the text telling the player in the top left how many missiles are left
       drawCurrentMissiles();
       // Draw the dialogue messages in the top right corner
@@ -2496,13 +2083,13 @@ tw-story {
       // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
       // This is set to true when the player returns to the page.
       // It's possible for this to be null or undefined, but that shall be treated as false.
-      if (typeof $tutorialOperationAllowed === "undefined" || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
+      if (typeof $operationDebugAllowed === "undefined" || $operationDebugAllowed === null || !$operationDebugAllowed) {
+        // Cancel the event if the operation is not allowed to be running
         return;
       }
-    
       // If paused, do nothing
       if (gamePaused) return;
-    
+
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
@@ -2510,38 +2097,67 @@ tw-story {
       // Check if click is on a contact report
       let wasOnContactReport = false;
       for (let i = 0; i < contactReports.length; i++) {
-        if (contactReports[i].contains(mouseX, mouseY)) {
+        // Launch a missile if the click is on a contact report and the player ship still has missiles
+        // PLayer ship should be the first contact in the contacts array
+        if (contactReports[i].contains(mouseX, mouseY) && contacts[0].numMissiles > 0) {
+          console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
+
+          // If this is the first contact report clicked, add a dialogue message
+          if (isFirstContact) {
+            addDialogue(`Engineer: I've got something on scope! I can't pick up any IFF information.`, engineerColor, defaultDialogueTime, engineerPortraitFilePath);
+            isFirstContact = false;
+          }
+
           wasOnContactReport = true;
 
-          // Check tutorial stage-specific actions
-          if (tutorialStage === 1 && contactReports[i].contact.contactType === "NEUTRAL" && !tutorialActions.reportedFirstRadarContact) {
-            tutorialActions.reportedFirstRadarContact = true;
+          // If this isn't the first contact report clicked and the associated contact is a missile, add a dialogue message for that
+          if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
+            addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor, defaultDialogueTime, engineerPortraitFilePath);
+            // Wait for 3 seconds, then have the captain respond
+            createTimeout(() => {
+              addDialogue(`Captain: They're pirates! Fire countermissile! General Quarters!`, captainColor, 12, captainPortraitFilePath);
+              // Now mark the player ship as allowed to fire
+              allowedToFire = true;
+              allowedToFireAtSpot = true;
+            }, 1000);
+            isFirstMissile = false;
           }
-          else if (tutorialStage === 2 && contactReports[i].contact.contactType === "NEUTRAL" && !tutorialActions.reportedRealRadarContact) {
-            tutorialActions.reportedRealRadarContact = true;
-          }
-          else if (tutorialStage === 3 && contactReports[i].contact.contactType === "NEUTRAL" && !tutorialActions.reportedStealthContact) {
-            tutorialActions.reportedStealthContact = true;
-          }
-          else if (tutorialStage === 4 && contactReports[i].contact.isMissile && !tutorialActions.reportedMissile) {
-            tutorialActions.reportedMissile = true;
-          }
-        
-          // Missile firing logic - only if allowed
+      
+          // If not allowed to fire, do nothing
           if (allowedToFire) {
+            // Fire at the contact report's associated contact
+            // contacts[0] is the player ship, so we will use it to launch the missile
+            // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
             contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
           }
-        
+
           // Remove the report after clicking
           contactReports.splice(i, 1);
           break;
         }
       }
-
-      // If not on a contact report, check if click is on radar screen for missile firing
-      if (!wasOnContactReport && allowedToFireAtSpot && allowedToFire) {
+      // If not on a contact report, check if click is on the radar screen
+      if (!wasOnContactReport) {
+        // Figure out the fire coordinates based on the mouse position
         const dx = mouseX - centerX;
         const dy = mouseY - centerY;
+
+        // Add dialogue if this is the first time the player has fired from a click
+        if (!madeFirstClick) {
+          addDialogue("Engineer: Captain, I think we need to fire at this position!", engineerColor, defaultDialogueTime, engineerPortraitFilePath);
+          madeFirstClick = true;
+          createTimeout(() => {
+            addDialogue("Captain: Affirmative. I'm networking your console into the fire control system.", captainColor, defaultDialogueTime, captainPortraitFilePath);
+            allowedToFireAtSpot = true;
+          }, 3000);
+          return; // Do nothing until the captain responds
+        }
+
+        if (!allowedToFireAtSpot || !allowedToFire) return; // Don't fire if not allowed
+
+        // Try to fire at the given coordinates
+        // contacts[0] is the player ship, so we will use it to launch the missile
+        // launchMissileAtPoint(targetX, targetY, missileFuelTime, missileArmingTime, missileMovementSpeed)
         contacts[0].launchMissileAtPoint(dx, dy, 30, 0.9, 10);
       }
     });
@@ -2554,7 +2170,7 @@ tw-story {
       // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
       // This is set to true when the player returns to the page.
       // It's possible for this to be null or undefined, but that shall be treated as false.
-      if (typeof $tutorialOperationAllowed === "undefined" || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
+      if (typeof $operationDebugAllowed === "undefined" || $operationDebugAllowed === null || !$operationDebugAllowed) {
         // Cancel the event if the operation is not allowed to be running
         return;
       }
@@ -2662,7 +2278,7 @@ tw-story {
     //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
     //             iffBroadcasting, iffString, contactColor, contactType,
     //             numMissilesLoaded
-    let contacts = [
+    const contacts = [
       // The player's ship. Always visible and at the center of the radar
       // Has 100 missiles loaded
       new Contact(0, 0, 5, 
@@ -2671,6 +2287,100 @@ tw-story {
                   true, 0, true, 0,
                   true, "PLAYER SHIP, Heavy Cruiser\nCRS Bounty\nCairn Class", [255, 255, 255],
                   "PLAYER", 100),
+      // Real example contacts - speeds now per second
+      new Contact(Math.PI/2, radius * 0.15, 5, 
+                  0.12, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.3,
+                  true, 0.6, true, 1,
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
+      new Contact(3 * Math.PI/2, radius * 0.75, 5, 
+                  1.2, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 1, true, 1,
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
+      new Contact(-1 * Math.PI/2, radius * 0.55, 5, 
+                  4.5, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 1, true, 1,
+                  false, "", [255, 0, 0],
+                  "HOSTILE"),
+      // Real example friendly contacts, broadcasting IFF
+      new Contact(0, radius * 0.75, 5, 
+                  1.2, 0.3, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.1,
+                  true, 0.6, true, 1,
+                  true, "Battleship\nHMS Warspite\nQueen Elizabeth Class", [255, 0, 255],
+                  "FRIENDLY"),
+      // ELINT Ghosts (No thermal, no radar detection)
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, true, 0.03,
+                  false, 0, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      // Radar ghosts (No ELINT, No thermal detection)
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
+      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
+                  120, 30, Math.random() * Math.PI * 2, 
+                  false, 0, false, 0, 
+                  true, 0.12, false, 0,
+                  false, "", [255, 0, 0],
+                  "GHOST"),
     ];
 
     // Fill the canvas with black initially
@@ -2680,28 +2390,223 @@ tw-story {
     // Start the animation with the timestamp
     lastFrameTime = performance.now();
 
+    // Add the initial dialogue message
+    addDialogue("Captain: Sensors! What's going on?!",  captainColor, defaultDialogueTime, captainPortraitFilePath);
+
     requestAnimationFrame(animate);
   })();
 </script>
+[[Back->Onward]]
+(set: $playerWonO1 to true)
+(set: $playerWonO2 to true)
+(set: $playerWonO3 to true)
+(set: $playerWonO4 to true)
+(set: $playerWonO5 to true)
+<!-- TODO remove this -->
 
-[[Back->Intro 3]]
 
-:: Operation 1 {"position":"1200,200","size":"100,100"}
-NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
+:: Discuss the massive enemy ship {"position":"1200,800","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"How were those weapon systems so advanced on that ship? The reports suggested we were dealing with something much less technologically advanced."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I reckon they managed to appropriate that vessel from the the local authority. Ships from our system aren't that state of the art. Regardless, the ship was brutally modified by that corsair and his band of idiots" </p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"One thing's for certain, the next time we encounter that ship, we're going to need backup." </p>
+  </div>
+
+[[Analyze a strange thermal signal]]
+
+
+:: Into the Omega system {"position":"850,950","size":"100,100"}
+Before hitting the jump point, Admiral Nelson reports shrapnel flowing from the portal. 
+  
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Cut the fusion engine Captain!"</p>
+  </div>
+Slowly the ship comes to a halt before entering the jump point. The steady flow of shrapnel out of the portal is interupted by the back half of a vessel flying towards your ship. 
+ 
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+   <p class="dialogue-text">"Activate secondary engines Captain!"</p>
+  </div>
+The CRS bounty narrowly escapes collision with part of a rogue ship. 
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+  <p class="dialogue-text">"What should we do now Admiral?"</p>
+  </div>
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+   <p class="dialogue-text">"We have to track down these assailants, they're likely on the other side of this jump point, so be wary."</p>
+  </div>
+[[Travel to through the jump point->Operation 1]]
+
+
+:: Intro 1 {"position":"600,200","size":"100,100"}
+All Eyes on Tartarus
+To mute audio, right click the tab in the browser and select "Mute Tab".
+(set: $playerWon to false)
+(set: $playerWonO1 to false)
+(set: $playerWonO2 to false)
+(set: $playerWonO3 to false)
+(set: $playerWonO4 to false)
+(set: $playerWonO5 to false)
+(set: $tutorialOperationAllowed to false)
+(set: $operation1Allowed to false)
+(set: $operation2Allowed to false)
+(set: $operation3Allowed to false)
+(set: $operation4Allowed to false)
+(set: $operation5Allowed to false)
+(set: $operationDebugAllowed to false)
+<!-- Allow audio button  (unmute all audio) -->
+<button id="playAudioButton">Allow Audio</button>
+<script>
+  // So far we only need to umute:
+  // id="submarine-song"
+  document.getElementById("playAudioButton").addEventListener("click", function() {
+    audioMuted = false;
+  }); 
+</script>
+
+[[Continue->Intro 2]]
+
+
+:: Intro 2 {"position":"725,200","size":"100,100"}
+Somewhere far in the future... many lightyears away.
+
+[[The Penumbral Solar system->Intro 2.5]]
+<!-- Take Her Down! (The Submarine Song) -->
+<script>
+  // If audio is already defined, we should stop it before starting a new one
+  if (typeof audio !== 'undefined') {
+    audio.pause();
+    // And probably remove it from the memory
+    delete audio;
+  }
+  audioSource = "../assets/take-her-down-submariners.mp3";
+  audio = new Audio(audioSource);
+  audio.loop = false;
+  // audio.muted = audioMuted;
+  // If audioMuted is not defined, this will break the script
+  // So we need to check and prevent this from happening
+  if (typeof audioMuted !== 'undefined') {
+    audio.muted = audioMuted;
+  }
+  audio.play();
+</script>
+
+
+:: Intro 2.5 {"position":"725,325","size":"100,100"}
+In this system, old rivals coexist orbiting a red giant star. The Central Galactic Federation (CGF) feels the pain of stagnation while the Democratic republic of planets (DRP) continues to diminish the already scarce resources available in the shared asteroid belts. Wormhole boost points "upkept" by the GCF have begun closing up all around the solar system due to neglect from their High council--- The interstellar travel agency was defunded long ago and the money was funneled into admistrative costs. Struggle for resources, transportation logistics and recent "terrorist" attacks have left relations between the two collectives heavily strained. 
+
+[[Onward->Intro2.75]]
+
+
+:: Intro 3 {"position":"1200,0","size":"100,100"}
+Construimus, Batuimus
+<!-- The Seabees Song -->
+<script>
+  // Stops the previous audio
+  if (typeof audio !== 'undefined') {
+    audio.pause();
+    delete audio;
+  }
+  audioSource = "../assets/song-of-the-seabees.mp3";
+  audio = new Audio(audioSource);
+  audio.loop = true;
+  if (typeof audioMuted !== 'undefined') {
+    audio.muted = audioMuted;
+  }
+  audio.play();
+</script>
+<!-- Dialogue with alternating character portraits -->
+<div class="dialogue-container">
+  <!-- Character 1 speaks -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 1">
+    <p class="dialogue-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod velit nec libero rutrum, non venenatis dolor fringilla. Phasellus id metus at lectus cursus tincidunt.</p>
+  </div>
+  
+  <!-- Character 2 speaks -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis.</p>
+  </div>
+  
+  <!-- Character 1 speaks again -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 1">
+    <p class="dialogue-text">Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.</p>
+  </div>
+  
+  <!-- Character 2 speaks again -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium voluptatum deleniti atque corrupti quos dolores et quas molestias excepturi.</p>
+  </div>
+</div>
+(set: $operation1Allowed to false)
 (set: $operation2Allowed to false)
 (set: $operation3Allowed to false)
 (set: $operation4Allowed to false)
 (set: $operation5Allowed to false)
 (set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
+
+[[Tutorial->Tutorial Operation]]
+
+[[Debug Operation->Debug Operation]]
+
+
+:: Intro2.75 {"position":"725,450","size":"100,100"}
+The DRP has made accusations of intentional traderoute sabotage in recent months to the CGF. Surviving merchants, describe the ships as brutish, coated in rust, and 1000-1500 years behind state of the art space craft of the day. Though the space craft used by the CGF may look old and run down, they're certainly not that old. The design for current warships were made within the last 300 years during the Central Galactic Civil war, so it couldn't be from them. It's evident that there exists a third party in this ordeal since miners and merchants from the CGF also report attacks from similarly characterized warships.
+
+[[Within the High Council->Intro2.9]]
+
+
+:: Intro2.9 {"position":"725,575","size":"100,100"}
+A series of old bloated officials sat in a rotunda, bickering over the where the funding of the CGF should be allocated. The leader of the bureaucrats, Charlemangne has seen drastic approval rating downturns recently. Citizens dispirited with the poor relations with the DRP, merchants narrowly escaping enslavement or death from terrorists, and workers unhappy with layoffs have coalesced into a massive force demanding change from the council. Long have these decaying, robe dressed officeholders left problems unsolved, spending much of their days squandering their unjust wages and growing inept. With citizen backlash at an all time high, they've decided to rectify pressing matters.
+
+
+[[Charlemagnes orders->Intro2.95]]
+
+
+:: Intro2.95 {"position":"725,700","size":"100,100"}
+The first order of business involves investigating this "third party". Vanquishing these marauders will deescalate the aggression shown from the DRP. Threats of supermassive nuclear warfare from the DRP has left the republic no other option as they no longer will reason with Charlemagne due to his inflated ego. Direct orders were made to Admiral Nelson, and Captain Custer of the CRS Bounty to investigate the region of space where the raids were reported.
+
+[[Board the CRS Bounty]]
+
+
+:: Onward {"position":"725,950","size":"100,100"}
+You've been aboard the CRS Bounty for a few days now venturing to the nearest jump point from the CGF capital planet to go sort out these marauders. You've seen nothing remarkable so far, just citizens traveling to leisure moons, intact merchant ships and the occasional untouched asteroid. This jump point is shared with the DRP and connects the Penumbral solar system to the Omega system 4000 light years away. The Omega system houses many trade partners of both the CGF and DRP, dealing in general resources along with other more nefarious commodities. 
+
+[[Into the Omega system]]
+
+[[Speak to Captain Custer]]
+
+[[Refresh your radar skills in the simulation chamber->Tutorial Operation]]
+
+
+:: Operation 1 {"position":"1200,200","size":"100,100"}
 Operation 1: Across the Point
 
-Tips:
-Use your thermal scanner, especially when missiles are flying at you.
-The captain won't fire until you identify an incoming missile.
-Click the contact report box, not the contact itself to report contacts.
-When weapon fire is authorized, you can click on a spot to fire at that spot.
+A field of scrap and trade crates are strewn across the expanse. The front half of the ship lays dormant. None of the escape pods were launched, so the marauders must have also attacked from within. 
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Be on high alert Engineer, they may be hiding among the wreckage or inside the ship. Show us what you can do."</p>
+  </div>
 
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Admiral, I think they know we're here..."</p>
+  </div>
 Controls:
 F11 for fullscreen
 Thermal Scan - Use A/D to rotate
@@ -5028,34 +4933,13 @@ tw-story {
 (set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 [[See Operation Results->Operation Result 1]]
-[[Back->Intro 3]]
+[[Back->Into the Omega system]]
 
-:: Operation Result 1 {"position":"1200,400","size":"100,100"}
-
-[[Click to go Back->Operation 1]]
-(if: $playerWonO1 is true)[[[Victory! Click to continue->Operation 2]]]
-(set: $operation1Allowed to false)
-(set: $operation2Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $tutorialOperationAllowed to false)
-(set: $operationDebugAllowed to false)
 
 :: Operation 2 {"position":"1400,200","size":"100,100"}
-NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
-(set: $operation1Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $tutorialOperationAllowed to false)
-(set: $operationDebugAllowed to false)
 Operation 2: The Tartarus
 
-Tips:
-Use your thermal scanner, especially when missiles are flying at you.
-Click the contact report box, not the contact itself to report contacts.
-When weapon fire is authorized, you can click on a spot to fire at that spot.
+Just as the battlefield seemed quiet, a massive ship appeared out of a different jump point junction. Adorned with parts from the wreckages of past foes, the size of the ship eclipses the view of the Omega systems star.
 
 Controls:
 F11 for fullscreen
@@ -7669,20 +7553,8 @@ tw-story {
 (set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 
-:: Operation Result 2 {"position":"1400,400","size":"100,100"}
-
-[[Click to go Back->Operation 2]]
-(if: $playerWonO2 is true)[[[Victory! Click to continue->Operation 3]]]
-(set: $operation1Allowed to false)
-(set: $operation2Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $tutorialOperationAllowed to false)
-(set: $operationDebugAllowed to false)
 
 :: Operation 3 {"position":"1600,200","size":"100,100"}
-NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
 Operation 3: Specters in the Dark
 
 Controls:
@@ -10313,17 +10185,6 @@ tw-story {
 (set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 
-:: Operation Result 3 {"position":"1600,400","size":"100,100"}
-
-[[Click to go Back->Operation 3]]
-(if: $playerWonO3 is true)[[[Victory! Click to continue->Operation 4]]]
-(set: $operation1Allowed to false)
-(set: $operation2Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $tutorialOperationAllowed to false)
-(set: $operationDebugAllowed to false)
 
 :: Operation 4 {"position":"1800,200","size":"100,100"}
 NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
@@ -13334,22 +13195,8 @@ tw-story {
 (set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 
-:: Operation Result 4 {"position":"1800,400","size":"100,100"}
-
-[[Click to go Back->Operation 4]]
-(if: $playerWonO4 is true)[[[Victory! Click to continue->Operation 5]]]
-
-
-(set: $operation1Allowed to false)
-(set: $operation2Allowed to false)
-(set: $operation3Allowed to false)
-(set: $operation4Allowed to false)
-(set: $operation5Allowed to false)
-(set: $tutorialOperationAllowed to false)
-(set: $operationDebugAllowed to false)
 
 :: Operation 5 {"position":"2000,200","size":"100,100"}
-NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
 Operation 5: There will be Peace!
 
 Controls:
@@ -15143,7 +14990,7 @@ tw-story {
         0, 0, 0, // Initially stationary
         true, 1.0, true, 0.7, // Visible, emitting radiation
         true, 1.0, true, 1.0, // Radar and thermal detectable
-        true, "GRAND NEBULA NAVY\nGNNFS WARSPITE\nSOVEREIGN CLASS BATTLESHIP", [255, 0, 255], // IFF broadcasting
+        true, "TERRAN DIRECTORATE NAVY\nTDS WARSPITE\nSOVEREIGN CLASS BATTLESHIP", [255, 0, 255], // IFF broadcasting
         "FRIENDLY", // Contact type
         300 // 300 missiles
       );
@@ -15227,7 +15074,7 @@ tw-story {
       }, 15000);
       
       createTimeout(() => {
-        addDialogue("GNNFS Warspite: Bounty, we'll coordinate our attack. Focus fire on that second contact while we go after the Tartarus!", friendlyColor, 8);
+        addDialogue("TDS Warspite: Bounty, we'll coordinate our attack. Focus fire on that second contact while we go after the Tartarus!", friendlyColor, 8);
       }, 20000);
       
       createTimeout(() => {
@@ -15756,7 +15603,7 @@ tw-story {
         }
         
         if (pirateShip && !pirateShip.destroyed && navyShip && !navyShip.destroyed && !response2) {
-          addDialogue("GNNFS Warspite: The Tartarus has advanced targeting systems. Keep your eyes open!", friendlyColor, 8);
+          addDialogue("TDS Warspite: The Tartarus has advanced targeting systems. Keep your eyes open!", friendlyColor, 8);
           response2 = true;
         }
         
@@ -15789,9 +15636,9 @@ tw-story {
           createTimeout(() => {
             // Make sure the Warspite is still alive before this dialogue
             if (navyShip && !navyShip.destroyed) {
-              addDialogue("GNNFS Warspite: The Tartarus has finally been destroyed. This is a major victory.", friendlyColor, 10);
+              addDialogue("TDS Warspite: The Tartarus has finally been destroyed. This is a major victory.", friendlyColor, 10);
             } else {
-              addDialogue("Admiral: That rotten ship is finally gone. But what a cost. May the crew of the Warspite rest in peace.", admiralColor, 10, admiralPortraitFilePath);
+              addDialogue("Admiral: That rotten ship is finally gone. Let's try to save as many of the Warspite crew as we can.", admiralColor, 10, admiralPortraitFilePath);
             }
           }, 3000);
           
@@ -16374,7 +16221,60 @@ tw-story {
 (set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 
-:: Operation Result 5 {"position":"2000,400","size":"100,100"}
+
+:: Operation Result 1 {"position":"1200,350","size":"100,100"}
+[[Click to go Back->Operation 1]]
+(if: $playerWonO1 is true)[[[Victory! Observe the enemy wreckage->[Victory! Observe the enemy wreckage]]]
+(set: $operation1Allowed to false)
+(set: $operation2Allowed to false)
+(set: $operation3Allowed to false)
+(set: $operation4Allowed to false)
+(set: $operation5Allowed to false)
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)
+
+
+:: Operation Result 2 {"position":"1400,350","size":"100,100"}
+[[Click to go Back->Operation 2]]
+(if: $playerWonO2 is true)[[[Victory! Full speed ahead to the closest asteroid cluster->[Victory! Full speed ahead to the closest ateroid cluster]]]
+(set: $operation1Allowed to false)
+(set: $operation2Allowed to false)
+(set: $operation3Allowed to false)
+(set: $operation4Allowed to false)
+(set: $operation5Allowed to false)
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)
+
+
+:: Operation Result 3 {"position":"1600,350","size":"100,100"}
+[[Click to go Back->Operation 3]]
+(if: $playerWonO3 is true)[[[Victory! Wait for ship repairs->Wait for repairs]]]
+(set: $operation1Allowed to false)
+(set: $operation2Allowed to false)
+(set: $operation3Allowed to false)
+(set: $operation4Allowed to false)
+(set: $operation5Allowed to false)
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)
+
+
+:: Operation Result 4 {"position":"1800,350","size":"100,100"}
+[[Click to go Back->Operation 4]]
+(if: $playerWonO4 is true)[[Victory! Discuss with the Captain of the Warspite]]
+
+(set: $playerWonO4 to true)
+(set: $operation1Allowed to false)
+(set: $operation2Allowed to false)
+(set: $operation3Allowed to false)
+(set: $operation4Allowed to false)
+(set: $operation5Allowed to false)
+(set: $tutorialOperationAllowed to false)
+(set: $operationDebugAllowed to false)
+
+
+:: Operation Result 5 {"position":"2000,350","size":"100,100"}
+[[Click to go Back->Operation 5]]
+(if: $playerWonO5 is true)[[Victory! Discuss with the Captain Martin]]
 
 
 (set: $operation1Allowed to false)
@@ -16385,67 +16285,234 @@ tw-story {
 (set: $tutorialOperationAllowed to false)
 (set: $operationDebugAllowed to false)
 
-[[Click to go Back->Operation 5]]
-(if: $playerWonO5 is true)[[[Victory! Click to continue->Ending 1]]]
 
-:: Ending 1 {"position":"2200,400","size":"100,100"}
-[[Click to go Back->Operation 5]]
+:: Speak to Captain Custer {"position":"600,950","size":"100,100"}
+<!-- Character 2 speaks -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"You ever hear about what happend to those rebels back in the galactic civil war?"</p>
+  </div>
+
+<!-- Character 2 speaks -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I've heard alot of stories. What are you getting at?"</p>
+  </div>
+  
+  <!-- Character 2 speaks -->
+  <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"They were going through one of those jump points right as the wormhole collapsed... some say they ended up in another dimension, others say they were turned into plasma instantaneously." </p>
+  </div>
+  
+  <!-- Character 2 speaks -->
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Now why would you tell me something like that man, I have so many other things to worry about right now. Buzz off."  </p>
+  </div>
+
+  
+[[Into the Omega system]]
 
 
-:: Debug Operation {"position":"1000,600","size":"100,100"}
-Debug Operation.
+:: The corsairs mystery {"position":"2000,600","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Here he is Admiral... In all his grandeur."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Boy oh boy, you're even uglier in person Nelson!"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"You have no grounds to be insulting me, especially when your ship and crew are no longer in existence. Who put you up to this, you mongrel?" </p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I'm a free agent. I kill and raid just for the fun of it. No nation could have bribed me into this! I do it for the love of the game, Nelson."</p>
+  </div>
+
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"You see, I have a hard time believing that a shabby crew such as yours could have acquired a ship like the Tartarus on your own."</p>
+  </div>
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Ehhhh, My uhhh... great uncle's brother gave it to me, for uhhh... hunting Slig blood worms!"</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"You can tell us the truth now, or we're going to start removing those rotting teeth of yours!"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Heh like I'd care! I've been meaning to get dentures."</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"What if we cut his beard sir?"</p>
+  </div>
+
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"NO! Wait! Alright I'll tell you whatever you want! Please don't, this took decades to grow and upkeep!"</p>
+  </div>
+
+
+[[Onward->The corsairs secret 2]]
+
+
+:: The corsairs secret 2 {"position":"2000,800","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I was a Soma dealer before getting this gig, The Grand Nebula federation threatened me and my crew with a life sentence working on an agricultural moon after we were caught selling product cut with space slug secretion."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"What does that have to do with you becoming a pirate gang leader?"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"The GNF offered us a second option... Destroy CGF merchant ships, and we get to loot all of the goods after slaughtering all the witnesses. They gave us the Tartarus which was retrofitted with experimental weapons intended to take out whoever opposed us."</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Welp, that didnt work out too well for you now did it?"</p>
+  </div>
+
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"If it weren't for the rotten Warspite, things would've ended much differently! I knew I should've picked a different crew to pilot the Tamarisk."</p>
+  </div>
+  
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"So, the Grand Nebula Federation put you up to this... But why?"</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"How should I know you fool? If I were to guess, it's that damned leader of yours Charlemagne pissing everyone off with the lack of political accord."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Did anyone from the GNF mention anything about the Democratic Republic of Planets?"</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"All I know is that's where my supply of Somas was going to before all this mess."</p>
+  </div>
+
+[[Onward->the corsairs secret 3]]
+
+
+:: The next day {"position":"1600,600","size":"100,100"}
+After repairs were made, the CRS bounty and its crew headed for a different jump point in hopes of getting to the bottom of this pirate mystery, and to hopefully recruit some help along the way.
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Are you sure this is the right direction Admiral? Seems like this jump point would take us into deeper space."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"If my memory serves me right, the jump point should be around this area, though the last time I was in the Omega system was 300 years ago, so I'm a bit rusty on the landmarks."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Why dont we have a map?"</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"The Galactic archives were destroyed to build a massive brothel, nobody bothered to back up any of the useful records."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We don't need no map maggots! Trust in old Admiral Nelson!"</p>
+  </div>
+
+
+[[To the jump point]]
+
+
+:: To the jump point {"position":"1600,800","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We're approaching the jump point Admiral."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Alright men, be prepared. We dont want to get caught with our pants down like last time!"</p>
+  </div>
+Upon emerging on the other side, what appeared before the CRS Bounty was a boundless void.
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I dont think the Nebula capital planet is anywhere near here Admiral."</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Yes, I can see that Custer. The correct jump point must have closed up long ago..."</p>
+  </div>
+
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">
+"Or it was intentionally closed..."</p>
+  </div>
+  
+   <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Nonetheless, we must make do. Let's see if we can find any other ships to give us some direction."</p>
+  </div>
+
+[[Onward->Operation 4]]
+
+
+:: Tutorial Operation {"position":"900,500","size":"100,100"}
 NOTE: If it seems like the mission is running a bit fast or extremely out of place sounds are playing, try reloading the page. This is a known issue with how Twine handles loading Javascript tags.
-
-TRIVIA:
-LS: Light Second = 299,792,458 Meters
-
-TIPS:
-Left clicking on a contact report will fire a missile at it. 
-
-Left clicking elsewhere on the screen will fire a missile at the clicked location.
-
-Mousing over a contact report and pressing "X" will dismiss it. 
-
-Mousing over a friendly contact will display miscellaneous information about it, such as the name of a friendly ship, or the remaining fuel time of a friendly missile.
-
-Radar and radiation detectors can be faulty, displaying false detections occasionally and randomly. Real contacts will be far more consisently located in one place.
-
-Missiles, both friendly and hostile, give off an immense amount of electromagnetic radiation, making them show up near continuously on the radiation detectors.
-
-Radar can be fooled by stealthy contacts, but thermal sensors never lie. 
-
-In combat, missiles can be flying at your ship so fast that you might not detect them on the radar until they are right on top of you. 
-Orient the thermal scanner to the direction of the enemy ship to get the most live data on any incoming missiles.
-
-Incoming missiles can be shot down by other missiles.
-
-Missiles are equipped with very short range thermal scanners that let them see what's in front of them. 
-
-Missiles do not care if you're friendly or hostile or neutral. If they see something, they will home in on it until they run out of fuel or until they strike true.
-
-That means your own missiles, if somehow redirected towards yourself or a friendly ship, will blow you up.
-
-Conserve your missiles. Once you're out, you have no way of defending yourself from incoming fire.
-
-Fire missiles in a spread of all possible positions you think they enemy could be in so they can't get away in time regardless of how they dodge.
-
-When firing a spread, make sure to also spread the missiles out in time so they don't get launched so quickly that they lock onto each other and either blow themselves up or alter course and mess up the spread.
+(set: $operation1Allowed to false)
+(set: $operation2Allowed to false)
+(set: $operation3Allowed to false)
+(set: $operation4Allowed to false)
+(set: $operation5Allowed to false)
+(set: $operationDebugAllowed to false)
+Tutorial.
 
 Controls:
+F11 for fullscreen
 Thermal Scan - Use A/D to rotate
 Contact Report - Left click to fire at, X to Dismiss, Q to fire a spread at
 Pause - P to toggle pause
 Message history - H to pause and view message history
-<script>
-  // Stops the previous audio
-  if (typeof audio !== 'undefined') {
-    audio.pause();
-    delete audio;
-  }
-</script>
 
 <!-- Removal of padding allows for much more game room on small monitors -->
 <style>
+tw-story {
+  padding: 0% 0%;
+  padding-top: 0%;
+  padding-right: 0%;
+  padding-bottom: 0%;
+  padding-left: 0%;
+}
+
+@media (min-width: 576px) {
   tw-story {
     padding: 0% 0%;
     padding-top: 0%;
@@ -16453,34 +16520,28 @@ Message history - H to pause and view message history
     padding-bottom: 0%;
     padding-left: 0%;
   }
-  
-  @media (min-width: 576px) {
-    tw-story {
-      padding: 0% 0%;
-      padding-top: 0%;
-      padding-right: 0%;
-      padding-bottom: 0%;
-      padding-left: 0%;
-    }
-  }
-  </style>
-  
+}
+</style>
 
-<!-- Debug Operation -->
-<canvas id="debugOperation" width="1350" height="720"></canvas>
+<canvas id="tutorialOperation" width="1350" height="750"></canvas>
 <script>
-  // Mark the debug operation as being usable
-  $operationDebugAllowed = true; // Set to true to allow the operation to run
-  // Turn all other operations off
-  $operation1Allowed = false;
-  $operation2Allowed = false;
-  $operation3Allowed = false;
-  $operation4Allowed = false;
-  $operation5Allowed = false;
-  $tutorialOperationAllowed = false;
-  $playerWon = false;
+    // Mark the tutorial operation as being usable
+    $tutorialOperationAllowed = true;
+    // Turn all other operations off
+    $operation1Allowed = false;
+    $operation2Allowed = false;
+    $operation3Allowed = false;
+    $operation4Allowed = false;
+    $operation5Allowed = false;
+    $operationDebugAllowed = false;
+    // Stops the previous audio
+    if (typeof audio !== 'undefined') {
+      audio.pause();
+      // And probably remove it from the memory
+      delete audio;
+    }
   (function() {
-    const canvas = document.getElementById("debugOperation");
+    const canvas = document.getElementById("tutorialOperation");
     const ctx = canvas.getContext("2d");
     const width = canvas.width;
     const height = canvas.height;
@@ -16542,33 +16603,50 @@ Message history - H to pause and view message history
     const missileScanSpeed = 60; // degrees per second
 
     // Random missile launch parameters
-    const baseMissileLaunchChance = 0.0001;
+    const baseMissileLaunchChance = 0;
     let missileLaunchChance = baseMissileLaunchChance;
-    let missileLaunchIncrease = 0.00001;
+    let missileLaunchIncrease = 0;
     // Missile attack type parameters
-    const chanceOfSpreadAttack = 0.5;
+    const chanceOfSpreadAttack = 0.0;
     const spreadAttackMissilePerRadiusAmount = 0.05; // Add 1 more missile for every radius amount of distance to target
     let allowedToFireAtSpot = false; // If true, the player can fire at any point on the screen, not just contacts. If false, they can't.
-    let allowedToFire = true; // If true, the player can cause a missile to be launched. If false, all controls related to firing are disabled. 
+    let allowedToFire = false; // If true, the player can cause a missile to be launched. If false, all controls related to firing are disabled. 
+    // Tartarus missile parameters
+    const tartarusMissileFuelTime = 120; // Lifetime of Tartarus missiles in seconds. Default 120
+    const tartarusMissileArmingTime = 1.0; // Time it takes for Tartarus missiles to arm in seconds. Default 1.0
+    const tartarusMissileSpeed = 12; // Speed of Tartarus missiles in ls/s. Default 12
 
     // Contact report parameters
-    const contactReports = [];
+    let contactReports = [];
     const reportLifetime = 10; // lifetime in seconds
 
     // IFF Parameters
     const iffBoxDisplayDistance = 100; // How far away the mouse can be before the IFF box stops displaying
     const acceptedTypes = ["FRIENDLY", "HOSTILE", "NEUTRAL", "GHOST", "PLAYER"]; // Accepted contact types
 
+    // Tutorial mission variables
+    let tutorialStage = 0;
+    let disableRadar = true;
+    let disableThermal = true;
+    let tutorialContactId = null;
+    let tutorialMissileInterval = null;
+    let infiniteMissiles = false;
+    const tutorialActions = {
+      reportedFirstRadarContact: false,
+      reportedRealRadarContact: false,  
+      reportedStealthContact: false,
+      reportedMissile: false,
+      shotDownMissile: false,
+      destroyedFinalTarget: false
+    };
+
     // Dialogue message parameters
     const dialogueMessages = []; // Array to store dialogue messages with text, color, and time they should disappear
-    const defaultDialogueTime = 5; // Default time for dialogue messages to disappear
+    const defaultDialogueTime = 12; // Default time for dialogue messages to disappear
     // Dialogue flags
     let isFirstContact = true;
     let isFirstMissile = true;
-    let madeFirstKill = false;
-    let madeSecondKill = false;
-    let friendlyTookAShot = false;
-    let madeFirstClick = false;
+    let shotDownFirstMissile = false;
     let firedFirstSpread = false;
     let firedSpreadAtMissile = false;
     let firedSpreadAtInvalidTarget = false;
@@ -16576,13 +16654,17 @@ Message history - H to pause and view message history
     const engineerColor = "#00FF00";
     const captainColor = "#34eb7a";
     const admiralColor = "#37ab56"
+    const helmsmanColor = "#9ceb34";
     const friendlyColor = "#FF00FF"
+    const aiColor = "#c0ffbd"
+    const unidentifiedColor = "#FFFFFF"
+    const pirateColor = "#FF0000"
     // Dialogue portrait paths
     const captainPortraitFilePath = "../assets/characters/Captain.png";
     const engineerPortraitFilePath = "../assets/characters/Engineer.png";
     const corsairPortraitFilePath = "../assets/characters/Pirate.png";
     const admiralPortraitFilePath = "../assets/characters/Admiral.png";
-  
+
     // Function to create explosion effect
     function createExplosion(x, y) {
       // Play explosion sound (Unused for now)
@@ -17044,7 +17126,6 @@ Message history - H to pause and view message history
               // and if firedFirstSpread is false
               // If so, write dialogue 
               if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                 firedFirstSpread = true;
               }
 
@@ -17147,7 +17228,6 @@ Message history - H to pause and view message history
                 // and if firedFirstSpread is false
                 // If so, write dialogue 
                 if(this.contactType === "PLAYER" && !firedFirstSpread) {
-                  addDialogue("Captain: Gunnery control, you heard the engineer. Fire a spread at that contact!", captainColor, defaultDialogueTime, captainPortraitFilePath);
                   firedFirstSpread = true;
                 }
 
@@ -17561,10 +17641,10 @@ Message history - H to pause and view message history
       checkCollisions() {
         // Only check for collisions if armed
         if (this.armingTime > 0) return;
-
+      
         for (let i = 0; i < contacts.length; i++) {
           const contact = contacts[i];
-          if (contact === this) continue; // Skip self and other missiles
+          if (contact === this) continue;
           
           // Calculate distance between missile and contact
           const dx = Math.cos(contact.realBearing) * contact.realDistance - Math.cos(this.realBearing) * this.realDistance;
@@ -17581,22 +17661,22 @@ Message history - H to pause and view message history
             createExplosion(centerX + this.realDistance * Math.cos(this.realBearing), 
                            centerY + this.realDistance * Math.sin(this.realBearing));
             
-            // Remove both from contacts array
-            console.log("Missile collided with contact:", contact);
-            console.log("Missile destroyed:", this);
-
-            // Check if it was a friendly missile that collided with a hostile contact
-            if (this.contactType === "FRIENDLY" && contact.contactType === "HOSTILE") {
-              // If the player hasn't made their first kill
-              if (!madeFirstKill) {
-                addDialogue("Engineer: Telemetry indicates one less hostile!", engineerColor, defaultDialogueTime, engineerPortraitFilePath);
-                madeFirstKill = true;
-              } else if (!madeSecondKill) {
-                addDialogue("Captain: Good hit. Let's finish the last of these scum!", captainColor, defaultDialogueTime, captainPortraitFilePath);
-                madeSecondKill = true;
+            // Check tutorial progress for missile destruction
+            if ((this.isMissile && this.contactType === "FRIENDLY" && contact.isMissile && contact.contactType === "HOSTILE") ||
+                (this.isMissile && this.contactType === "HOSTILE" && contact.isMissile && contact.contactType === "FRIENDLY")) {
+                
+              if (tutorialStage === 4 && !tutorialActions.shotDownMissile) {
+                tutorialActions.shotDownMissile = true;
+                shotDownFirstMissile = true;
               }
             }
-
+            
+            // Check for final target destruction
+            if (tutorialStage === 5 && contact.contactType === "HOSTILE" && !contact.isMissile) {
+              tutorialActions.destroyedFinalTarget = true;
+            }
+          
+            // Remove both from contacts array
             contacts.splice(contacts.indexOf(this), 1);
             contacts.splice(contacts.indexOf(contact), 1);
             return;
@@ -17748,7 +17828,7 @@ Message history - H to pause and view message history
       // Calculate the endpoint of the rotating line
       const endX = centerX + radius * Math.cos(angle);
       const endY = centerY + radius * Math.sin(angle);
-  
+
       // Draw the rotating line
       ctx.beginPath();
       ctx.moveTo(centerX, centerY);
@@ -18120,6 +18200,34 @@ Message history - H to pause and view message history
         elapsed: 0
       });
     }
+
+    // Function to create custom intervals that respect pause state
+    function createInterval(callback, delay) {
+      const intervalId = Date.now() + Math.random(); // Generate a unique ID
+      
+      if (!window.customIntervals) {
+        window.customIntervals = [];
+      }
+      
+      window.customIntervals.push({
+        callback: callback,
+        delay: delay,
+        elapsed: 0,
+        id: intervalId
+      });
+      
+      return intervalId; // Return ID so it can be cleared later
+    }
+
+    // Function to clear a custom interval
+    function uncreateInterval(intervalId) {
+      if (!window.customIntervals) return;
+      
+      const index = window.customIntervals.findIndex(interval => interval.id === intervalId);
+      if (index !== -1) {
+        window.customIntervals.splice(index, 1);
+      }
+    }
     
     function animate(currentTime) {
 
@@ -18129,7 +18237,7 @@ Message history - H to pause and view message history
       // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
       // This is set to true when the player returns to the page.
       // It's possible for this to be null or undefined, but that shall be treated as false.
-      if (typeof $operationDebugAllowed === "undefined" || $operationDebugAllowed === null || !$operationDebugAllowed) {
+      if (typeof $tutorialOperationAllowed === "undefined" || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
         // Cancel the animation frame if the operation is not allowed to run
         return;
       }
@@ -18148,7 +18256,7 @@ Message history - H to pause and view message history
         requestAnimationFrame(animate)
         return;
       }
-
+      
       // Check if game should end now
       // Check if all player ships are gone
       if (areAllContactsGone("PLAYER")) {
@@ -18157,17 +18265,6 @@ Message history - H to pause and view message history
         gameOverColor = "red";
         // Play defeat sound
         const audio = new Audio("../assets/defeat.mp3");
-        audio.play();
-      }
-
-      // Check if all hostile contacts are gone
-      if (areAllContactsGone("HOSTILE")) {
-        gameOver = true;
-        $playerWon = true;
-        gameOverMessage = "VICTORY!";
-        gameOverColor = "green";
-        // Play victory sound
-        const audio = new Audio("../assets/victory.mp3");
         audio.play();
       }
       
@@ -18210,6 +18307,487 @@ Message history - H to pause and view message history
           window.customTimeouts.splice(i, 1);
         }
       }
+
+    // Custom interval handling system
+    if (!window.customIntervals) {
+      window.customIntervals = [];
+    }
+
+    // Process any active intervals
+    for (let i = window.customIntervals.length - 1; i >= 0; i--) {
+      // Check if the interval still exists (may have been removed by another callback)
+      if (i < window.customIntervals.length) {
+        const interval = window.customIntervals[i];
+
+        // Make sure interval is defined before trying to use it
+        // Shouldn't be necessary, yet if this check is not here, the tutorial mission breaks after the missiles collide
+        if (interval) {
+          // Only increment elapsed time when game is not paused
+          interval.elapsed += trueDeltaTimeMillis;
+
+          if (interval.elapsed >= interval.delay) {
+            try {
+              // Execute the callback but don't remove from array
+              interval.callback();
+              // Reset elapsed time for next interval
+              interval.elapsed = 0;
+            } catch (error) {
+              console.error("Error in interval callback:", error);
+              // Remove problematic interval
+              window.customIntervals.splice(i, 1);
+            }
+          }
+        } else {
+          // Remove undefined interval if it somehow exists
+          window.customIntervals.splice(i, 1);
+        }
+      }
+    }
+
+    // Tutorial mission logic
+    if (tutorialStage === 0) {
+      // Initial instructions
+      tutorialStage = 1;
+      addDialogue("SIM_AI: This simulator will familiarize you with your role as the Sensor Engineer aboard Central Republic warships.", aiColor);
+      
+      createTimeout(() => {
+        addDialogue("SIM_AI: To begin, we will first introduce you to the active Radar. Radar provides a means for you to identify targets at ranges up to one light-second away. For reference, that's 300,000 kilometers.", aiColor);
+        
+        createTimeout(() => {
+          addDialogue("SIM_AI: The radar will now be powered on.", aiColor);
+          
+          createTimeout(() => {
+            // Enable radar
+            disableRadar = false;
+            
+            // Spawn a radar-detectable contact
+            tutorialContactId = Date.now();
+            contacts.push(new Contact(
+              Math.PI/4, radius * 0.5, 5,
+              0, 0, 0,
+              false, 0, false, 0,
+              true, 1, false, 0,
+              false, "", [255, 0, 0],
+              "NEUTRAL", 0
+            ));
+            
+            createTimeout(() => {
+              addDialogue("SIM_AI: Observe the contact report that is now appearing. When objects are detected by radar, this generates a contact report.", aiColor);
+              
+              createTimeout(() => {
+                addDialogue("SIM_AI: You may notice that the report has various controls. Clicking on a report will report it to the captain.", aiColor);
+                
+                createTimeout(() => {
+                  addDialogue("SIM_AI: Alternatively, you can either press X or wait out the report to dismiss it.", aiColor);
+                  
+                  createTimeout(() => {
+                    addDialogue("SIM_AI: When in a combat scenario, you may press Q to recommend that a lot of missiles be fired at the contact.", aiColor);
+                    
+                    createTimeout(() => {
+                      addDialogue("SIM_AI: For now, you are not in a combat scenario, so clicking on a report will only report it to the captain. To advance the tutorial, click the contact report as soon as you can.", aiColor);
+                      
+                      // Set up an interval to check if the player has reported the first contact
+                      let checkReported = createInterval(() => {
+                        if (tutorialActions.reportedFirstRadarContact) {
+                          uncreateInterval(checkReported);
+                          tutorialStage = 2;
+                          
+                          // Remove the original contact
+                          contacts = contacts.filter(c => c.contactType === "PLAYER");
+                          // And all contact reports
+                          contactReports = [];
+                          
+                          addDialogue("SIM_AI: The next thing that must be learned about a radar is that it can be faulty. Sensor ghosts can sometimes appear on the radar.", aiColor);
+                          
+                          createTimeout(() => {
+                            // Add several radar ghosts
+                            for (let i = 0; i < 12; i++) {
+                              contacts.push(new Contact(
+                                Math.random() * Math.PI * 2, Math.random() * radius, 5,
+                                120, 2, Math.random() * Math.PI * 2,
+                                false, 0, false, 0,
+                                true, 0.7, false, 0,
+                                false, "", [255, 0, 0],
+                                "GHOST", 0
+                              ));
+                            }
+                            
+                            // Add one real contact
+                            const realContact = new Contact(
+                              Math.PI * 1.25, radius * 0.75, 5,
+                              0, 0, 0,
+                              false, 0, false, 0,
+                              true, 1, true, 1,
+                              false, "", [255, 0, 0],
+                              "NEUTRAL", 0
+                            );
+                            contacts.push(realContact);
+                            
+                            addDialogue("SIM_AI: Now lots of ghosts and one real contact has been added. You must report it to advance the scenario. Hint: Sensor ghosts aren't consistently located in one spot, but real contacts are.", aiColor);
+                            
+                            // Check when player reports the real contact using the flag
+                            let checkRealReported = createInterval(() => {
+                              if (tutorialActions.reportedRealRadarContact) {
+                                uncreateInterval(checkRealReported);
+                                tutorialStage = 3;
+                                
+                                // Remove all non-player contacts
+                                contacts = contacts.filter(c => c.contactType === "PLAYER");
+                                // And all contact reports
+                                contactReports = [];
+                                
+                                addDialogue("SIM_AI: Good job. If you wish to review any of the previous messages, you can do so by pressing H.", aiColor);
+                                
+                                createTimeout(() => {
+                                  addDialogue("SIM_AI: The next tool in your sensor kit is a passive electromagnetic radiation detector. This will detect objects emitting radiation.", aiColor);
+                                  
+                                  createTimeout(() => {
+                                    addDialogue("SIM_AI: These will only highlight the direction the emission was detected in, and will not tell you the distance.", aiColor);
+                                    
+                                    createTimeout(() => {
+                                      // Add an ELINT detectable contact
+                                      contacts.push(new Contact(
+                                        Math.PI/2, radius * 0.5, 5,
+                                        0, 0, 0,
+                                        false, 0, true, 0.8,
+                                        false, 0, false, 0,
+                                        false, "", [255, 0, 0],
+                                        "NEUTRAL", 0
+                                      ));
+                                      
+                                      addDialogue("SIM_AI: A contact emitting radiation has now been added. Observe how the radiation detector picks up on this.", aiColor);
+                                      
+                                      createTimeout(() => {
+                                        addDialogue("SIM_AI: But as you might have guessed, this detector is prone to picking up random noise. Space is full of things that emit radiation.", aiColor);
+                                        
+                                        createTimeout(() => {
+                                          addDialogue("SIM_AI: Environments like this.", aiColor);
+                                          
+                                          // Remove previous contact and add ELINT ghosts
+                                          contacts = contacts.filter(c => c.contactType === "PLAYER");
+                                          // And all contact reports
+                                          contactReports = [];
+                                          
+                                          // Add many ELINT ghosts
+                                          for (let i = 0; i < 24; i++) {
+                                            contacts.push(new Contact(
+                                              Math.random() * Math.PI * 2, Math.random() * radius, 5,
+                                              120, 2, Math.random() * Math.PI * 2,
+                                              false, 0, true, 0.05,
+                                              false, 0, false, 0,
+                                              false, "", [255, 0, 0],
+                                              "GHOST", 0
+                                            ));
+                                          }
+                                          
+                                          createTimeout(() => {
+                                            addDialogue("SIM_AI: The final tool in the sensor kit is the thermal scanner. It can be rotated with the A/D keys.", aiColor);
+                                            
+                                            createTimeout(() => {
+                                              addDialogue("SIM_AI: Thermal scanners are virtually foolproof - there aren't false detections, and nothing can hide from it.", aiColor);
+                                              
+                                              createTimeout(() => {
+                                                // Add a stealth contact with high ELINT
+                                                contacts.push(new Contact(
+                                                  Math.PI * 1.75, radius * 0.15, 5,
+                                                  0, 0, 0,
+                                                  false, 0, true, 0.9,
+                                                  false, 0, true, 1,
+                                                  false, "", [255, 0, 0],
+                                                  "NEUTRAL", 0
+                                                ));
+                                                
+                                                addDialogue("SIM_AI: A contact with full radar stealth has been added. It is emitting radiation. See if you can pick it up.", aiColor);
+                                                
+                                                createTimeout(() => {
+                                                  addDialogue("SIM_AI: Now the thermal scanner will be powered on. Rotate the scanner to detect the contact, then report it.", aiColor);
+                                                  
+                                                  // Enable thermal scanner
+                                                  disableThermal = false;
+                                                  
+                                                  // Check when player reports the stealth contact using the flag
+                                                  let checkStealthReported = createInterval(() => {
+                                                    if (tutorialActions.reportedStealthContact) {
+                                                      uncreateInterval(checkStealthReported);
+                                                      tutorialStage = 4;
+                                                      
+                                                      // Remove all non-player contacts
+                                                      contacts = contacts.filter(c => c.contactType === "PLAYER");
+                                                      // And all contact reports
+                                                      contactReports = [];
+                                                      
+                                                      addDialogue("SIM_AI: Good job. For the final part of this tutorial, you must learn to fire weapons.", aiColor);
+                                                      
+                                                      createTimeout(() => {
+                                                        addDialogue("SIM_AI: Currently, you are not networked into the fire control computer. Any request for fire must be routed through the captain. In some situations you may start off with permission to fire. But in others, you will not. To receive permission to fire, you must indicate some clear and present danger to the ship.", aiColor);
+                                                        
+                                                        createTimeout(() => {
+                                                          // Set up missile attack interval
+                                                          tutorialMissileInterval = createInterval(() => {
+                                                            // Only spawn if the missile has not been shot yet
+                                                            if (!tutorialActions.shotDownMissile) {
+                                                              // Spawn a missile targeted at the player
+                                                              const missileContact = new MissileContact(
+                                                                Math.random() * Math.PI * 2, radius * 0.92,
+                                                                contacts[0], 30, "HOSTILE", 0.5, 10
+                                                              );
+                                                              contacts.push(missileContact);
+                                                            }
+                                                          }, 8000);
+                                                          
+                                                          addDialogue("SIM_AI: Like the missile that's going to be spawned in to hit you. Don't worry, it doesn't have enough fuel to reach all the way to the ship.", aiColor);
+                                                          
+                                                          createTimeout(() => {
+                                                            addDialogue("SIM_AI: To advance the scenario, report the missile.", aiColor);
+                                                            
+                                                            // Check when player reports a missile using the flag
+                                                            let checkMissileReported = createInterval(() => {
+                                                              if (tutorialActions.reportedMissile) {
+                                                                uncreateInterval(checkMissileReported);
+                                                                
+                                                                addDialogue("Engineer: Incoming!", engineerColor, defaultDialogueTime, engineerPortraitFilePath);
+                                                                
+                                                                createTimeout(() => {
+                                                                  addDialogue("Captain: I'm networking you into the fire control computer.", captainColor, defaultDialogueTime, captainPortraitFilePath);
+                                                                  
+                                                                  // Enable firing
+                                                                  allowedToFire = true;
+                                                                  
+                                                                  addDialogue("SIM_AI: Now you have the ability to fire at the missile. Click the contact report again.", aiColor);
+                                                                  
+                                                                  // Set up check for missile destroyed using the flag
+                                                                  let checkMissileDestroyed = createInterval(() => {
+                                                                    if (tutorialActions.shotDownMissile) {
+                                                                      uncreateInterval(checkMissileDestroyed);
+                                                                      uncreateInterval(tutorialMissileInterval);
+                                                                      tutorialStage = 5;
+                                                                      
+                                                                      // Remove all non-player contacts
+                                                                      contacts = contacts.filter(c => c.contactType === "PLAYER");
+                                                                      // And all contact reports
+                                                                      contactReports = [];
+                                                                      
+                                                                      addDialogue("SIM_AI: Notice that the missile counter was decremented. It is important to conserve your missiles. Another note about missiles: They have an arming time, during which they cannot lock on to targets or blow up. ", aiColor);
+                                                                      
+                                                                      createTimeout(() => {
+                                                                        addDialogue("SIM_AI: But for the sake of this simulation, the counter will be reset to full.", aiColor);
+                                                                        
+                                                                        // Enable infinite missiles
+                                                                        infiniteMissiles = true;
+                                                                        
+                                                                        createTimeout(() => {
+                                                                          addDialogue("SIM_AI: It may sometimes be necessary to fire at a point that you suspect a contact is located at.", aiColor);
+                                                                          
+                                                                          createTimeout(() => {
+                                                                            addDialogue("SIM_AI: To do so, you must click on a spot in the radar screen.", aiColor);
+                                                                            
+                                                                            // Enable point firing
+                                                                            allowedToFireAtSpot = true;
+                                                                            
+                                                                            createTimeout(() => {
+                                                                              // Add a stealth contact for final target
+                                                                              const finalContact = new Contact(
+                                                                                Math.random() * Math.PI * 2, radius * 0.3, 5,
+                                                                                0.12, 0.1, Math.random() * Math.PI * 2,
+                                                                                false, 0, true, 0.9,
+                                                                                false, 0, true, 1,
+                                                                                false, "", [255, 0, 0],
+                                                                                "HOSTILE", 0
+                                                                              );
+                                                                              contacts.push(finalContact);
+                                                                              
+                                                                              addDialogue("SIM_AI: A contact with full radar stealth has been added. Using the radiation detections as a hint, fire in that direction to win.", aiColor);
+                                                                              
+                                                                              // Check if the final target is destroyed using the flag
+                                                                              let checkMissionComplete = createInterval(() => {
+                                                                                if (tutorialActions.destroyedFinalTarget || areAllContactsGone("HOSTILE")) {
+                                                                                  uncreateInterval(checkMissionComplete);
+                                                                                  
+                                                                                  // Trigger mission victory
+                                                                                  gameOver = true;
+                                                                                  $playerWonO2 = true;
+                                                                                  gameOverMessage = "TUTORIAL COMPLETE!";
+                                                                                  gameOverColor = "green";
+                                                                                  
+                                                                                  const audio = new Audio("../assets/victory.mp3");
+                                                                                  audio.play();
+                                                                                }
+                                                                              }, 1000);
+                                                                            }, 6000);
+                                                                          }, 6000);
+                                                                        }, 6000);
+                                                                      }, 6000);
+                                                                    }
+                                                                  }, 1000);
+                                                                }, 6000);
+                                                              }
+                                                            }, 1000);
+                                                          }, 6000);
+                                                        }, 10000);
+                                                      }, 6000);
+                                                    }
+                                                  }, 1000);
+                                                }, 10000);
+                                              }, 10000);
+                                            }, 10000);
+                                          }, 10000);
+                                        }, 10000);
+                                      }, 12000);
+                                    }, 10000);
+                                  }, 10000);
+                                }, 10000);
+                              }
+                            }, 2000);
+                          }, 10000);
+                        }
+                      }, 2000);
+                    }, 10000);
+                  }, 10000);
+                }, 10000);
+              }, 10000);
+            }, 10000);
+          }, 9000);
+        }, 10000);
+      }, 6000);
+    }
+
+    // Handle disabling radar/thermal drawing if needed
+    if (disableRadar) {
+      // Skip radar line drawing
+    } else {
+      drawRadarLine();
+    }
+
+    if (disableThermal) {
+      // Skip thermal scan drawing
+    } else {
+      drawThermalScan();
+    }
+
+    // Handle infinite missiles if enabled
+    if (infiniteMissiles && contacts.length > 0 && contacts[0]) {
+      contacts[0].numMissiles = 100;
+    }  
+
+      //
+      // Plan for this mission
+      //
+
+      // tutorial mission:
+
+      // -- No sensors / scan lines should be drawn to screen at this point. The code responsible for drawing the radar and thermal scan should be disabled. Elint can still be drawn --
+
+      // This simulator will familiarize you with your role as the Sensor Engineer aboard Central Republic warships.
+
+      // To begin, we will first introduce you to the active Radar. Radar provides a means for you to identify targets at ranges up to one light-second away. For reference, that's 300,000 kilometers.
+
+      // The radar will now be powered on.
+
+      // -- The code for drawing the radar now becomes active --
+
+      // -- A contact is spawned in which is detectable by the radar, but not by ELINT. It is located 0.5 radii from the center --
+
+      // Observe the contact report that is now appearing. When objects are detected by radar, this generates a contact report.
+
+      // You may notice that the report has various controls. Clicking on a report will report it to the captain, who can then make an informed decision about what to do.
+
+      // Alternatively, you can either press X or wait out the report to dismiss it.
+
+      // When in a combat scenario, you may press Q to recommend that a lot of missiles be fired at the contact, spread out over a large area to increase the chances of hitting it.
+
+      // Also when in a combat scenario, if you have been networked into the fire control computer, you may click on the report to fire a missile at it. Sometimes, the radar can pick up enough information to determine a contact's velocity. This will make the missile fired at a contact report try to fire at when it is going, so that the missile can intercept moving contacts. If the contact is moving too fast for an intercept, the missile will default to shooting at it's last known position.
+
+      // For now, you are not in a combat scenario, so clicking on a report will only report it to the captain, and pressing Q will do nothing. To advance the tutorial, click the contact report as soon as you can.
+
+      // The next thing that must be learned about a radar is that it can be faulty. Sensor ghosts can sometimes appear on the radar, and these can be nearly indistinguishable from real contacts.
+
+      // A number of sensor ghosts will now be spawned in, and the previous contact will be removed.
+
+      // -- The contact previously added is removed --
+
+      // -- Twelve radar ghosts are now spawned in, followed by one real contact located at 0.75 radii from the center --
+
+      // Now one real contact has been added. You must report it to advance the scenario. Hint: Sensor ghosts aren't consistently located in one spot, but real contacts are.
+
+      // -- A check is now activated inside the event listener that checks to see when the player clicks the one real contact --
+
+      // -- After clicking, all contacts other than the player ship are removed --
+
+      // Good job. If you wish to review any of the previous messages, you can do so at any time by pressing H. You can return by pressing P twice. Scrolling in the message history menu can be done with the up and down arrow keys.
+
+      // The next tool in your sensor kit is a passive electromagnetic radiation detector. This will detect objects emitting radiation, whether it be radio waves from another ship's radar, or the immense energy put out by a missile engine running at full burn.
+
+      // These will only highlight the direction the emission was detected in, and will not tell you the distance to that emission, unlike radar.
+
+      // -- A contact that has a high ELINT detection chance is now added 0.5 radii from the center --
+
+      // A contact emitting radiation has now been added. Observe how the radiation detector picks up on this.
+
+      // But as you might have guessed, this detector is prone to picking up random noise. Space is full lots of things that emit radiation, and the detector can pick up on these as well. In particularly hostile environments, the detector may be constantly going off.
+
+      // Environments like this.
+
+      // -- Twenty four ELINT ghosts are now added. The previous object is removed --
+
+      // But even so, particularly emissive objects can still be differentiated from mere ghosts.
+
+      // Some objects may be able to hide from Radar, but not from the radiation detector, and that leads into the final tool in the sensor kit: The thermal scanner.
+
+      // The thermal scanner scans a particular sub-region of the radar screen. It can be rotated with the A/D keys.
+
+      // Thermal scanners are virtually foolproof - that is to say there aren't false detections on it, and nothing can hide from it. It's only limitation is it's short range and limited cone of detection.
+
+      // A contact with full radar stealth has been added, although it is emitting quite a bit of radiation. See if you can pick it up through all the radiation noise.
+
+      // -- A single real contact is added at 0.15 radii from the center. It has an extremely high ELINT detection chance --
+
+      // Now the thermal scanner will be powered on. To advance the scenario, rotate the scanner to detect the contact, then report the associated thermal contact report. It is within thermal detection range.
+
+      // -- The code for drawing the thermal scanner and rotating it with a and d becomes active --
+
+      // -- Another check is now activated inside the event listener that checks to see when the player clicks the one real contact --
+
+      // -- After clicking, all contacts other than the player ship are removed --
+
+      // Good job. For the final part of this tutorial, you must learn to fire weapons.
+
+      // Currently, you are not networked into the fire control computer. Any request for fire must be routed through the captain. In some situations you may start off with permission to fire. But in others, you will not. To receive permission to fire, you must indicate some clear and present danger to the ship.
+
+      // -- Using the custom createInterval function, a missile should be spawned in at 0.92 radii and sent directly towards the player ship at an interval, with insufficient fuel time to reach the player ship --
+
+      // Like the missile just spawned in to hit you. Don't worry, it doesn't actually have enough fuel to reach all the way to the ship. To advance the scenario, report the missile. It will respawn until reported.
+
+      // -- On reporting the missile, the following dialogue should play --
+
+      // Engineer: Incoming!
+      // Captain: I'm networking you into the fire control computer.
+
+      // -- The player should now be allowed to fire at a contact report, but not at a point --
+
+      // Now you have the ability to fire at the missile. Click the contact report again to have the ship launch a missile of its own to shoot down the incoming missile. Do so to advance.
+
+      // -- There will now be a check to see if the hostile missile ever collides with a friendly missile. If so, the interval responsible for spawning the missile is deleted and it stops being spawned in. Any contacts other than the player ship are removed at this point --
+
+      // Notice that the missile counter in the top left was decremented. It is important to conserve your missiles in combat scenarios so you have enough to shoot down any salvo fired by the enemy.
+
+      // But for the sake of this simulation, the counter will be reset to full.
+
+      // -- Code responsible for resetting the player ship's missile count to 100 every frame now becomes active --
+
+      // It may sometimes be necessary to fire at a point that you suspect a contact is located at.
+
+      // To do so, you must click on a spot in the radar screen. This will launch a missile directly at the clicked location.
+
+      // Don't worry about the missiles not being able to see the contact. As you may have noticed, they have a built in thermal scanner, albeit one with much less range.
+
+      // So long as the missile's target is within it's thermal scan cone, the missile will home in on it.
+
+      // But this is a double edged sword, as the missile doesn't care who's friendly. It will home in on ANY heat source.
+
+      // A contact with full radar stealth has been added outside of thermal detection range. But don't worry, it is emitting radiation. Using the bearing given by the constant radiation detections as a hint, fire in the general direction of the contact to blow it up. Do so to win the scenario.
+
+      // -- The player is now allowed to fire at a point. When this contact is destroyed, trigger the mission victory --
+
       
       // Cap deltaTime to prevent huge jumps if tab was inactive
       const cappedDeltaTime = Math.min(deltaTime, 0.5);
@@ -18223,59 +18801,6 @@ Message history - H to pause and view message history
       // Do not include missiles in these arrays
       const friendlyContacts = contacts.filter(contact => contact.contactType === "FRIENDLY" || contact.contactType === "PLAYER" && !contact.isMissile);
       const hostileContacts = contacts.filter(contact => contact.contactType === "HOSTILE" && !contact.isMissile);
-
-      // Keep track of launch chance for both sides
-      const hostileLaunchChance = missileLaunchChance;
-      const friendlyLaunchChance = missileLaunchChance;
-
-      missileLaunched = false;
-
-      // Randomly make hostile contacts fire missiles at player or friendly contacts
-      for (let contact of hostileContacts) {
-        // Skip missiles
-        if (contact.isMissile) continue;
-
-        if (Math.random() < missileLaunchChance && typeof friendlyContacts !== 'undefined' && friendlyContacts.length > 0) {
-          // Randomly select a target from friendly contacts
-          const target = friendlyContacts[Math.floor(Math.random() * friendlyContacts.length)];
-          if (typeof target !== 'undefined') {
-            // Actually fire the missile
-            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
-          }
-        }
-      }
-      
-      // Randomly make friendly contacts fire missiles at hostile contacts
-      for (let contact of friendlyContacts) {
-        // Skip the player contact
-        if (contact.contactType === "PLAYER") continue;
-        // Skip missiles
-        if (contact.isMissile) continue;
-        
-        if (Math.random() < missileLaunchChance && typeof hostileContacts !== 'undefined' && hostileContacts.length > 0) {
-          // Randomly select a target from hostile contacts
-          const target = hostileContacts[Math.floor(Math.random() * hostileContacts.length)];
-          if (typeof target !== 'undefined') {
-            // Actually fire the missile
-
-            // Add dialogue if this is the first missile launch
-            if (!friendlyTookAShot) {
-              addDialogue("Warspite: Unidentified contacts presumed hostile! Fire at will!", friendlyColor);
-              friendlyTookAShot = true;
-            }
-            contact.launchMissileAtContact(target, 30, 0.9, 10, Math.random() < chanceOfSpreadAttack);
-          }
-        }
-      }
-
-      // If a missile was launched, reset the missileLaunchChance to base value
-      if (missileLaunched) {
-        missileLaunchChance = baseMissileLaunchChance;
-      } else {
-        // Otherwise increase the missile launch chance
-        missileLaunchChance += missileLaunchIncrease * cappedDeltaTime;
-        if (missileLaunchChance > 1.0) missileLaunchChance = 1.0;
-      }
       
       // Update and draw contacts
       for (let contact of contacts) {
@@ -18283,10 +18808,7 @@ Message history - H to pause and view message history
         contact.checkDetection(angle, thermalScanAbsoluteAngle, thermalScanRadius, cappedDeltaTime);
         contact.draw(cappedDeltaTime);
       }
-      
-      // Draw the radar line and thermal scan
-      drawRadarLine();
-      drawThermalScan();
+
       // Draw the text telling the player in the top left how many missiles are left
       drawCurrentMissiles();
       // Draw the dialogue messages in the top right corner
@@ -18339,13 +18861,13 @@ Message history - H to pause and view message history
       // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
       // This is set to true when the player returns to the page.
       // It's possible for this to be null or undefined, but that shall be treated as false.
-      if (typeof $operationDebugAllowed === "undefined" || $operationDebugAllowed === null || !$operationDebugAllowed) {
-        // Cancel the event if the operation is not allowed to be running
+      if (typeof $tutorialOperationAllowed === "undefined" || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
         return;
       }
+    
       // If paused, do nothing
       if (gamePaused) return;
-
+    
       const rect = canvas.getBoundingClientRect();
       const mouseX = event.clientX - rect.left;
       const mouseY = event.clientY - rect.top;
@@ -18353,67 +18875,38 @@ Message history - H to pause and view message history
       // Check if click is on a contact report
       let wasOnContactReport = false;
       for (let i = 0; i < contactReports.length; i++) {
-        // Launch a missile if the click is on a contact report and the player ship still has missiles
-        // PLayer ship should be the first contact in the contacts array
-        if (contactReports[i].contains(mouseX, mouseY) && contacts[0].numMissiles > 0) {
-          console.log(`Radar contact at ${contactReports[i].timestamp} reported`);
-
-          // If this is the first contact report clicked, add a dialogue message
-          if (isFirstContact) {
-            addDialogue(`Engineer: I've got something on scope! I can't pick up any IFF information.`, engineerColor, defaultDialogueTime, engineerPortraitFilePath);
-            isFirstContact = false;
-          }
-
+        if (contactReports[i].contains(mouseX, mouseY)) {
           wasOnContactReport = true;
 
-          // If this isn't the first contact report clicked and the associated contact is a missile, add a dialogue message for that
-          if (contactReports[i].contact.isMissile && !isFirstContact && isFirstMissile) {
-            addDialogue(`Engineer: Fast movers! Likely missiles!`, engineerColor, defaultDialogueTime, engineerPortraitFilePath);
-            // Wait for 3 seconds, then have the captain respond
-            createTimeout(() => {
-              addDialogue(`Captain: They're pirates! Fire countermissile! General Quarters!`, captainColor, 12, captainPortraitFilePath);
-              // Now mark the player ship as allowed to fire
-              allowedToFire = true;
-              allowedToFireAtSpot = true;
-            }, 1000);
-            isFirstMissile = false;
+          // Check tutorial stage-specific actions
+          if (tutorialStage === 1 && contactReports[i].contact.contactType === "NEUTRAL" && !tutorialActions.reportedFirstRadarContact) {
+            tutorialActions.reportedFirstRadarContact = true;
           }
-      
-          // If not allowed to fire, do nothing
+          else if (tutorialStage === 2 && contactReports[i].contact.contactType === "NEUTRAL" && !tutorialActions.reportedRealRadarContact) {
+            tutorialActions.reportedRealRadarContact = true;
+          }
+          else if (tutorialStage === 3 && contactReports[i].contact.contactType === "NEUTRAL" && !tutorialActions.reportedStealthContact) {
+            tutorialActions.reportedStealthContact = true;
+          }
+          else if (tutorialStage === 4 && contactReports[i].contact.isMissile && !tutorialActions.reportedMissile) {
+            tutorialActions.reportedMissile = true;
+          }
+        
+          // Missile firing logic - only if allowed
           if (allowedToFire) {
-            // Fire at the contact report's associated contact
-            // contacts[0] is the player ship, so we will use it to launch the missile
-            // launchMissileAtContact(targetContact, missileFuelTime, missileArmingTime, missileMovementSpeed)
             contacts[0].launchMissileAtContact(contactReports[i].contact, 30, 0.9, 10, false);
           }
-
+        
           // Remove the report after clicking
           contactReports.splice(i, 1);
           break;
         }
       }
-      // If not on a contact report, check if click is on the radar screen
-      if (!wasOnContactReport) {
-        // Figure out the fire coordinates based on the mouse position
+
+      // If not on a contact report, check if click is on radar screen for missile firing
+      if (!wasOnContactReport && allowedToFireAtSpot && allowedToFire) {
         const dx = mouseX - centerX;
         const dy = mouseY - centerY;
-
-        // Add dialogue if this is the first time the player has fired from a click
-        if (!madeFirstClick) {
-          addDialogue("Engineer: Captain, I think we need to fire at this position!", engineerColor, defaultDialogueTime, engineerPortraitFilePath);
-          madeFirstClick = true;
-          createTimeout(() => {
-            addDialogue("Captain: Affirmative. I'm networking your console into the fire control system.", captainColor, defaultDialogueTime, captainPortraitFilePath);
-            allowedToFireAtSpot = true;
-          }, 3000);
-          return; // Do nothing until the captain responds
-        }
-
-        if (!allowedToFireAtSpot || !allowedToFire) return; // Don't fire if not allowed
-
-        // Try to fire at the given coordinates
-        // contacts[0] is the player ship, so we will use it to launch the missile
-        // launchMissileAtPoint(targetX, targetY, missileFuelTime, missileArmingTime, missileMovementSpeed)
         contacts[0].launchMissileAtPoint(dx, dy, 30, 0.9, 10);
       }
     });
@@ -18426,7 +18919,7 @@ Message history - H to pause and view message history
       // This is set in the twine passage that contains the game, and is set to false when the player leaves the page.
       // This is set to true when the player returns to the page.
       // It's possible for this to be null or undefined, but that shall be treated as false.
-      if (typeof $operationDebugAllowed === "undefined" || $operationDebugAllowed === null || !$operationDebugAllowed) {
+      if (typeof $tutorialOperationAllowed === "undefined" || $tutorialOperationAllowed === null || !$tutorialOperationAllowed) {
         // Cancel the event if the operation is not allowed to be running
         return;
       }
@@ -18534,7 +19027,7 @@ Message history - H to pause and view message history
     //             radarDetectable, radarDetectionChance, thermalDetectable, thermalDetectionChance,
     //             iffBroadcasting, iffString, contactColor, contactType,
     //             numMissilesLoaded
-    const contacts = [
+    let contacts = [
       // The player's ship. Always visible and at the center of the radar
       // Has 100 missiles loaded
       new Contact(0, 0, 5, 
@@ -18543,100 +19036,6 @@ Message history - H to pause and view message history
                   true, 0, true, 0,
                   true, "PLAYER SHIP, Heavy Cruiser\nCRS Bounty\nCairn Class", [255, 255, 255],
                   "PLAYER", 100),
-      // Real example contacts - speeds now per second
-      new Contact(Math.PI/2, radius * 0.15, 5, 
-                  0.12, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.3,
-                  true, 0.6, true, 1,
-                  false, "", [255, 0, 0],
-                  "HOSTILE"),
-      new Contact(3 * Math.PI/2, radius * 0.75, 5, 
-                  1.2, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 1, true, 1,
-                  false, "", [255, 0, 0],
-                  "HOSTILE"),
-      new Contact(-1 * Math.PI/2, radius * 0.55, 5, 
-                  4.5, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 1, true, 1,
-                  false, "", [255, 0, 0],
-                  "HOSTILE"),
-      // Real example friendly contacts, broadcasting IFF
-      new Contact(0, radius * 0.75, 5, 
-                  1.2, 0.3, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.1,
-                  true, 0.6, true, 1,
-                  true, "Battleship\nHMS Warspite\nQueen Elizabeth Class", [255, 0, 255],
-                  "FRIENDLY"),
-      // ELINT Ghosts (No thermal, no radar detection)
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, true, 0.03,
-                  false, 0, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      // Radar ghosts (No ELINT, No thermal detection)
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
-      new Contact(Math.random() * Math.PI * 2, Math.random() * radius, 5, 
-                  120, 30, Math.random() * Math.PI * 2, 
-                  false, 0, false, 0, 
-                  true, 0.12, false, 0,
-                  false, "", [255, 0, 0],
-                  "GHOST"),
     ];
 
     // Fill the canvas with black initially
@@ -18646,19 +19045,255 @@ Message history - H to pause and view message history
     // Start the animation with the timestamp
     lastFrameTime = performance.now();
 
-    // Add the initial dialogue message
-    addDialogue("Captain: Sensors! What's going on?!",  captainColor, defaultDialogueTime, captainPortraitFilePath);
-
     requestAnimationFrame(animate);
   })();
 </script>
-[[Back->Intro 3]]
-(set: $playerWonO1 to true)
-(set: $playerWonO2 to true)
-(set: $playerWonO3 to true)
-(set: $playerWonO4 to true)
-(set: $playerWonO5 to true)
-<!-- TODO remove this -->
+
+[[Back->Onward]]
+[[Debug->Debug Operation]]
+
+
+:: Victory! Discuss with the Captain Martin {"position":"2000,475","size":"100,100"}
+With the combined efforts of the CRS bounty and the Warspite, the Tartarus drifts incapacitated.
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We did it Engineer! I never doubted you for a second."
+</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Welp, thats certainly a lie. So... What do you think about a promotion?"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Woah woah woah... This was only your first assignment. How about asking in another 5 years, if you're still kicking by then? "</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"..."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Captain Martin, you and your crew were incredible. This is going to be a great story to tell at the Quasar Quarters."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Happy to help. You better keep that promise about the Magellanic Cloud."</p>
+  </div>
+
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Well boys... It looks like the Tartarus is thoroughly disabled. Let's take this Corsair in for questioning."</p>
+  </div>
+
+[[Onward->The corsairs mystery]]
+
+
+:: Victory! Discuss with the Captain of the Warspite {"position":"1800,475","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Now what the hell is going on in this system Captain Martin? Nothing but nonsense has revealed itself since we've been here." </p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"You caught us at a strange time Admiral Nelson. The past couple weeks have left us questioning what we're being told from our command. All was normal before the Tamarisk appeared. Initially we thought this was a new addition to our local force but based on the conduct of their captain we knew something was wrong."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">Why were they operating a Grand Nebula warship?"</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"They either stole that ship, or it was given to them by the Nebula war assembly. The latter is becoming more plausible with recent evidence. There's no records of this ship existing in the first place, and any dialogue with our command denied this ship would be a problem for us."</p>
+  </div>
+
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"What happened when they first arrived?"</p>
+  </div>
+  
+   <div class="dialogue left-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"After a brief interrogation with the ship, they turned hostile, after we caught them in a lie, much like what just happened. A brief battle ensued, but whoever was commanding that vessel was an imbecile so they retreated after an embarrasing display. It was only until our chance meeting outside of that jump point that we found them again. Presumably, they were trying to reconvene with their commanding vessel."</p>
+  </div>
+
+
+[[Onward->Captain Martins agreement]]
+
+
+:: Wait for repairs {"position":"1600,475","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Why can't we catch a break since arriving in this dreadful system?"</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">
+"What's strangest is the lack of local authority. We haven't seen a single Nebula ship. Hopefully they haven't been eliminated by these pirates."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I've had suspicions that the lack of command in this area may be intentional. Theres no way the Grand Nebula Federation doesn't know about these pirates... maybe they set them up to do these raids." </p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We best hope not. We already have enough political drama with the DRP as is, having another empire against us is certainly not optimal."</p>
+  </div>
+
+[[The next day]]
+
+
+:: \[Victory! Full speed ahead to the closest ateroid cluster {"position":"1400,475","size":"100,100"}
+With hopes of losing the pursuing ship, the CRS bounty proceeds towards a large asteroid cluster, all the while large thermal signatures indicative of explosions ring out around the ship.
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I know we're smaller than them, but this field looks pretty dense captain."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We're going to make it. There's no way that ship will follow us through these asteroids. It would be like dragging a whale through a forest."</p>
+  </div>
+
+With precise piloting from Captain Custer, the CRS bounty throughly buried itself in the local asteroid cluster, hopefully away from harm.
+
+
+[[Onward->preoperation 3]]
+
+
+:: \[Victory! Observe the enemy wreckage {"position":"1200,500","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Well that wasnt so bad was it captain?"</p>
+  </div>
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"What are you talking about?! That measly destroyer nearly took us out with your poor comms!"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We lived didnt we? I dont see whats the big deal?"</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Listen, if thats just a destroyer, I'd rather not encounter their flagship with you on the controls!"</p>
+  </div>
+
+ <div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">
+"You two did mighty fine. Captain, get us closer to that wreckage."</p>
+  </div>
+  
+   <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">
+"Which one?"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">
+"What do you think? The one we just blew up you fool!"</p>
+  </div>
+
+Visually, the style matches the reports, Jagged metal ornaments welded to an old rusted warship. 
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">
+"Welp, there's no question that anyone from the CGF is at fault for these attacks. Seems like a gang of pirates"</p>
+  </div>
+
+[[Onward->Operation 2]]
+
+
+:: next {"position":"1800,800","size":"100,100"}
+The CRS Bounty, now accompanied by the Warspite, started back to the Penumbral system jump point; the site of the original battle with the Tartarus.
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"If we make it through this... I'll buy you a slime farm in my system Captain Martin."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/oldCaptain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I know you're not paid that well Custer. Don't get my hopes up... How about you show my crew around your system."</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Right on Martin, theres not alot to see in our system, but maybe we will take them to the Medium Magellanic Cloud. What do you think admiral?" </p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We will worry about that after the Corsair and his band of pirates are destroyed or apprehended. Focus on the task at hand."</p>
+  </div>
+
+[[Onward->Operation 5]]
+
+
+:: preoperation 3 {"position":"1400,600","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"The coast is seemingly clear, good thinking on the escape plan Admiral."</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I wouldnt say we necessarily got out unscathed... our rear right thruster was grazed by something, It may take a while for a service robot to repair it"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"You're starting to grow on me engineer, very perceptive... Welp, looks like we're stuck here for a while, who wants to play some cards?"</p>
+  </div>
+
+
+
+
+[[Discuss the massive enemy ship]]
+
+[[Analyze a strange thermal signal]]
+
+
+:: the corsairs secret 3 {"position":"2200,800","size":"100,100"}
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Captain.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"We dont have much to go off of here sir. What should we do with him and his crew?"</p>
+  </div>
+
+  <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Engineer.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"I vote we launch them into the local star!"</p>
+  </div>
+
+<div class="dialogue right-dialogue">
+    <img src="../assets/characters/Admiral.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">
+"What!? Are you mad? These men will know justice after all the damage they've caused! I think we will should a stop back at the Null Zone, where they can be made to till the soil for the CGF for the rest of their days!"</p>
+  </div>
+
+ <div class="dialogue left-dialogue">
+    <img src="../assets/characters/Pirate.png" class="portrait" alt="Character 2">
+    <p class="dialogue-text">"Oh god! Anything but manual labor!!"</p>
+  </div>
+
+
+[[Back in the CGF]]
 
 
 :: StoryStylesheet [stylesheet]
