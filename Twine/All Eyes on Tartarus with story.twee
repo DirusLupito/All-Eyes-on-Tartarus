@@ -186,6 +186,11 @@ Message history - H to pause and view message history
     audio.pause();
     delete audio;
   }
+
+  if (typeof backgroundMusic !== 'undefined') {
+    backgroundMusic.pause();
+    delete backgroundMusic;
+  }
 </script>
 
 <!-- Removal of padding allows for much more game room on small monitors -->
@@ -237,6 +242,9 @@ Message history - H to pause and view message history
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
+    // Level music settings
+    const backgroundMusic = new Audio("../assets/levelMusic.ogg");
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -1880,6 +1888,13 @@ Message history - H to pause and view message history
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -2226,6 +2241,13 @@ Message history - H to pause and view message history
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -2652,6 +2674,12 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+    
+
+    if (typeof backgroundMusic !== 'undefined') {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById("operation1");
     const ctx = canvas.getContext("2d");
@@ -2666,6 +2694,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
+    // Level music settings
+    const backgroundMusic = new Audio("../assets/levelMusic.ogg");
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -4325,6 +4356,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -4828,6 +4866,13 @@ tw-story {
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -4986,6 +5031,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+
+    if (typeof backgroundMusic !== 'undefined') {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById("operation2");
     const ctx = canvas.getContext("2d");
@@ -5000,6 +5050,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
+    // Level music settings
+    const backgroundMusic = new Audio("../assets/levelMusic.ogg");
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -6694,6 +6747,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -7435,6 +7495,13 @@ tw-story {
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+          
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -7601,6 +7668,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+
+    if (typeof backgroundMusic !== 'undefined') {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById("operation3");
     const ctx = canvas.getContext("2d");
@@ -7615,6 +7687,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
+    // Level music settings
+    const backgroundMusic = new Audio("../assets/levelMusic.ogg");
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -9643,6 +9718,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -10075,6 +10157,13 @@ tw-story {
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -10234,6 +10323,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+
+    if (typeof backgroundMusic !== 'undefined') {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById("operation4");
     const ctx = canvas.getContext("2d");
@@ -10248,6 +10342,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
+    // Level music settings
+    const backgroundMusic = new Audio("../assets/levelMusic.ogg");
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -12676,6 +12773,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -13013,6 +13117,13 @@ tw-story {
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -13243,6 +13354,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+    
+    if (typeof backgroundMusic !== 'undefined') {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById("operation5");
     const ctx = canvas.getContext("2d");
@@ -13257,6 +13373,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
+    // Level music settings
+    const backgroundMusic = new Audio("../assets/levelMusic.ogg");
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -15694,6 +15813,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -16038,6 +16164,13 @@ tw-story {
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -16540,6 +16673,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+    
+    if (typeof backgroundMusic !== 'undefined') {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById("tutorialOperation");
     const ctx = canvas.getContext("2d");
@@ -16554,6 +16692,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () => new Audio("../assets/ELINTBeep.mp3"));
+    // Level music settings
+    const backgroundMusic = new Audio("../assets/levelMusic.ogg");
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -18244,6 +18385,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+        
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -18975,6 +19123,13 @@ tw-story {
       } else if (event.key === 'p' || event.key === 'P') {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;

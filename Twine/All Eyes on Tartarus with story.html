@@ -209,6 +209,11 @@ Message history - H to pause and view message history
     audio.pause();
     delete audio;
   }
+
+  if (typeof backgroundMusic !== &#39;undefined&#39;) {
+    backgroundMusic.pause();
+    delete backgroundMusic;
+  }
 &lt;/script&gt;
 
 &lt;!-- Removal of padding allows for much more game room on small monitors --&gt;
@@ -260,6 +265,9 @@ Message history - H to pause and view message history
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    // Level music settings
+    const backgroundMusic = new Audio(&quot;../assets/levelMusic.ogg&quot;);
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -1903,6 +1911,13 @@ Message history - H to pause and view message history
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -2249,6 +2264,13 @@ Message history - H to pause and view message history
       } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -2631,6 +2653,12 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+    
+
+    if (typeof backgroundMusic !== &#39;undefined&#39;) {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById(&quot;operation1&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
@@ -2645,6 +2673,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    // Level music settings
+    const backgroundMusic = new Audio(&quot;../assets/levelMusic.ogg&quot;);
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -4304,6 +4335,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -4807,6 +4845,13 @@ tw-story {
       } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -4961,6 +5006,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+
+    if (typeof backgroundMusic !== &#39;undefined&#39;) {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById(&quot;operation2&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
@@ -4975,6 +5025,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    // Level music settings
+    const backgroundMusic = new Audio(&quot;../assets/levelMusic.ogg&quot;);
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -6669,6 +6722,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -7410,6 +7470,13 @@ tw-story {
       } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+          
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -7572,6 +7639,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+
+    if (typeof backgroundMusic !== &#39;undefined&#39;) {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById(&quot;operation3&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
@@ -7586,6 +7658,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    // Level music settings
+    const backgroundMusic = new Audio(&quot;../assets/levelMusic.ogg&quot;);
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -9614,6 +9689,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -10046,6 +10128,13 @@ tw-story {
       } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -10201,6 +10290,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+
+    if (typeof backgroundMusic !== &#39;undefined&#39;) {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById(&quot;operation4&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
@@ -10215,6 +10309,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    // Level music settings
+    const backgroundMusic = new Audio(&quot;../assets/levelMusic.ogg&quot;);
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -12643,6 +12740,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -12980,6 +13084,13 @@ tw-story {
       } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -13206,6 +13317,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+    
+    if (typeof backgroundMusic !== &#39;undefined&#39;) {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById(&quot;operation5&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
@@ -13220,6 +13336,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    // Level music settings
+    const backgroundMusic = new Audio(&quot;../assets/levelMusic.ogg&quot;);
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -15657,6 +15776,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -16001,6 +16127,13 @@ tw-story {
       } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -16459,6 +16592,11 @@ tw-story {
       // And probably remove it from the memory
       delete audio;
     }
+    
+    if (typeof backgroundMusic !== &#39;undefined&#39;) {
+      backgroundMusic.pause();
+      delete backgroundMusic;
+    }
   (function() {
     const canvas = document.getElementById(&quot;tutorialOperation&quot;);
     const ctx = canvas.getContext(&quot;2d&quot;);
@@ -16473,6 +16611,9 @@ tw-story {
     // creating a cacophony of beeps that can overload the number of audio channels available in the browser.
     const numBeeps = 20;
     const elintBeeps = Array.from({ length: numBeeps }, () =&gt; new Audio(&quot;../assets/ELINTBeep.mp3&quot;));
+    // Level music settings
+    const backgroundMusic = new Audio(&quot;../assets/levelMusic.ogg&quot;);
+    let isMusicPlaying = false;
     
     // Track the start time
     const startTime = Date.now();
@@ -18163,6 +18304,13 @@ tw-story {
     
       // Game over check
       if (gameOver) {
+        // Stop the background music
+        if (backgroundMusic) {
+          backgroundMusic.pause();
+          backgroundMusic.currentTime = 0;
+          isMusicPlaying = false;
+        }
+        
         // If viewing message history, draw that instead of game over menu
         if (isViewingMessageHistory) {
           drawMessageHistory();
@@ -18894,6 +19042,13 @@ tw-story {
       } else if (event.key === &#39;p&#39; || event.key === &#39;P&#39;) {
         // Toggle pause state if not in game over state
         if (!gameOver) {
+          // If this is the first unpause, i.e. the player is starting the level, also start the music
+          if (!isMusicPlaying) {
+            backgroundMusic.play();
+            isMusicPlaying = true;
+            backgroundMusic.loop = true;
+          }
+
           // If viewing message history, just exit that view but remain paused
           if (isViewingMessageHistory) {
             isViewingMessageHistory = false;
@@ -18969,28 +19124,7 @@ tw-story {
 &lt;/script&gt;
 
 [[Back-&gt;Onward]]
-[[Debug-&gt;Debug Operation]]</tw-passagedata><tw-passagedata pid="32" name="Wait for repairs" tags="" position="1600,475" size="100,100">&lt;div class=&quot;dialogue right-dialogue&quot;&gt;
-    &lt;img src=&quot;../assets/characters/Captain.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
-    &lt;p class=&quot;dialogue-text&quot;&gt;&quot;Why can&#39;t we catch a break since arriving in this dreadful system?&quot;&lt;/p&gt;
-  &lt;/div&gt;
-
-  &lt;div class=&quot;dialogue left-dialogue&quot;&gt;
-    &lt;img src=&quot;../assets/characters/Admiral.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
-    &lt;p class=&quot;dialogue-text&quot;&gt;
-&quot;What&#39;s strangest is the lack of local authority. We haven&#39;t seen a single Nebula ship. Hopefully they haven&#39;t been eliminated by these pirates.&quot;&lt;/p&gt;
-  &lt;/div&gt;
-
-&lt;div class=&quot;dialogue right-dialogue&quot;&gt;
-    &lt;img src=&quot;../assets/characters/Engineer.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
-    &lt;p class=&quot;dialogue-text&quot;&gt;&quot;I&#39;ve had suspicions that the lack of command in this area may be intentional. Theres no way the Grand Nebula Federation doesn&#39;t know about these pirates... maybe they set them up to do these raids.&quot; &lt;/p&gt;
-  &lt;/div&gt;
-
- &lt;div class=&quot;dialogue left-dialogue&quot;&gt;
-    &lt;img src=&quot;../assets/characters/Captain.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
-    &lt;p class=&quot;dialogue-text&quot;&gt;&quot;We best hope not. We already have enough political drama with the DRP as is, having another empire against us is certainly not optimal.&quot;&lt;/p&gt;
-  &lt;/div&gt;
-
-[[The next day]]</tw-passagedata><tw-passagedata pid="33" name="Victory! Discuss with the Captain Martin" tags="" position="2000,475" size="100,100">With the combined efforts of the CRS bounty and the Warspite, the Tartarus drifts incapacitated.
+[[Debug-&gt;Debug Operation]]</tw-passagedata><tw-passagedata pid="32" name="Victory! Discuss with the Captain Martin" tags="" position="2000,475" size="100,100">With the combined efforts of the CRS bounty and the Warspite, the Tartarus drifts incapacitated.
 &lt;div class=&quot;dialogue right-dialogue&quot;&gt;
     &lt;img src=&quot;../assets/characters/Captain.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
     &lt;p class=&quot;dialogue-text&quot;&gt;&quot;We did it Engineer! I never doubted you for a second.&quot;
@@ -19027,7 +19161,7 @@ tw-story {
     &lt;p class=&quot;dialogue-text&quot;&gt;&quot;Well boys... It looks like the Tartarus is thoroughly disabled. Let&#39;s take this Corsair in for questioning.&quot;&lt;/p&gt;
   &lt;/div&gt;
 
-[[Onward-&gt;The corsairs mystery]]</tw-passagedata><tw-passagedata pid="34" name="Victory! Discuss with the Captain of the Warspite" tags="" position="1800,475" size="100,100">&lt;div class=&quot;dialogue right-dialogue&quot;&gt;
+[[Onward-&gt;The corsairs mystery]]</tw-passagedata><tw-passagedata pid="33" name="Victory! Discuss with the Captain of the Warspite" tags="" position="1800,475" size="100,100">&lt;div class=&quot;dialogue right-dialogue&quot;&gt;
     &lt;img src=&quot;../assets/characters/Admiral.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
     &lt;p class=&quot;dialogue-text&quot;&gt;&quot;Now what the hell is going on in this system Captain Martin? Nothing but nonsense has revealed itself since we&#39;ve been here.&quot; &lt;/p&gt;
   &lt;/div&gt;
@@ -19058,7 +19192,28 @@ tw-story {
   &lt;/div&gt;
 
 
-[[Onward-&gt;Captain Martins agreement]]</tw-passagedata><tw-passagedata pid="35" name="[Victory! Full speed ahead to the closest ateroid cluster" tags="" position="1400,475" size="100,100">With hopes of losing the pursuing ship, the CRS bounty proceeds towards a large asteroid cluster, all the while large thermal signatures indicative of explosions ring out around the ship.
+[[Onward-&gt;Captain Martins agreement]]</tw-passagedata><tw-passagedata pid="34" name="Wait for repairs" tags="" position="1600,475" size="100,100">&lt;div class=&quot;dialogue right-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/Captain.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;&quot;Why can&#39;t we catch a break since arriving in this dreadful system?&quot;&lt;/p&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;dialogue left-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/Admiral.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;
+&quot;What&#39;s strangest is the lack of local authority. We haven&#39;t seen a single Nebula ship. Hopefully they haven&#39;t been eliminated by these pirates.&quot;&lt;/p&gt;
+  &lt;/div&gt;
+
+&lt;div class=&quot;dialogue right-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/Engineer.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;&quot;I&#39;ve had suspicions that the lack of command in this area may be intentional. Theres no way the Grand Nebula Federation doesn&#39;t know about these pirates... maybe they set them up to do these raids.&quot; &lt;/p&gt;
+  &lt;/div&gt;
+
+ &lt;div class=&quot;dialogue left-dialogue&quot;&gt;
+    &lt;img src=&quot;../assets/characters/Captain.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
+    &lt;p class=&quot;dialogue-text&quot;&gt;&quot;We best hope not. We already have enough political drama with the DRP as is, having another empire against us is certainly not optimal.&quot;&lt;/p&gt;
+  &lt;/div&gt;
+
+[[The next day]]</tw-passagedata><tw-passagedata pid="35" name="[Victory! Full speed ahead to the closest ateroid cluster" tags="" position="1400,475" size="100,100">With hopes of losing the pursuing ship, the CRS bounty proceeds towards a large asteroid cluster, all the while large thermal signatures indicative of explosions ring out around the ship.
 
 &lt;div class=&quot;dialogue right-dialogue&quot;&gt;
     &lt;img src=&quot;../assets/characters/Engineer.png&quot; class=&quot;portrait&quot; alt=&quot;Character 2&quot;&gt;
